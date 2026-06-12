@@ -218,12 +218,22 @@ function checkForNotifications(newData) {
       oldStockMap[item.name] = item.stock;
     });
 
+    // Determine if this shop just restocked (compare next timestamp)
+    const restockKey = shopKey === 'SeedShop_Normal' ? 'SeedShop' : shopKey;
+    const oldNext = stockData.restockTimes[restockKey] ? stockData.restockTimes[restockKey].next : 0;
+    const newNext = newData.restockTimes[restockKey] ? newData.restockTimes[restockKey].next : 0;
+    const shopRestocked = oldNext !== newNext && newNext > 0;
+
     newItems.forEach(item => {
       const oldStock = oldStockMap[item.name] !== undefined ? oldStockMap[item.name] : 0;
       const newStock = item.stock;
 
-      // If user is tracking this item, and stock goes from 0 to > 0
-      if (trackedItems.has(item.name) && oldStock === 0 && newStock > 0) {
+      // Trigger notification if:
+      // - user is tracking this item, AND
+      // - (item stock went from 0 to >0 OR shop restocked and item is still in stock >0)
+      const isRestocked = (oldStock === 0 && newStock > 0) || (shopRestocked && newStock > 0);
+
+      if (trackedItems.has(item.name) && isRestocked) {
         triggerNotification(item);
       }
     });
