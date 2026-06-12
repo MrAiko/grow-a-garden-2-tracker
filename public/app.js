@@ -276,10 +276,26 @@ async function toggleTracking(itemName, btn) {
     icon.className = 'fa-solid fa-bell';
     btn.setAttribute('title', 'Отключить уведомление о завозе');
     
-    // Play test notification
-    const testTitle = `🔔 Уведомление настроено!`;
+    // Check if the item is currently in stock in stockData
+    let currentItem = null;
+    if (stockData && stockData.shops) {
+      for (const shopKey of Object.keys(stockData.shops)) {
+        const item = stockData.shops[shopKey].find(i => i.name === itemName);
+        if (item) {
+          currentItem = item;
+          break;
+        }
+      }
+    }
+
+    const testTitle = currentItem && currentItem.stock > 0 
+      ? `🔔 Предмет уже в наличии!` 
+      : `🔔 Уведомление настроено!`;
+      
     const testOptions = {
-      body: `Мы оповестим вас, когда "${itemName}" появится в наличии.`,
+      body: currentItem && currentItem.stock > 0 
+        ? `"${itemName}" прямо сейчас в наличии: ${currentItem.stock} шт. | Цена: ${currentItem.price}`
+        : `Мы оповестим вас, когда "${itemName}" появится в наличии.`,
       icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
       badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png'
     };
