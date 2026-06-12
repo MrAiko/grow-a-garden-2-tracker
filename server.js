@@ -68,6 +68,28 @@ app.post('/api/update-stock', (req, res) => {
     isRestockTimeUpdated = true;
   }
 
+  // Merge price data from previous cache if new price is Unknown or invalid (overwritten by out-of-stock text)
+  if (currentStock && currentStock.shops) {
+    for (const shopKey of Object.keys(newStock.shops || {})) {
+      const oldItems = currentStock.shops[shopKey] || [];
+      const newItems = newStock.shops[shopKey] || [];
+
+      const oldPriceMap = {};
+      oldItems.forEach(item => {
+        if (item.price && item.price !== 'Unknown' && !item.price.toLowerCase().includes('stock')) {
+          oldPriceMap[item.name] = item.price;
+        }
+      });
+
+      newItems.forEach(item => {
+        const isUnknown = !item.price || item.price === 'Unknown' || item.price.toLowerCase().includes('stock');
+        if (isUnknown && oldPriceMap[item.name]) {
+          item.price = oldPriceMap[item.name];
+        }
+      });
+    }
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,

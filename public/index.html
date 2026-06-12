@@ -6,6 +6,8 @@
   <title>Grow a Garden 2 — Live Stock Dashboard</title>
   <!-- SEO -->
   <meta name="description" content="Мониторинг стоков и редких предметов в реальном времени для игры Grow a Garden 2 Roblox. Включайте push-уведомления на интересующие вас товары.">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png">
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +22,7 @@
     <!-- Header -->
     <header class="dashboard-header glass">
       <div class="header-logo">
-        <i class="fa-solid fa-seedling logo-icon"></i>
+        <img src="https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png" alt="Icon" class="logo-image">
         <div>
           <h1>Grow a Garden 2</h1>
           <p class="subtitle">Live Stock Tracker & Alerts</p>
@@ -107,9 +109,59 @@
       </section>
     </main>
 
+    <!-- Developer API Section -->
+    <section class="shop-section glass api-docs-section">
+      <h2 class="section-title"><i class="fa-solid fa-code"></i> Открытый API для разработчиков</h2>
+      <div class="api-docs-content">
+        <p>Используйте наш открытый API для интеграции с вашими Telegram-ботами, Discord-ботами или другими сайтами.</p>
+        <div class="api-endpoint-box">
+          <span class="badge-method">GET</span>
+          <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/stock</code>
+        </div>
+        
+        <details class="api-details">
+          <summary>Показать пример ответа (JSON) и код интеграции</summary>
+          <div class="details-body">
+            <h5>Пример JSON ответа:</h5>
+            <pre><code>{
+  "restockTimes": {
+    "CrateShop": { "last": 1781286539, "next": 1781288039 },
+    "GearShop": { "last": 1781286639, "next": 1781287439 },
+    "SeedShop": { "last": 1781286739, "next": 1781288639 }
+  },
+  "shops": {
+    "CrateShop": [
+      { "name": "Ladder Crate", "stock": 1, "price": "3K¢", "rarity": "Common" }
+    ],
+    "GearShop": [
+      { "name": "Common Watering Can", "stock": 3, "price": "2K¢", "rarity": "Common" }
+    ],
+    "SeedShop_Normal": [
+      { "name": "Carrot", "stock": 4, "price": "1¢", "rarity": "Common" }
+    ]
+  },
+  "updatedAt": 1781287318259
+}</code></pre>
+            
+            <h5>Пример на Python:</h5>
+            <pre><code>import requests
+
+response = requests.get("https://grow-a-garden-2-tracker.onrender.com/api/stock")
+data = response.json()
+print("Магазин ящиков:", data["shops"]["CrateShop"])</code></pre>
+
+            <h5>Пример на JavaScript (Node.js):</h5>
+            <pre><code>fetch("https://grow-a-garden-2-tracker.onrender.com/api/stock")
+  .then(res => res.json())
+  .then(data => console.log(data.shops.CrateShop));</code></pre>
+          </div>
+        </details>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="dashboard-footer">
-      <p>&copy; 2026 Grow a Garden 2 Stock Tracker. Разработано с помощью Antigravity.</p>
+      <p>&copy; 2026 Grow a Garden 2 Stock Tracker.</p>
     </footer>
   </div>
 
