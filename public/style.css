@@ -176,7 +176,7 @@ body {
 /* Stats & Overview Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
@@ -203,13 +203,13 @@ body {
 
 .timers-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
 @media (max-width: 600px) {
   .timers-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 

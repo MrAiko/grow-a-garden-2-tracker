@@ -10,13 +10,10 @@ const searchInput = document.getElementById('search-input');
 const filterBtns = document.querySelectorAll('.filter-btn');
 const lastUpdatedText = document.getElementById('last-updated-text');
 const apiStatusBadge = document.getElementById('api-status-badge');
-const subscriberCountText = document.getElementById('subscriber-count-text');
-const tgBotLink = document.getElementById('tg-bot-link');
 
 const crateGrid = document.getElementById('crate-shop-grid');
 const gearGrid = document.getElementById('gear-shop-grid');
 const seedGrid = document.getElementById('seed-shop-grid');
-const exclusiveGrid = document.getElementById('exclusive-shop-grid');
 
 // API Poll Functions
 async function fetchData() {
@@ -64,16 +61,6 @@ function updateStatusUI(status) {
     lastUpdatedText.textContent = 'Ожидание данных...';
   }
 
-  // Subscriber Count
-  subscriberCountText.textContent = `Подписчиков: ${status.subscribersCount || 0}`;
-
-  // Bot Link
-  if (status.botConnected && status.botUsername) {
-    tgBotLink.href = `https://t.me/${status.botUsername}`;
-    tgBotLink.style.display = 'inline-flex';
-  } else {
-    tgBotLink.style.display = 'none';
-  }
 }
 
 function updateOfflineStatus() {
@@ -92,7 +79,6 @@ function updateTimers() {
   updateTimerBox('timer-crates', times.CrateShop ? times.CrateShop.next : 0);
   updateTimerBox('timer-gears', times.GearShop ? times.GearShop.next : 0);
   updateTimerBox('timer-seeds', times.SeedShop ? times.SeedShop.next : 0);
-  updateTimerBox('timer-exclusive', times.ExclusiveShop ? times.ExclusiveShop.next : 0);
 }
 
 function updateTimerBox(elementId, nextTimestamp) {
@@ -131,7 +117,6 @@ function renderDashboard() {
   renderShopGrid(crateGrid, stockData.shops.CrateShop || []);
   renderShopGrid(gearGrid, stockData.shops.GearShop || []);
   renderShopGrid(seedGrid, stockData.shops.SeedShop_Normal || []);
-  renderShopGrid(exclusiveGrid, stockData.shops.SeedShop_Exclusive || []);
 }
 
 function renderShopGrid(gridElement, items) {
