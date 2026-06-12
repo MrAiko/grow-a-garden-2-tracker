@@ -5,6 +5,9 @@ let activeRarityFilter = 'all'; // 'all', 'rare+', 'epic+'
 let activeStockFilter = false; // true/false
 let searchQuery = '';
 
+// Notification Subscriptions
+let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
+
 // DOM Elements
 const searchInput = document.getElementById('search-input');
 const filterBtns = document.querySelectorAll('.filter-btn');
@@ -24,7 +27,9 @@ async function fetchData() {
     ]);
 
     if (stockRes.ok) {
-      stockData = await stockRes.json();
+      const newStockData = await stockRes.json();
+      checkForNotifications(newStockData);
+      stockData = newStockData;
     }
     
     if (statusRes.ok) {
@@ -60,7 +65,6 @@ function updateStatusUI(status) {
   } else {
     lastUpdatedText.textContent = 'Ожидание данных...';
   }
-
 }
 
 function updateOfflineStatus() {
@@ -124,6 +128,12 @@ function renderShopGrid(gridElement, items) {
   
   // Filter logic
   const filtered = items.filter(item => {
+    // client-side safety filter for layout/technical artifacts
+    const ln = item.name.toLowerCase();
+    if (ln === 'itemtemplate' || ln === 'template' || ln === 'padding' || ln === 'uipadding' || ln === 'uipadting' || ln === 'robux_shelf' || ln === 'sheckles_shelf' || ln === 'shackles_shelf' || ln === 'buttons' || ln.includes('padding') || ln.includes('template') || ln.includes('shelf') || ln.includes('layout')) {
+      return false;
+    }
+
     // Search query match
     if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -158,16 +168,29 @@ function renderShopGrid(gridElement, items) {
     const card = document.createElement('div');
     const rarityClass = `rarity-${item.rarity.toLowerCase()}`;
     const badgeClass = `badge-${item.rarity.toLowerCase()}`;
-    card.className = `item-card ${rarityClass}`;
-
+    
     const inStock = item.stock > 0;
+    const cardClass = inStock ? `item-card ${rarityClass}` : `item-card ${rarityClass} stock-out-card`;
+
     const stockHtml = inStock 
       ? `<span class="item-stock stock-in"><i class="fa-solid fa-circle-check"></i> ${item.stock} шт.</span>`
       : `<span class="item-stock stock-out"><i class="fa-solid fa-circle-xmark"></i> Нет стока</span>`;
 
+    // Notification bell button state
+    const isTracked = trackedItems.has(item.name);
+    const bellClass = isTracked ? 'bell-active' : '';
+    const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
+    const bellTitle = isTracked ? 'Отключить уведомление о завозе' : 'Оповестить при завозе';
+
+    card.className = cardClass;
     card.innerHTML = `
       <div class="item-header">
-        <h4 class="item-name" title="${item.name}">${item.name}</h4>
+        <div class="name-container">
+          <button class="bell-btn ${bellClass}" data-name="${item.name}" title="${bellTitle}">
+            <i class="${bellIcon}"></i>
+          </button>
+          <h4 class="item-name" title="${item.name}">${item.name}</h4>
+        </div>
         <span class="item-badge ${badgeClass}">${item.rarity}</span>
       </div>
       <div class="item-body">
@@ -180,6 +203,79 @@ function renderShopGrid(gridElement, items) {
   });
 }
 
+// Push Notifications Engine
+function checkForNotifications(newData) {
+  if (!stockData || !stockData.shops) {
+    return; // Do not notify on initial load
+  }
+
+  for (const shopKey of Object.keys(newData.shops)) {
+    const oldItems = stockData.shops[shopKey] || [];
+    const newItems = newData.shops[shopKey] || [];
+
+    const oldStockMap = {};
+    oldItems.forEach(item => {
+      oldStockMap[item.name] = item.stock;
+    });
+
+    newItems.forEach(item => {
+      const oldStock = oldStockMap[item.name] !== undefined ? oldStockMap[item.name] : 0;
+      const newStock = item.stock;
+
+      // If user is tracking this item, and stock goes from 0 to > 0
+      if (trackedItems.has(item.name) && oldStock === 0 && newStock > 0) {
+        triggerNotification(item);
+      }
+    });
+  }
+}
+
+function triggerNotification(item) {
+  if (Notification.permission === 'granted') {
+    const title = `🔔 ${item.name} появился в наличии!`;
+    const options = {
+      body: `Сток: ${item.stock} шт. | Цена: ${item.price} | Редкость: ${item.rarity}\nСпеши купить в Grow a Garden 2!`,
+      icon: 'https://cdn-icons-png.flaticon.com/512/628/628324.png',
+      requireInteraction: true
+    };
+    new Notification(title, options);
+  }
+}
+
+async function toggleTracking(itemName, btn) {
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert('Пожалуйста, разрешите отправку уведомлений в браузере для этой функции!');
+      return;
+    }
+  } else if (Notification.permission === 'denied') {
+    alert('Уведомления заблокированы. Включите доступ к уведомлениям для этого сайта в настройках браузера.');
+    return;
+  }
+
+  const icon = btn.querySelector('i');
+  if (trackedItems.has(itemName)) {
+    trackedItems.delete(itemName);
+    btn.classList.remove('bell-active');
+    icon.className = 'fa-regular fa-bell';
+    btn.setAttribute('title', 'Оповестить при завозе');
+  } else {
+    trackedItems.add(itemName);
+    btn.classList.add('bell-active');
+    icon.className = 'fa-solid fa-bell';
+    btn.setAttribute('title', 'Отключить уведомление о завозе');
+    
+    // Play test notification
+    new Notification(`🔔 Уведомление настроено!`, {
+      body: `Мы оповестим вас, когда "${itemName}" появится в наличии.`,
+      icon: 'https://cdn-icons-png.flaticon.com/512/628/628324.png'
+    });
+  }
+
+  localStorage.setItem('trackedItems', JSON.stringify(Array.from(trackedItems)));
+}
+
 // Event Listeners for Filters
 searchInput.addEventListener('input', (e) => {
   searchQuery = e.target.value;
@@ -188,7 +284,6 @@ searchInput.addEventListener('input', (e) => {
 
 filterBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    // Rarity and Stock Buttons check
     const rarity = btn.getAttribute('data-rarity');
     const stock = btn.getAttribute('data-stock');
 
@@ -207,6 +302,15 @@ filterBtns.forEach(btn => {
 
     renderDashboard();
   });
+});
+
+// Event Delegation for Bell Buttons
+document.addEventListener('click', (e) => {
+  const bell = e.target.closest('.bell-btn');
+  if (bell) {
+    const name = bell.getAttribute('data-name');
+    toggleTracking(name, bell);
+  }
 });
 
 // Init and Loops

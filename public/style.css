@@ -521,6 +521,90 @@ body {
   font-size: 11px;
 }
 
+/* Out of Stock Card Dimming */
+.item-card.stock-out-card {
+  opacity: 0.55;
+  filter: grayscale(15%);
+}
+
+.item-card.stock-out-card:hover {
+  opacity: 1;
+  filter: none;
+}
+
+/* Notification Banner */
+.notification-banner {
+  padding: 16px 24px;
+  border-left: 3px solid var(--color-warning);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.banner-content p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.banner-content strong {
+  color: var(--text-primary);
+}
+
+.bell-glow {
+  font-size: 20px;
+  color: var(--color-warning);
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
+  animation: bellRing 2s infinite ease-in-out;
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(0); }
+}
+
+/* Bell Button styling inside cards */
+.name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 80%;
+  overflow: hidden;
+}
+
+.bell-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.bell-btn:hover {
+  color: var(--color-warning);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.1);
+}
+
+.bell-btn.bell-active {
+  color: var(--color-warning);
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+}
+
 /* Footer */
 .dashboard-footer {
   text-align: center;
