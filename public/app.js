@@ -231,14 +231,24 @@ function checkForNotifications(newData) {
 }
 
 function triggerNotification(item) {
+  const title = `🔔 ${item.name} в наличии!`;
+  const options = {
+    body: `Сток: ${item.stock} шт. | Цена: ${item.price} | Редкость: ${item.rarity}\nСпеши купить в Grow a Garden 2!`,
+    icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
+    badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
+    tag: 'stock-alert-' + item.name,
+    requireInteraction: true
+  };
+
   if (Notification.permission === 'granted') {
-    const title = `🔔 ${item.name} появился в наличии!`;
-    const options = {
-      body: `Сток: ${item.stock} шт. | Цена: ${item.price} | Редкость: ${item.rarity}\nСпеши купить в Grow a Garden 2!`,
-      icon: 'https://cdn-icons-png.flaticon.com/512/628/628324.png',
-      requireInteraction: true
-    };
-    new Notification(title, options);
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, options);
+      });
+    } else {
+      new Notification(title, options);
+    }
+    playAlertSound();
   }
 }
 
@@ -267,10 +277,21 @@ async function toggleTracking(itemName, btn) {
     btn.setAttribute('title', 'Отключить уведомление о завозе');
     
     // Play test notification
-    new Notification(`🔔 Уведомление настроено!`, {
+    const testTitle = `🔔 Уведомление настроено!`;
+    const testOptions = {
       body: `Мы оповестим вас, когда "${itemName}" появится в наличии.`,
-      icon: 'https://cdn-icons-png.flaticon.com/512/628/628324.png'
-    });
+      icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
+      badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png'
+    };
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(testTitle, testOptions);
+      });
+    } else {
+      new Notification(testTitle, testOptions);
+    }
+    playAlertSound();
   }
 
   localStorage.setItem('trackedItems', JSON.stringify(Array.from(trackedItems)));
@@ -317,3 +338,41 @@ document.addEventListener('click', (e) => {
 fetchData();
 setInterval(fetchData, 5000); // Poll API data every 5 seconds
 setInterval(updateTimers, 1000); // Tick timers every second
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered with scope:', reg.scope))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+
+// Synthesise audio alert chime using Web Audio API
+function playAlertSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const playNote = (freq, startTime, duration) => {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      gainNode.gain.setValueAtTime(0.12, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    
+    const now = audioCtx.currentTime;
+    playNote(523.25, now, 0.15); // Note C5
+    playNote(659.25, now + 0.12, 0.25); // Note E5
+  } catch (e) {
+    console.warn('AudioContext chime audio failed to play:', e);
+  }
+}

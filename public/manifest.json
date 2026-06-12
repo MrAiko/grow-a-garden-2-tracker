@@ -1,0 +1,21 @@
+{
+  "name": "Grow a Garden 2 Stock Tracker",
+  "short_name": "GAG2 Stock",
+  "description": "Мониторинг стоков и редких предметов в реальном времени для игры Grow a Garden 2 Roblox.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
