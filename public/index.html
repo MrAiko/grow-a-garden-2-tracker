@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grow a Garden 2 — Live Stock Dashboard</title>
+  <!-- SEO -->
+  <meta name="description" content="Мониторинг стоков и редких предметов в реальном времени для игры Grow a Garden 2 Roblox. Подключайте Telegram бота для уведомлений.">
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-glow"></div>
+  
+  <div class="container">
+    <!-- Header -->
+    <header class="dashboard-header glass">
+      <div class="header-logo">
+        <i class="fa-solid fa-seedling logo-icon"></i>
+        <div>
+          <h1>Grow a Garden 2</h1>
+          <p class="subtitle">Live Stock Tracker & Alerts</p>
+        </div>
+      </div>
+      
+      <div class="header-status">
+        <div class="status-badge" id="api-status-badge">
+          <span class="status-dot pulsing"></span>
+          <span class="status-text">Офлайн</span>
+        </div>
+        <div class="last-updated" id="last-updated-text">Последнее обновление: Никогда</div>
+      </div>
+    </header>
+
+    <!-- Overview & Stats -->
+    <section class="stats-grid">
+      <!-- Restock Timers -->
+      <div class="stats-card glass restock-card">
+        <h3><i class="fa-solid fa-clock"></i> Таймеры Завоза (Restock)</h3>
+        <div class="timers-container">
+          <div class="timer-box">
+            <span class="timer-label">Crates</span>
+            <span class="timer-val" id="timer-crates">--:--:--</span>
+          </div>
+          <div class="timer-box">
+            <span class="timer-label">Gears</span>
+            <span class="timer-val" id="timer-gears">--:--:--</span>
+          </div>
+          <div class="timer-box">
+            <span class="timer-label">Normal Seeds</span>
+            <span class="timer-val" id="timer-seeds">--:--:--</span>
+          </div>
+          <div class="timer-box">
+            <span class="timer-label">Exclusive Seeds</span>
+            <span class="timer-val" id="timer-exclusive">--:--:--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telegram Bot Info -->
+      <div class="stats-card glass tg-info-card">
+        <h3><i class="fa-brands fa-telegram"></i> Telegram Бот Оповещений</h3>
+        <p>Получайте уведомления в ЛС или каналы при завозах редких предметов.</p>
+        <div class="tg-actions">
+          <a href="#" target="_blank" id="tg-bot-link" class="btn btn-primary">
+            <i class="fa-brands fa-telegram"></i> Подключить Бота
+          </a>
+          <div class="subscriber-count" id="subscriber-count-text">Подписчиков: 0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters & Search -->
+    <section class="filters-bar glass">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="search-input" placeholder="Поиск предметов...">
+      </div>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-rarity="all">Все</button>
+        <button class="filter-btn" data-rarity="rare+">Rare+</button>
+        <button class="filter-btn" data-rarity="epic+">Epic+</button>
+        <button class="filter-btn" data-stock="in-stock">В наличии</button>
+      </div>
+    </section>
+
+    <!-- Main Content: Shops -->
+    <main class="shops-container">
+      <!-- Crate Shop Section -->
+      <section class="shop-section glass" id="crates-section">
+        <h2 class="section-title"><i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)</h2>
+        <div class="cards-grid" id="crate-shop-grid">
+          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+        </div>
+      </section>
+
+      <!-- Gear Shop Section -->
+      <section class="shop-section glass" id="gears-section">
+        <h2 class="section-title"><i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение (Gears)</h2>
+        <div class="cards-grid" id="gear-shop-grid">
+          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+        </div>
+      </section>
+
+      <!-- Normal Seeds Section -->
+      <section class="shop-section glass" id="seeds-section">
+        <h2 class="section-title"><i class="fa-solid fa-leaf"></i> Обычные семена (Seeds)</h2>
+        <div class="cards-grid" id="seed-shop-grid">
+          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+        </div>
+      </section>
+
+      <!-- Exclusive Seeds Section -->
+      <section class="shop-section glass" id="exclusive-section">
+        <h2 class="section-title"><i class="fa-solid fa-star"></i> Эксклюзивные семена (Exclusive)</h2>
+        <div class="cards-grid" id="exclusive-shop-grid">
+          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <p>&copy; 2026 Grow a Garden 2 Stock Tracker. Разработано с помощью Antigravity.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
