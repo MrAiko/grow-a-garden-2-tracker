@@ -213,7 +213,8 @@ body::before {
 /* Stats / Timers */
 .stats-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
 }
 
 .stats-card {
@@ -834,4 +835,70 @@ body::before {
   .timer-val {
     font-size: 17px;
   }
+}
+
+/* Weather Layout */
+.weather-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weather-info-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(139, 90, 43, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.weather-info-box::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 3px;
+  background-color: var(--color-grass);
+  border-radius: 0 4px 4px 0;
+}
+
+.weather-info-box:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(139, 90, 43, 0.25);
+  transform: translateY(-2px);
+}
+
+.weather-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.weather-val {
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weather-emoji {
+  font-size: 24px;
+}
+
+.weather-effect {
+  font-size: 13px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 10px 14px;
+  border-left: 2px solid var(--color-grass);
 }

@@ -93,6 +93,7 @@ app.post('/api/update-stock', (req, res) => {
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
+    weather: newStock.weather || 'Sunny',
     updatedAt: Date.now()
   };
 

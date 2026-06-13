@@ -30,6 +30,7 @@ async function fetchData() {
       const newStockData = await stockRes.json();
       checkForNotifications(newStockData);
       stockData = newStockData;
+      updateWeatherUI(stockData);
     }
     
     if (statusRes.ok) {
@@ -44,6 +45,48 @@ async function fetchData() {
     console.error('Error fetching dashboard data:', err);
     updateOfflineStatus();
   }
+}
+
+// Update Weather Display
+function updateWeatherUI(data) {
+  const weatherLabel = document.getElementById('weather-label-text');
+  const weatherValue = document.getElementById('weather-value-text');
+  const weatherEffect = document.getElementById('weather-effect-text');
+  
+  if (!weatherLabel || !weatherValue || !weatherEffect) return;
+  
+  const weather = data.weather || 'Sunny';
+  const weatherClean = weather.trim();
+  const weatherLower = weatherClean.toLowerCase();
+  
+  let emoji = '☀️';
+  let effect = 'Эффект: Нормальная скорость роста / Default growth speed';
+  
+  if (weatherLower.includes('rain') && !weatherLower.includes('acid')) {
+    emoji = '🌧️';
+    effect = '🌧️ Эффект: Ускоренный рост в 2 раза! / 2x growth speed!';
+  } else if (weatherLower.includes('lightning') || weatherLower.includes('thunder')) {
+    emoji = '⚡';
+    effect = '⚡ Эффект: Шанс мутации «Заряженный» (80x)! / Mutation chance «Electric» (80x)!';
+  } else if (weatherLower.includes('rainbow')) {
+    emoji = '🌈';
+    effect = '🌈 Эффект: Повышенный шанс на семена Rainbow! / Higher Rainbow seed chance!';
+  } else if (weatherLower.includes('snow')) {
+    emoji = '❄️';
+    effect = '❄️ Эффект: Шанс мутации «Замороженный» (40x)! / Mutation chance «Frozen» (40x)!';
+  } else if (weatherLower.includes('star')) {
+    emoji = '✨';
+    effect = '✨ Эффект: Шанс мутации «Космический» (25x)! / Mutation chance «Starstruck» (25x)!';
+  } else if (weatherLower.includes('midas') || weatherLower.includes('gold')) {
+    emoji = '👑';
+    effect = '👑 Эффект: Мутация Midas (10x) & золотые семена! / Midas mutation (10x) & Golden seeds!';
+  } else if (weatherLower.includes('acid')) {
+    emoji = '🧪';
+    effect = '🧪 Эффект: Опасность для посевов! / Acid Rain risk!';
+  }
+  
+  weatherValue.innerHTML = `<span class="weather-emoji">${emoji}</span> ${weatherClean}`;
+  weatherEffect.textContent = effect;
 }
 
 // Update Status Bar
