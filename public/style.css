@@ -485,17 +485,18 @@ body::before {
 /* Card Header elements */
 .item-header {
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-start;
   width: 100%;
-  position: relative;
+  gap: 8px;
 }
 
 .name-container {
   display: flex;
   align-items: center;
   gap: 6px;
-  max-width: calc(100% - 60px); /* Leave room for absolute positioned badge! Prevents overlap! */
+  flex: 1;
+  min-width: 0;
 }
 
 .item-name {
@@ -506,6 +507,8 @@ body::before {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Expand name fully on hover or active/touch */
@@ -513,7 +516,7 @@ body::before {
 .item-card:active .item-name {
   white-space: normal;
   overflow: visible;
-  text-overflow: clip;
+  word-break: break-word;
 }
 
 /* Bell Button */
@@ -543,18 +546,15 @@ body::before {
   filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.6));
 }
 
-/* Rarity badge (Absolutely positioned to NEVER overlap the name container) */
+/* Rarity badge (Not absolutely positioned to let flex row flow naturally) */
 .item-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
   font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 6px;
   border-radius: 4px;
   letter-spacing: 0.5px;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .badge-common { background: rgba(100, 116, 139, 0.15); color: var(--rarity-common); }
@@ -576,6 +576,8 @@ body::before {
   gap: 8px;
   margin-top: auto;
   width: 100%;
+  min-width: 0;
+  flex: 1;
 }
 
 .item-stock {

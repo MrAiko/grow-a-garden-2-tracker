@@ -113,6 +113,7 @@ let statusData = null;
 let activeRarityFilter = 'all'; // 'all', 'rare+', 'epic+'
 let activeStockFilter = false; // true/false
 let searchQuery = '';
+let lastWeatherKey = '';
 
 // Notification Subscriptions
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
@@ -143,6 +144,7 @@ function setLanguage(lang) {
     langRuBtn.classList.remove('active');
   }
   
+  lastWeatherKey = '';
   updateStaticTranslations();
   if (stockData) {
     renderDashboard();
@@ -325,84 +327,143 @@ function updateTimerBox(elementId, nextTimestamp) {
 
 // Weather Update Engine
 function updateWeatherUI() {
+  const weatherContainer = document.querySelector('.weather-container');
+  const timeBox = document.getElementById('weather-time-box');
+  const t = translations[currentLang];
+
   if (!stockData || !stockData.weather) {
     document.getElementById('time-val').textContent = '--';
     document.getElementById('time-detail').textContent = '--:--:--';
-    document.getElementById('weather-val').textContent = '--';
-    document.getElementById('weather-detail-timer').textContent = '--:--:--';
+    
+    // Clear dynamic weather items and restore default "None" box
+    if (weatherContainer && timeBox) {
+      const childrenToRemove = Array.from(weatherContainer.children).filter(child => child !== timeBox);
+      childrenToRemove.forEach(child => child.remove());
+      
+      const weatherBox = document.createElement('div');
+      weatherBox.className = 'weather-box active-weather-item';
+      weatherBox.id = 'weather-active-box';
+      weatherBox.innerHTML = `
+        <span class="weather-label">${t.weatherLabelActive}</span>
+        <span class="weather-val" style="color: var(--text-secondary)">--</span>
+        <span class="weather-detail weather-timer-countdown">--:--:--</span>
+      `;
+      weatherContainer.appendChild(weatherBox);
+    }
+    lastWeatherKey = 'none';
     return;
   }
   
   const w = stockData.weather;
-  const t = translations[currentLang];
   
   // 1. Time of Day (Night / Day)
   const isNight = w.night;
   const timeValEl = document.getElementById('time-val');
   const timeDetailEl = document.getElementById('time-detail');
   
-  if (isNight) {
-    timeValEl.textContent = t.timeNight;
-    timeValEl.style.color = 'var(--rarity-epic)';
-    if (w.nightStartedAt) {
-      const date = new Date(w.nightStartedAt * 1000);
-      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+  if (timeValEl && timeDetailEl) {
+    if (isNight) {
+      timeValEl.textContent = t.timeNight;
+      timeValEl.style.color = 'var(--rarity-epic)';
+      if (w.nightStartedAt) {
+        const date = new Date(w.nightStartedAt * 1000);
+        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+      } else {
+        timeDetailEl.textContent = '--:--:--';
+      }
     } else {
-      timeDetailEl.textContent = '--:--:--';
-    }
-  } else {
-    timeValEl.textContent = t.timeDay;
-    timeValEl.style.color = 'var(--color-warning)';
-    if (w.nightEndedAt) {
-      const date = new Date(w.nightEndedAt * 1000);
-      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
-    } else {
-      timeDetailEl.textContent = '--:--:--';
-    }
-  }
-  
-  // 2. Active Weather (Rainbow, Snowfall, Starfall, etc.)
-  const weatherValEl = document.getElementById('weather-val');
-  const weatherDetailTimerEl = document.getElementById('weather-detail-timer');
-  
-  let activeWeatherName = null;
-  let activeWeatherInfo = null;
-  
-  if (w.weathers) {
-    for (const [name, info] of Object.entries(w.weathers)) {
-      if (info.playing) {
-        activeWeatherName = name;
-        activeWeatherInfo = info;
-        break;
+      timeValEl.textContent = t.timeDay;
+      timeValEl.style.color = 'var(--color-warning)';
+      if (w.nightEndedAt) {
+        const date = new Date(w.nightEndedAt * 1000);
+        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+      } else {
+        timeDetailEl.textContent = '--:--:--';
       }
     }
   }
   
-  if (activeWeatherName && activeWeatherInfo) {
-    weatherValEl.textContent = activeWeatherName;
-    if (activeWeatherName.toLowerCase().includes('star')) {
-      weatherValEl.style.color = 'var(--rarity-legendary)';
-    } else if (activeWeatherName.toLowerCase().includes('rain')) {
-      weatherValEl.style.color = 'var(--rarity-exotic)';
-    } else {
-      weatherValEl.style.color = 'var(--rarity-rare)';
+  // 2. Collect active weathers
+  const activeWeathers = [];
+  if (w.weathers) {
+    for (const [name, info] of Object.entries(w.weathers)) {
+      if (info.playing) {
+        activeWeathers.push({ name, endTime: info.endTime });
+      }
+    }
+  }
+  
+  // Create a unique key for the current active weathers to check if structure changed
+  const currentKey = activeWeathers.map(aw => aw.name).sort().join(',') || 'none';
+  
+  if (weatherContainer && timeBox) {
+    if (currentKey !== lastWeatherKey) {
+      // Rebuild the weather items list
+      const childrenToRemove = Array.from(weatherContainer.children).filter(child => child !== timeBox);
+      childrenToRemove.forEach(child => child.remove());
+      
+      if (activeWeathers.length > 0) {
+        activeWeathers.forEach(({ name, endTime }) => {
+          const weatherBox = document.createElement('div');
+          weatherBox.className = 'weather-box active-weather-item';
+          weatherBox.setAttribute('data-name', name);
+          weatherBox.setAttribute('data-endtime', endTime);
+          
+          let colorStyle = 'var(--text-secondary)';
+          if (name.toLowerCase().includes('star')) {
+            colorStyle = 'var(--rarity-legendary)';
+          } else if (name.toLowerCase().includes('rain')) {
+            colorStyle = 'var(--rarity-exotic)';
+          } else {
+            colorStyle = 'var(--rarity-rare)';
+          }
+          
+          weatherBox.innerHTML = `
+            <span class="weather-label">${t.weatherLabelActive}</span>
+            <span class="weather-val" style="color: ${colorStyle}">${name}</span>
+            <span class="weather-detail weather-timer-countdown">--:--:--</span>
+          `;
+          weatherContainer.appendChild(weatherBox);
+        });
+      } else {
+        // Rebuild fallback "None" box
+        const weatherBox = document.createElement('div');
+        weatherBox.className = 'weather-box active-weather-item';
+        weatherBox.id = 'weather-active-box';
+        weatherBox.innerHTML = `
+          <span class="weather-label">${t.weatherLabelActive}</span>
+          <span class="weather-val" style="color: var(--text-secondary)">${t.weatherNone}</span>
+          <span class="weather-detail weather-timer-countdown">--:--:--</span>
+        `;
+        weatherContainer.appendChild(weatherBox);
+      }
+      lastWeatherKey = currentKey;
     }
     
-    // Countdown timer for active weather
+    // 3. Update countdown timers for all active weather items currently in DOM
     const now = Math.floor(Date.now() / 1000);
-    const diff = activeWeatherInfo.endTime - now;
-    
-    if (diff <= 0) {
-      weatherDetailTimerEl.textContent = '--:--:--';
-    } else {
-      const mins = Math.floor(diff / 60);
-      const secs = diff % 60;
-      weatherDetailTimerEl.textContent = t.weatherEndsIn.replace('{}', `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
-    }
-  } else {
-    weatherValEl.textContent = t.weatherNone;
-    weatherValEl.style.color = 'var(--text-secondary)';
-    weatherDetailTimerEl.textContent = '--:--:--';
+    const activeItems = weatherContainer.querySelectorAll('.active-weather-item');
+    activeItems.forEach(box => {
+      const endTimeAttr = box.getAttribute('data-endtime');
+      const timerEl = box.querySelector('.weather-timer-countdown');
+      if (!timerEl) return;
+      
+      if (!endTimeAttr || endTimeAttr === '0') {
+        timerEl.textContent = '--:--:--';
+        return;
+      }
+      
+      const endTime = parseInt(endTimeAttr, 10);
+      const diff = endTime - now;
+      
+      if (diff <= 0) {
+        timerEl.textContent = '--:--:--';
+      } else {
+        const mins = Math.floor(diff / 60);
+        const secs = diff % 60;
+        timerEl.textContent = t.weatherEndsIn.replace('{}', `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      }
+    });
   }
 }
 
