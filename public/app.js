@@ -55,44 +55,56 @@ function updateWeatherUI(data) {
   
   if (!weatherLabel || !weatherValue || !weatherEffect) return;
   
-  let weather = data.weather || 'Sunny';
-  // Remove Roblox asset IDs, links, query parameters, and clean up spaces
-  weather = weather.replace(/rbxassetid:\/\/\d+/gi, '')
-                   .replace(/https?:\/\/\S+/gi, '')
-                   .replace(/AssetId=\d+/gi, '');
-                   
-  // Remove emojis from the text string to prevent duplicates
-  const weatherText = weather.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]/gu, '').trim();
-  const weatherClean = weatherText.replace(/\s+/g, ' ') || 'Sunny';
-  const weatherLower = weatherClean.toLowerCase();
+  let rawWeather = data.weather || 'Sunny';
+  let rawLower = rawWeather.toLowerCase();
   
+  let weatherName = 'Sunny';
   let emoji = '☀️';
   let effect = 'Эффект: Нормальная скорость роста / Default growth speed';
   
-  if (weatherLower.includes('rain') && !weatherLower.includes('acid')) {
+  if (rawLower.includes('🌧️') || (rawLower.includes('rain') && !rawLower.includes('acid'))) {
+    weatherName = 'Rain';
     emoji = '🌧️';
     effect = '🌧️ Эффект: Ускоренный рост в 2 раза! / 2x growth speed!';
-  } else if (weatherLower.includes('lightning') || weatherLower.includes('thunder')) {
+  } else if (rawLower.includes('⚡') || rawLower.includes('lightning') || rawLower.includes('thunder')) {
+    weatherName = 'Lightning';
     emoji = '⚡';
     effect = '⚡ Эффект: Шанс мутации «Заряженный» (80x)! / Mutation chance «Electric» (80x)!';
-  } else if (weatherLower.includes('rainbow')) {
+  } else if (rawLower.includes('🌈') || rawLower.includes('rainbow')) {
+    weatherName = 'Rainbow';
     emoji = '🌈';
     effect = '🌈 Эффект: Повышенный шанс на семена Rainbow! / Higher Rainbow seed chance!';
-  } else if (weatherLower.includes('snow')) {
+  } else if (rawLower.includes('❄️') || rawLower.includes('snow')) {
+    weatherName = 'Snowfall';
     emoji = '❄️';
     effect = '❄️ Эффект: Шанс мутации «Замороженный» (40x)! / Mutation chance «Frozen» (40x)!';
-  } else if (weatherLower.includes('star')) {
+  } else if (rawLower.includes('✨') || rawLower.includes('star')) {
+    weatherName = 'Starfall';
     emoji = '✨';
     effect = '✨ Эффект: Шанс мутации «Космический» (25x)! / Mutation chance «Starstruck» (25x)!';
-  } else if (weatherLower.includes('midas') || weatherLower.includes('gold')) {
+  } else if (rawLower.includes('👑') || rawLower.includes('midas') || rawLower.includes('gold')) {
+    weatherName = 'Midas';
     emoji = '👑';
     effect = '👑 Эффект: Мутация Midas (10x) & золотые семена! / Midas mutation (10x) & Golden seeds!';
-  } else if (weatherLower.includes('acid')) {
+  } else if (rawLower.includes('🧪') || rawLower.includes('acid')) {
+    weatherName = 'Acid Rain';
     emoji = '🧪';
     effect = '🧪 Эффект: Опасность для посевов! / Acid Rain risk!';
+  } else {
+    // If it is none of the above, clean asset IDs and clean up text
+    let cleanText = rawWeather.replace(/rbxassetid:\/\/\d+/gi, '')
+                              .replace(/https?:\/\/\S+/gi, '')
+                              .replace(/AssetId=\d+/gi, '')
+                              .replace(/погода/gi, '')
+                              .replace(/weather/gi, '')
+                              .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{FE00}-\u{FE0F}]/gu, '')
+                              .replace(/[:\-–—]/g, '')
+                              .replace(/\s+/g, ' ')
+                              .trim();
+    weatherName = cleanText || 'Sunny';
   }
   
-  weatherValue.innerHTML = `<span class="weather-emoji">${emoji}</span> ${weatherClean}`;
+  weatherValue.innerHTML = `<span class="weather-emoji">${emoji}</span> ${weatherName}`;
   weatherEffect.textContent = effect;
 }
 
