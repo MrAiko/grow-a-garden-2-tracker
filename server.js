@@ -61,7 +61,7 @@ function rateLimiter(limit, windowMs) {
 }
 
 app.use(cors());
-app.use(express.json({ limit: '10kb' })); // Limit payload size to prevent RAM exhaust crashes
+app.use(express.json({ limit: '500kb' })); // Limit payload size to prevent RAM exhaust crashes
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Cache in-memory
