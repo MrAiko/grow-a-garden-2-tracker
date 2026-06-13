@@ -55,8 +55,15 @@ function updateWeatherUI(data) {
   
   if (!weatherLabel || !weatherValue || !weatherEffect) return;
   
-  const weather = data.weather || 'Sunny';
-  const weatherClean = weather.trim();
+  let weather = data.weather || 'Sunny';
+  // Remove Roblox asset IDs, links, query parameters, and clean up spaces
+  weather = weather.replace(/rbxassetid:\/\/\d+/gi, '')
+                   .replace(/https?:\/\/\S+/gi, '')
+                   .replace(/AssetId=\d+/gi, '');
+                   
+  // Remove emojis from the text string to prevent duplicates
+  const weatherText = weather.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]/gu, '').trim();
+  const weatherClean = weatherText.replace(/\s+/g, ' ') || 'Sunny';
   const weatherLower = weatherClean.toLowerCase();
   
   let emoji = '☀️';
