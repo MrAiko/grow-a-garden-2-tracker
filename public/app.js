@@ -1,4 +1,91 @@
+// Translation Dictionary
+const translations = {
+  ru: {
+    title: 'Grow a Garden 2',
+    subtitle: 'Мониторинг стоков и оповещения',
+    statusOnline: 'В сети',
+    statusOffline: 'Офлайн',
+    lastUpdatedNever: 'Последнее обновление: Никогда',
+    lastUpdatedPrefix: 'Обновлено: ',
+    lastUpdatedWaiting: 'Ожидание данных...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Таймеры Завоза (Restock)',
+    timerLabelCrates: 'Crates',
+    timerLabelGears: 'Gears',
+    timerLabelSeeds: 'Normal Seeds',
+    restockAlertText: 'Завоз!',
+    notificationBanner: '<strong>Уведомления на экран:</strong> Кликните на колокольчик 🔔 на карточке любого предмета. Браузер пришлет вам звуковое push-уведомление на экран, как только этот предмет появится в наличии!',
+    searchPlaceholder: 'Поиск предметов...',
+    filterAll: 'Все',
+    filterInStock: 'В наличии',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение (Gears)',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Обычные семена (Seeds)',
+    sectionApi: '<i class="fa-solid fa-code"></i> Открытый API для разработчиков',
+    apiDescription: 'Используйте наш открытый API для интеграции с вашими Telegram-ботами, Discord-ботами или другими сайтами.',
+    apiShowSample: 'Показать пример ответа (JSON) и код интеграции',
+    apiJsonSample: 'Пример JSON ответа:',
+    apiPythonSample: 'Пример на Python:',
+    apiJsSample: 'Пример на JavaScript (Node.js):',
+    loadingPlaceholder: 'Ожидание данных от Roblox бота...',
+    noItemsPlaceholder: 'Нет предметов по заданным фильтрам',
+    inStockText: ' шт.',
+    outOfStockText: 'Нет стока',
+    bellTrack: 'Оповестить при завозе',
+    bellUntrack: 'Отключить уведомление о завозе',
+    notificationGrantedAlert: 'Пожалуйста, разрешите отправку уведомлений в браузере для этой функции!',
+    notificationBlockedAlert: 'Уведомления заблокированы. Включите доступ к уведомлениям для этого сайта в настройках браузера.',
+    notifInStockTitle: '🔔 Предмет уже в наличии!',
+    notifTrackedTitle: '🔔 Уведомление настроено!',
+    notifInStockBody: (name, stock, price) => `"${name}" прямо сейчас в наличии: ${stock} шт. | Цена: ${price}`,
+    notifTrackedBody: (name) => `Мы оповестим вас, когда "${name}" появится в наличии.`,
+    pushTitle: (name) => `🔔 ${name} в наличии!`,
+    pushBody: (stock, price, rarity) => `Сток: ${stock} шт. | Цена: ${price} | Редкость: ${rarity}\nСпеши купить в Grow a Garden 2!`,
+  },
+  en: {
+    title: 'Grow a Garden 2',
+    subtitle: 'Live Stock Tracker & Alerts',
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    lastUpdatedNever: 'Last updated: Never',
+    lastUpdatedPrefix: 'Updated: ',
+    lastUpdatedWaiting: 'Waiting for data...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Restock Timers',
+    timerLabelCrates: 'Crates',
+    timerLabelGears: 'Gears',
+    timerLabelSeeds: 'Normal Seeds',
+    restockAlertText: 'Restocked!',
+    notificationBanner: '<strong>Screen Notifications:</strong> Click the bell icon 🔔 on any item card. The browser will play a sound and show a push notification as soon as that item is back in stock!',
+    searchPlaceholder: 'Search items...',
+    filterAll: 'All',
+    filterInStock: 'In Stock',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Crate Shop',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Gear Shop',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Normal Seeds',
+    sectionApi: '<i class="fa-solid fa-code"></i> Developer Open API',
+    apiDescription: 'Use our open API to integrate with your Telegram bots, Discord bots, or other websites.',
+    apiShowSample: 'Show JSON response example and integration code',
+    apiJsonSample: 'JSON response example:',
+    apiPythonSample: 'Python example:',
+    apiJsSample: 'JavaScript (Node.js) example:',
+    loadingPlaceholder: 'Waiting for Roblox bot data...',
+    noItemsPlaceholder: 'No items match your filters',
+    inStockText: ' pcs.',
+    outOfStockText: 'Out of stock',
+    bellTrack: 'Notify when in stock',
+    bellUntrack: 'Mute stock notifications',
+    notificationGrantedAlert: 'Please allow browser notification permissions for this feature!',
+    notificationBlockedAlert: 'Notifications are blocked. Please enable notifications for this site in your browser settings.',
+    notifInStockTitle: '🔔 Item is in stock!',
+    notifTrackedTitle: '🔔 Notification configured!',
+    notifInStockBody: (name, stock, price) => `"${name}" is in stock right now: ${stock} pcs. | Price: ${price}`,
+    notifTrackedBody: (name) => `We will notify you as soon as "${name}" is back in stock.`,
+    pushTitle: (name) => `🔔 ${name} in stock!`,
+    pushBody: (stock, price, rarity) => `Stock: ${stock} pcs. | Price: ${price} | Rarity: ${rarity}\nHurry up to buy in Grow a Garden 2!`,
+  }
+};
+
 // State Management
+let currentLang = localStorage.getItem('siteLang') || 'ru';
 let stockData = null;
 let statusData = null;
 let activeRarityFilter = 'all'; // 'all', 'rare+', 'epic+'
@@ -13,10 +100,99 @@ const searchInput = document.getElementById('search-input');
 const filterBtns = document.querySelectorAll('.filter-btn');
 const lastUpdatedText = document.getElementById('last-updated-text');
 const apiStatusBadge = document.getElementById('api-status-badge');
+const langRuBtn = document.getElementById('lang-ru-btn');
+const langEnBtn = document.getElementById('lang-en-btn');
 
 const crateGrid = document.getElementById('crate-shop-grid');
 const gearGrid = document.getElementById('gear-shop-grid');
 const seedGrid = document.getElementById('seed-shop-grid');
+
+// Translation Functions
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('siteLang', lang);
+  
+  // Update switcher buttons UI
+  if (currentLang === 'ru') {
+    langRuBtn.classList.add('active');
+    langEnBtn.classList.remove('active');
+  } else {
+    langEnBtn.classList.add('active');
+    langRuBtn.classList.remove('active');
+  }
+  
+  updateStaticTranslations();
+  if (stockData) {
+    renderDashboard();
+  }
+}
+
+function updateStaticTranslations() {
+  const t = translations[currentLang];
+  
+  // Header
+  document.querySelector('.dashboard-header .subtitle').textContent = t.subtitle;
+  
+  // Status Bar
+  if (statusData) {
+    updateStatusUI(statusData);
+  } else {
+    updateOfflineStatus();
+  }
+  
+  // Restock Headers & Labels
+  document.querySelector('.restock-card h3').innerHTML = t.restockHeader;
+  const timerLabels = document.querySelectorAll('.timer-box .timer-label');
+  if (timerLabels.length >= 3) {
+    timerLabels[0].textContent = t.timerLabelCrates;
+    timerLabels[1].textContent = t.timerLabelGears;
+    timerLabels[2].textContent = t.timerLabelSeeds;
+  }
+  
+  // Notification Banner
+  document.querySelector('.notification-banner p').innerHTML = t.notificationBanner;
+  
+  // Filters
+  searchInput.placeholder = t.searchPlaceholder;
+  filterBtns.forEach(btn => {
+    const rarity = btn.getAttribute('data-rarity');
+    const stock = btn.getAttribute('data-stock');
+    if (rarity === 'all') {
+      btn.textContent = t.filterAll;
+    } else if (stock === 'in-stock') {
+      btn.textContent = t.filterInStock;
+    }
+  });
+  
+  // Section Titles
+  document.querySelector('#crates-section .section-title').innerHTML = t.sectionCrates;
+  document.querySelector('#gears-section .section-title').innerHTML = t.sectionGears;
+  document.querySelector('#seeds-section .section-title').innerHTML = t.sectionSeeds;
+  
+  // API Section
+  document.querySelector('.api-docs-section .section-title').innerHTML = t.sectionApi;
+  document.querySelector('.api-docs-section p').textContent = t.apiDescription;
+  document.querySelector('.api-details summary').textContent = t.apiShowSample;
+  
+  const apiHeaders = document.querySelectorAll('.details-body h5');
+  if (apiHeaders.length >= 3) {
+    apiHeaders[0].textContent = t.apiJsonSample;
+    apiHeaders[1].textContent = t.apiPythonSample;
+    apiHeaders[2].textContent = t.apiJsSample;
+  }
+
+  // If no data loaded yet, show translated placeholder
+  if (!stockData) {
+    const loaderHTML = `<div class="loading-placeholder">${t.loadingPlaceholder}</div>`;
+    crateGrid.innerHTML = loaderHTML;
+    gearGrid.innerHTML = loaderHTML;
+    seedGrid.innerHTML = loaderHTML;
+  }
+}
+
+// Add Switcher Event Listeners
+langRuBtn.addEventListener('click', () => setLanguage('ru'));
+langEnBtn.addEventListener('click', () => setLanguage('en'));
 
 // API Poll Functions
 async function fetchData() {
@@ -53,7 +229,7 @@ function updateStatusUI(status) {
   
   if (status.status === 'online') {
     dot.className = 'status-dot online pulsing';
-    text.textContent = 'В сети';
+    text.textContent = translations[currentLang].statusOnline;
   } else {
     updateOfflineStatus();
   }
@@ -61,9 +237,9 @@ function updateStatusUI(status) {
   // Last Updated
   if (status.lastUpdated) {
     const date = new Date(status.lastUpdated);
-    lastUpdatedText.textContent = `Обновлено: ${date.toLocaleTimeString()}`;
+    lastUpdatedText.textContent = `${translations[currentLang].lastUpdatedPrefix}${date.toLocaleTimeString()}`;
   } else {
-    lastUpdatedText.textContent = 'Ожидание данных...';
+    lastUpdatedText.textContent = translations[currentLang].lastUpdatedWaiting;
   }
 }
 
@@ -71,7 +247,7 @@ function updateOfflineStatus() {
   const dot = apiStatusBadge.querySelector('.status-dot');
   const text = apiStatusBadge.querySelector('.status-text');
   dot.className = 'status-dot';
-  text.textContent = 'Офлайн';
+  text.textContent = translations[currentLang].statusOffline;
 }
 
 // Countdown Timers Engine
@@ -98,7 +274,7 @@ function updateTimerBox(elementId, nextTimestamp) {
   const diff = nextTimestamp - now;
 
   if (diff <= 0) {
-    el.textContent = 'Завоз!';
+    el.textContent = translations[currentLang].restockAlertText;
     el.style.color = 'var(--color-success)';
     el.style.textShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
     return;
@@ -160,7 +336,7 @@ function renderShopGrid(gridElement, items) {
   });
 
   if (filtered.length === 0) {
-    gridElement.innerHTML = '<div class="loading-placeholder">Нет предметов по заданным фильтрам</div>';
+    gridElement.innerHTML = `<div class="loading-placeholder">${translations[currentLang].noItemsPlaceholder}</div>`;
     return;
   }
 
@@ -173,14 +349,14 @@ function renderShopGrid(gridElement, items) {
     const cardClass = inStock ? `item-card ${rarityClass}` : `item-card ${rarityClass} stock-out-card`;
 
     const stockHtml = inStock 
-      ? `<span class="item-stock stock-in"><i class="fa-solid fa-circle-check"></i> ${item.stock} шт.</span>`
-      : `<span class="item-stock stock-out"><i class="fa-solid fa-circle-xmark"></i> Нет стока</span>`;
+      ? `<span class="item-stock stock-in"><i class="fa-solid fa-circle-check"></i> ${item.stock}${translations[currentLang].inStockText}</span>`
+      : `<span class="item-stock stock-out"><i class="fa-solid fa-circle-xmark"></i> ${translations[currentLang].outOfStockText}</span>`;
 
     // Notification bell button state
     const isTracked = trackedItems.has(item.name);
     const bellClass = isTracked ? 'bell-active' : '';
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
-    const bellTitle = isTracked ? 'Отключить уведомление о завозе' : 'Оповестить при завозе';
+    const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
 
     card.className = cardClass;
     card.innerHTML = `
@@ -241,9 +417,10 @@ function checkForNotifications(newData) {
 }
 
 function triggerNotification(item) {
-  const title = `🔔 ${item.name} в наличии!`;
+  const t = translations[currentLang];
+  const title = t.pushTitle(item.name);
   const options = {
-    body: `Сток: ${item.stock} шт. | Цена: ${item.price} | Редкость: ${item.rarity}\nСпеши купить в Grow a Garden 2!`,
+    body: t.pushBody(item.stock, item.price, item.rarity),
     icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
     badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
     tag: 'stock-alert-' + item.name,
@@ -266,11 +443,11 @@ async function toggleTracking(itemName, btn) {
   if (Notification.permission === 'default') {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') {
-      alert('Пожалуйста, разрешите отправку уведомлений в браузере для этой функции!');
+      alert(translations[currentLang].notificationGrantedAlert);
       return;
     }
   } else if (Notification.permission === 'denied') {
-    alert('Уведомления заблокированы. Включите доступ к уведомлениям для этого сайта в настройках браузера.');
+    alert(translations[currentLang].notificationBlockedAlert);
     return;
   }
 
@@ -279,12 +456,12 @@ async function toggleTracking(itemName, btn) {
     trackedItems.delete(itemName);
     btn.classList.remove('bell-active');
     icon.className = 'fa-regular fa-bell';
-    btn.setAttribute('title', 'Оповестить при завозе');
+    btn.setAttribute('title', translations[currentLang].bellTrack);
   } else {
     trackedItems.add(itemName);
     btn.classList.add('bell-active');
     icon.className = 'fa-solid fa-bell';
-    btn.setAttribute('title', 'Отключить уведомление о завозе');
+    btn.setAttribute('title', translations[currentLang].bellUntrack);
     
     // Check if the item is currently in stock in stockData
     let currentItem = null;
@@ -299,13 +476,13 @@ async function toggleTracking(itemName, btn) {
     }
 
     const testTitle = currentItem && currentItem.stock > 0 
-      ? `🔔 Предмет уже в наличии!` 
-      : `🔔 Уведомление настроено!`;
+      ? translations[currentLang].notifInStockTitle 
+      : translations[currentLang].notifTrackedTitle;
       
     const testOptions = {
       body: currentItem && currentItem.stock > 0 
-        ? `"${itemName}" прямо сейчас в наличии: ${currentItem.stock} шт. | Цена: ${currentItem.price}`
-        : `Мы оповестим вас, когда "${itemName}" появится в наличии.`,
+        ? translations[currentLang].notifInStockBody(itemName, currentItem.stock, currentItem.price)
+        : translations[currentLang].notifTrackedBody(itemName),
       icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
       badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png'
     };
@@ -361,6 +538,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Init and Loops
+setLanguage(currentLang); // Setup initial translation language
 fetchData();
 setInterval(fetchData, 5000); // Poll API data every 5 seconds
 setInterval(updateTimers, 1000); // Tick timers every second
