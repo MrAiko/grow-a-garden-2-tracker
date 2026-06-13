@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://grow-a-garden-2-tracker.onrender.com/sitemap.xml
