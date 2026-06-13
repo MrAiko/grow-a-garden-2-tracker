@@ -40,6 +40,17 @@ const translations = {
     notifTrackedBody: (name) => `Мы оповестим вас, когда "${name}" появится в наличии.`,
     pushTitle: (name) => `🔔 ${name} в наличии!`,
     pushBody: (stock, price, rarity) => `Сток: ${stock} шт. | Цена: ${price} | Редкость: ${rarity}\nСпеши купить в Grow a Garden 2!`,
+    
+    // Weather Card Localizations
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Погода и Время Суток',
+    weatherLabelTime: 'Время суток',
+    weatherLabelActive: 'Активная погода',
+    timeDay: 'День ☀️',
+    timeNight: 'Ночь 🌙',
+    weatherNone: 'Нет ☀️',
+    timeStarted: 'Начало в {}',
+    timeEnded: 'Конец в {}',
+    weatherEndsIn: 'Закончится через: {}'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -81,6 +92,17 @@ const translations = {
     notifTrackedBody: (name) => `We will notify you as soon as "${name}" is back in stock.`,
     pushTitle: (name) => `🔔 ${name} in stock!`,
     pushBody: (stock, price, rarity) => `Stock: ${stock} pcs. | Price: ${price} | Rarity: ${rarity}\nHurry up to buy in Grow a Garden 2!`,
+    
+    // Weather Card Localizations
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Weather & Time',
+    weatherLabelTime: 'Time of Day',
+    weatherLabelActive: 'Active Weather',
+    timeDay: 'Day ☀️',
+    timeNight: 'Night 🌙',
+    weatherNone: 'None ☀️',
+    timeStarted: 'Started at {}',
+    timeEnded: 'Ended at {}',
+    weatherEndsIn: 'Ends in: {}'
   }
 };
 
@@ -147,6 +169,17 @@ function updateStaticTranslations() {
     timerLabels[0].textContent = t.timerLabelCrates;
     timerLabels[1].textContent = t.timerLabelGears;
     timerLabels[2].textContent = t.timerLabelSeeds;
+  }
+  
+  // Weather Card Header & Labels
+  const weatherCardHeader = document.querySelector('.weather-card h3');
+  if (weatherCardHeader) {
+    weatherCardHeader.innerHTML = t.weatherHeader;
+  }
+  const weatherLabels = document.querySelectorAll('.weather-box .weather-label');
+  if (weatherLabels.length >= 2) {
+    weatherLabels[0].textContent = t.weatherLabelTime;
+    weatherLabels[1].textContent = t.weatherLabelActive;
   }
   
   // Notification Banner
@@ -288,6 +321,89 @@ function updateTimerBox(elementId, nextTimestamp) {
   const seconds = diff % 60;
 
   el.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Weather Update Engine
+function updateWeatherUI() {
+  if (!stockData || !stockData.weather) {
+    document.getElementById('time-val').textContent = '--';
+    document.getElementById('time-detail').textContent = '--:--:--';
+    document.getElementById('weather-val').textContent = '--';
+    document.getElementById('weather-detail-timer').textContent = '--:--:--';
+    return;
+  }
+  
+  const w = stockData.weather;
+  const t = translations[currentLang];
+  
+  // 1. Time of Day (Night / Day)
+  const isNight = w.night;
+  const timeValEl = document.getElementById('time-val');
+  const timeDetailEl = document.getElementById('time-detail');
+  
+  if (isNight) {
+    timeValEl.textContent = t.timeNight;
+    timeValEl.style.color = 'var(--rarity-epic)';
+    if (w.nightStartedAt) {
+      const date = new Date(w.nightStartedAt * 1000);
+      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+    } else {
+      timeDetailEl.textContent = '--:--:--';
+    }
+  } else {
+    timeValEl.textContent = t.timeDay;
+    timeValEl.style.color = 'var(--color-warning)';
+    if (w.nightEndedAt) {
+      const date = new Date(w.nightEndedAt * 1000);
+      timeDetailEl.textContent = t.timeEnded.replace('{}', date.toLocaleTimeString());
+    } else {
+      timeDetailEl.textContent = '--:--:--';
+    }
+  }
+  
+  // 2. Active Weather (Rainbow, Snowfall, Starfall, etc.)
+  const weatherValEl = document.getElementById('weather-val');
+  const weatherDetailTimerEl = document.getElementById('weather-detail-timer');
+  
+  let activeWeatherName = null;
+  let activeWeatherInfo = null;
+  
+  if (w.weathers) {
+    for (const [name, info] of Object.entries(w.weathers)) {
+      if (info.playing) {
+        activeWeatherName = name;
+        activeWeatherInfo = info;
+        break;
+      }
+    }
+  }
+  
+  if (activeWeatherName && activeWeatherInfo) {
+    weatherValEl.textContent = activeWeatherName;
+    if (activeWeatherName.toLowerCase().includes('star')) {
+      weatherValEl.style.color = 'var(--rarity-legendary)';
+    } else if (activeWeatherName.toLowerCase().includes('rain')) {
+      weatherValEl.style.color = 'var(--rarity-exotic)';
+    } else {
+      weatherValEl.style.color = 'var(--rarity-rare)';
+    }
+    
+    // Countdown timer for active weather
+    const now = Math.floor(Date.now() / 1000);
+    const diff = activeWeatherInfo.endTime - now;
+    
+    if (diff <= 0) {
+      weatherDetailTimerEl.textContent = '--:--:--';
+    } else {
+      const mins = Math.floor(diff / 60);
+      const secs = diff % 60;
+      weatherDetailTimerEl.textContent = t.weatherEndsIn.replace('{}', `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+    }
+  } else {
+    weatherValEl.textContent = t.weatherNone;
+    weatherValEl.style.color = 'var(--text-secondary)';
+    weatherDetailTimerEl.textContent = '--:--:--';
+  }
 }
 
 // Cards Rendering Engine
@@ -541,7 +657,12 @@ document.addEventListener('click', (e) => {
 setLanguage(currentLang); // Setup initial translation language
 fetchData();
 setInterval(fetchData, 5000); // Poll API data every 5 seconds
-setInterval(updateTimers, 1000); // Tick timers every second
+
+// Tick timers and update weather UI every second
+setInterval(() => {
+  updateTimers();
+  updateWeatherUI();
+}, 1000);
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {

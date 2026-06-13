@@ -141,9 +141,28 @@ app.post('/api/update-stock', rateLimiter(20, 60000), (req, res) => {
     }
   }
 
+  let nightStartedAt = currentStock && currentStock.weather ? currentStock.weather.nightStartedAt : null;
+  let nightEndedAt = currentStock && currentStock.weather ? currentStock.weather.nightEndedAt : null;
+  
+  if (newStock.weather) {
+    const wasNight = currentStock && currentStock.weather ? currentStock.weather.night : false;
+    const isNight = newStock.weather.night;
+    const nowSec = Math.floor(Date.now() / 1000);
+    
+    if (isNight && !wasNight) {
+      nightStartedAt = nowSec;
+    } else if (!isNight && wasNight) {
+      nightEndedAt = nowSec;
+    }
+    
+    newStock.weather.nightStartedAt = nightStartedAt;
+    newStock.weather.nightEndedAt = nightEndedAt;
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
+    weather: newStock.weather,
     updatedAt: Date.now()
   };
 
