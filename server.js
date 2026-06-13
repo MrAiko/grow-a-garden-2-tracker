@@ -93,7 +93,33 @@ app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
   res.json(currentStock);
 });
 
-app.post('/api/update-stock', rateLimiter(20, 60000), (req, res) => {
+// Cache for resolved asset images to avoid making redundant API calls
+const resolvedImageCache = new Map();
+
+async function resolveAssetThumbnail(assetId) {
+  if (!assetId) return null;
+  if (resolvedImageCache.has(assetId)) {
+    return resolvedImageCache.get(assetId);
+  }
+  
+  try {
+    const url = `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&size=150x150&format=Png&isCircular=false`;
+    const response = await fetch(url);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.data && data.data[0] && data.data[0].imageUrl) {
+        const imageUrl = data.data[0].imageUrl;
+        resolvedImageCache.set(assetId, imageUrl);
+        return imageUrl;
+      }
+    }
+  } catch (err) {
+    console.error(`Error resolving asset image for ID ${assetId}:`, err);
+  }
+  return null;
+}
+
+app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   const reqPassword = req.headers['x-api-password'] || req.body.password;
   if (reqPassword !== API_PASSWORD) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -157,6 +183,30 @@ app.post('/api/update-stock', rateLimiter(20, 60000), (req, res) => {
     
     newStock.weather.nightStartedAt = nightStartedAt;
     newStock.weather.nightEndedAt = nightEndedAt;
+  }
+
+  // Resolve all asset images asynchronously
+  if (newStock.shops) {
+    const promises = [];
+    for (const shopKey of Object.keys(newStock.shops)) {
+      const items = newStock.shops[shopKey] || [];
+      items.forEach(item => {
+        if (item.image && !item.image.startsWith('http')) {
+          const assetId = item.image;
+          const promise = resolveAssetThumbnail(assetId).then(resolvedUrl => {
+            if (resolvedUrl) {
+              item.image = resolvedUrl;
+            } else {
+              item.image = null;
+            }
+          });
+          promises.push(promise);
+        }
+      });
+    }
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
   }
 
   currentStock = {
