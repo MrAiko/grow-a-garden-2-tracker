@@ -355,7 +355,7 @@ function updateWeatherUI() {
     timeValEl.style.color = 'var(--color-warning)';
     if (w.nightEndedAt) {
       const date = new Date(w.nightEndedAt * 1000);
-      timeDetailEl.textContent = t.timeEnded.replace('{}', date.toLocaleTimeString());
+      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
     } else {
       timeDetailEl.textContent = '--:--:--';
     }
@@ -474,6 +474,10 @@ function renderShopGrid(gridElement, items) {
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
     const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
 
+    const imageHtml = item.image 
+      ? `<div class="item-image-wrapper"><img src="${item.image}" alt="${item.name}" class="item-card-image" loading="lazy"></div>`
+      : '';
+
     card.className = cardClass;
     card.innerHTML = `
       <div class="item-header">
@@ -485,9 +489,12 @@ function renderShopGrid(gridElement, items) {
         </div>
         <span class="item-badge ${badgeClass}">${item.rarity}</span>
       </div>
-      <div class="item-body">
-        ${stockHtml}
-        <span class="item-price"><i class="fa-solid fa-coins price-icon"></i> ${item.price}</span>
+      <div class="item-main-content">
+        ${imageHtml}
+        <div class="item-body">
+          ${stockHtml}
+          <span class="item-price"><i class="fa-solid fa-coins price-icon"></i> ${item.price}</span>
+        </div>
       </div>
     `;
     
