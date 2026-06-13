@@ -90,6 +90,14 @@ function updateWeatherUI(data) {
     weatherName = 'Acid Rain';
     emoji = '🧪';
     effect = '🧪 Эффект: Опасность для посевов! / Acid Rain risk!';
+  } else if (rawLower.includes('blood') || rawLower.includes('кровавая') || rawLower.includes('🩸')) {
+    weatherName = 'Blood Moon';
+    emoji = '🩸';
+    effect = '🩸 Эффект: Шанс мутации «Кровавый» (80x)! / Mutation chance «Bloodlit» (80x)!';
+  } else if (rawLower.includes('night') || rawLower.includes('ночь') || rawLower.includes('🌙')) {
+    weatherName = 'Night';
+    emoji = '🌙';
+    effect = '🌙 Эффект: Обычная скорость роста / Default growth speed';
   } else {
     // If it is none of the above, clean asset IDs and clean up text
     let cleanText = rawWeather.replace(/rbxassetid:\/\/\d+/gi, '')
