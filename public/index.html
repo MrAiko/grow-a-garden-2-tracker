@@ -103,7 +103,12 @@
 
       <!-- Weather & Night Card -->
       <div class="stats-card glass weather-card">
-        <h3><i class="fa-solid fa-cloud-sun"></i> Погода и Время Суток</h3>
+        <div class="weather-card-header">
+          <h3><i class="fa-solid fa-cloud-sun"></i> Погода и Время Суток</h3>
+          <button class="weather-settings-btn" id="weather-settings-toggle" title="Настройка уведомлений / Settings">
+            <i class="fa-solid fa-cog"></i>
+          </button>
+        </div>
         <div class="weather-container">
           <div class="weather-box" id="weather-time-box">
             <span class="weather-label">Время суток</span>
@@ -115,6 +120,9 @@
             <span class="weather-val" id="weather-val">--</span>
             <span class="weather-detail" id="weather-detail-timer">--:--:--</span>
           </div>
+        </div>
+        <div class="weather-settings-panel" id="weather-settings-panel" style="display: none;">
+          <!-- Generated dynamically in app.js -->
         </div>
       </div>
     </section>

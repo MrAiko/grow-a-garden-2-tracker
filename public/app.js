@@ -131,6 +131,23 @@ let activeStockFilter = false; // true/false
 let searchQuery = '';
 let lastWeatherKey = '';
 
+// Weather & Moon Configuration Options
+const weatherOptions = {
+  day: { emoji: '☀️', ru: 'День', en: 'Day' },
+  sunset: { emoji: '🌇', ru: 'Закат', en: 'Sunset' },
+  moon: { emoji: '🌙', ru: 'Ночь', en: 'Night' },
+  bloodmoon: { emoji: '🔴', ru: 'Кровавая луна', en: 'Blood Moon' },
+  goldmoon: { emoji: '🟡', ru: 'Золотая луна', en: 'Goldmoon' },
+  chainedmoon: { emoji: '⛓️', ru: 'Цепная луна', en: 'Chained Moon' },
+  pizzamoon: { emoji: '🍕', ru: 'Пицца-луна', en: 'Pizza Moon' },
+  rainbowmoon: { emoji: '🌈', ru: 'Радужная луна', en: 'Rainbow Moon' },
+  starfall: { emoji: '🌠', ru: 'Звездопад', en: 'Starfall' },
+  rainbow: { emoji: '🌈', ru: 'Радуга', en: 'Rainbow' },
+  snowfall: { emoji: '❄️', ru: 'Снегопад', en: 'Snowfall' },
+  rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
+  solareclipse: { emoji: '🌑', ru: 'Затмение', en: 'Eclipse' }
+};
+
 // Notification Subscriptions
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
 
@@ -162,6 +179,7 @@ function setLanguage(lang) {
   
   lastWeatherKey = '';
   updateStaticTranslations();
+  renderWeatherSettings();
   if (stockData) {
     renderDashboard();
   }
@@ -256,6 +274,7 @@ async function fetchData() {
     if (stockRes.ok) {
       const newStockData = await stockRes.json();
       checkForNotifications(newStockData);
+      checkForWeatherNotifications(newStockData);
       stockData = newStockData;
     }
     
@@ -640,8 +659,8 @@ function triggerNotification(item) {
   const title = t.pushTitle(item.name);
   const options = {
     body: t.pushBody(item.stock, item.price, item.rarity),
-    icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
-    badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
+    icon: '/logo.png',
+    badge: '/logo.png',
     tag: 'stock-alert-' + item.name,
     requireInteraction: true
   };
@@ -702,8 +721,8 @@ async function toggleTracking(itemName, btn) {
       body: currentItem && currentItem.stock > 0 
         ? translations[currentLang].notifInStockBody(itemName, currentItem.stock, currentItem.price)
         : translations[currentLang].notifTrackedBody(itemName),
-      icon: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png',
-      badge: 'https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png'
+      icon: '/logo.png',
+      badge: '/logo.png'
     };
 
     if (navigator.serviceWorker.controller) {
@@ -753,6 +772,203 @@ document.addEventListener('click', (e) => {
   if (bell) {
     const name = bell.getAttribute('data-name');
     toggleTracking(name, bell);
+  }
+});
+
+// Render weather subscription toggles inside settings panel
+function renderWeatherSettings() {
+  const panel = document.getElementById('weather-settings-panel');
+  if (!panel) return;
+  panel.innerHTML = '';
+  
+  const t = translations[currentLang];
+  
+  Object.keys(weatherOptions).forEach(key => {
+    const opt = weatherOptions[key];
+    const name = currentLang === 'ru' ? opt.ru : opt.en;
+    const isTracked = trackedItems.has('env:' + key);
+    
+    const row = document.createElement('div');
+    row.className = 'weather-settings-item';
+    
+    const bellClass = isTracked ? 'bell-active' : '';
+    const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
+    const title = isTracked ? t.bellUntrack : t.bellTrack;
+    
+    row.innerHTML = `
+      <div class="weather-settings-info">
+        <span class="weather-settings-emoji">${opt.emoji}</span>
+        <span class="weather-settings-name">${name}</span>
+      </div>
+      <button class="weather-bell-btn ${bellClass}" data-env="${key}" title="${title}">
+        <i class="${bellIcon}"></i>
+      </button>
+    `;
+    panel.appendChild(row);
+  });
+}
+
+// Toggle tracking for custom weather/moon events
+async function toggleWeatherTracking(envKey, btn) {
+  const itemName = 'env:' + envKey;
+  
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert(translations[currentLang].notificationGrantedAlert);
+      return;
+    }
+  } else if (Notification.permission === 'denied') {
+    alert(translations[currentLang].notificationBlockedAlert);
+    return;
+  }
+
+  const icon = btn.querySelector('i');
+  const t = translations[currentLang];
+  
+  if (trackedItems.has(itemName)) {
+    trackedItems.delete(itemName);
+    btn.classList.remove('bell-active');
+    icon.className = 'fa-regular fa-bell';
+    btn.setAttribute('title', t.bellTrack);
+  } else {
+    trackedItems.add(itemName);
+    btn.classList.add('bell-active');
+    icon.className = 'fa-solid fa-bell';
+    btn.setAttribute('title', t.bellUntrack);
+    
+    const opt = weatherOptions[envKey];
+    const envName = currentLang === 'ru' ? opt.ru : opt.en;
+    
+    const testTitle = t.notifTrackedTitle;
+    const testOptions = {
+      body: t.notifTrackedBody(envName),
+      icon: '/logo.png',
+      badge: '/logo.png'
+    };
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(testTitle, testOptions);
+      });
+    } else {
+      new Notification(testTitle, testOptions);
+    }
+    playAlertSound();
+  }
+
+  localStorage.setItem('trackedItems', JSON.stringify(Array.from(trackedItems)));
+  renderWeatherSettings();
+}
+
+// Compare current weather state with last fetched and notify on transition
+function checkForWeatherNotifications(newData) {
+  if (!stockData || !stockData.weather || !newData.weather) {
+    return;
+  }
+  
+  const oldW = stockData.weather;
+  const newW = newData.weather;
+  
+  // 1. Detect Phase Change
+  let oldPhase = oldW.phase || '';
+  if (!oldPhase) oldPhase = oldW.night ? 'moon' : 'day';
+  
+  let newPhase = newW.phase || '';
+  if (!newPhase) newPhase = newW.night ? 'moon' : 'day';
+  
+  oldPhase = oldPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  newPhase = newPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  
+  if (oldPhase !== newPhase) {
+    const trackedKey = 'env:' + newPhase;
+    if (trackedItems.has(trackedKey)) {
+      triggerWeatherNotification(newPhase, null);
+    }
+  }
+  
+  // 2. Detect New Active Weathers
+  const oldWeathers = new Set();
+  if (oldW.weathers) {
+    for (const [name, info] of Object.entries(oldW.weathers)) {
+      if (info.playing) {
+        oldWeathers.add(name.toLowerCase());
+      }
+    }
+  }
+  
+  if (newW.weathers) {
+    for (const [name, info] of Object.entries(newW.weathers)) {
+      if (info.playing) {
+        const lowerName = name.toLowerCase();
+        if (!oldWeathers.has(lowerName)) {
+          const trackedKey = 'env:' + lowerName;
+          if (trackedItems.has(trackedKey)) {
+            triggerWeatherNotification(null, name);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Display push notification for weather changes
+function triggerWeatherNotification(phaseKey, weatherName) {
+  const t = translations[currentLang];
+  let title = '';
+  let body = '';
+  
+  if (phaseKey) {
+    const phaseTranslationKey = 'phase' + phaseKey;
+    const phaseText = t[phaseTranslationKey] || phaseKey;
+    title = currentLang === 'ru' ? '🌍 Изменение времени/луны' : '🌍 Time/Moon Phase Change';
+    body = currentLang === 'ru' ? `Началась фаза: ${phaseText}` : `New phase started: ${phaseText}`;
+  } else if (weatherName) {
+    const optKey = weatherName.toLowerCase();
+    const opt = weatherOptions[optKey];
+    const localizedName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : weatherName;
+    title = currentLang === 'ru' ? '🌧️ Изменение погоды' : '🌧️ Weather Change';
+    body = currentLang === 'ru' ? `Началась погода: ${localizedName}` : `New weather active: ${localizedName}`;
+  }
+  
+  const options = {
+    body: body,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: 'weather-alert-' + (phaseKey || weatherName),
+    requireInteraction: true
+  };
+  
+  if (Notification.permission === 'granted') {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, options);
+      });
+    } else {
+      new Notification(title, options);
+    }
+    playAlertSound();
+  }
+}
+
+// Settings Cog Toggle Click Event
+const settingsToggle = document.getElementById('weather-settings-toggle');
+const settingsPanel = document.getElementById('weather-settings-panel');
+
+if (settingsToggle && settingsPanel) {
+  settingsToggle.addEventListener('click', () => {
+    const isHidden = settingsPanel.style.display === 'none';
+    settingsPanel.style.display = isHidden ? 'grid' : 'none';
+    settingsToggle.classList.toggle('active', isHidden);
+  });
+}
+
+// Weather Bell Click Event delegation
+document.addEventListener('click', async (e) => {
+  const weatherBell = e.target.closest('.weather-bell-btn');
+  if (weatherBell) {
+    const envKey = weatherBell.getAttribute('data-env');
+    await toggleWeatherTracking(envKey, weatherBell);
   }
 });
 

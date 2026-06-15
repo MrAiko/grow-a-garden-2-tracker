@@ -90,7 +90,58 @@ app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
   if (!currentStock) {
     return res.status(404).json({ error: 'No stock data available yet' });
   }
-  res.json(currentStock);
+  
+  // Clone currentStock and rewrite image URLs to proxy URLs
+  const responseData = JSON.parse(JSON.stringify(currentStock));
+  if (responseData.shops) {
+    for (const shopKey of Object.keys(responseData.shops)) {
+      const items = responseData.shops[shopKey] || [];
+      items.forEach(item => {
+        if (item.image && item.image.startsWith('http')) {
+          item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
+        }
+      });
+    }
+  }
+  
+  res.json(responseData);
+});
+
+// Cache for proxied image buffers to bypass Russian IP throttling on Roblox CDNs
+const proxiedImageCache = new Map();
+
+app.get('/api/proxy-image', async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl || (!imageUrl.startsWith('https://') && !imageUrl.startsWith('http://'))) {
+    return res.status(400).send('Invalid image URL');
+  }
+  
+  if (proxiedImageCache.has(imageUrl)) {
+    const cached = proxiedImageCache.get(imageUrl);
+    res.setHeader('Content-Type', cached.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=604800'); // Cache for 7 days
+    return res.send(cached.buffer);
+  }
+  
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      return res.status(response.status).send('Failed to fetch image');
+    }
+    
+    const contentType = response.headers.get('content-type') || 'image/png';
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    proxiedImageCache.set(imageUrl, { contentType, buffer });
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=604800'); // Cache for 7 days
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error proxying image:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 // Cache for resolved asset images to avoid making redundant API calls
