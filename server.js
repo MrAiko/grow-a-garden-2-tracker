@@ -193,11 +193,12 @@ function getMergedWeather() {
   
   // Find phase
   let selectedPhase = activeSessionsList[0].weather.phase || 'Day';
+  const STANDARD_PHASES = ["day", "sunset", "moon", "night"];
   for (const session of activeSessionsList) {
     if (session.weather && session.weather.phase) {
       const phase = session.weather.phase;
       const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-      if (SPECIAL_PHASES.includes(phaseLower)) {
+      if (phaseLower && !STANDARD_PHASES.includes(phaseLower)) {
         selectedPhase = phase; // Prioritize special phase
         break;
       }
@@ -223,7 +224,7 @@ function getMergedWeather() {
   
   // Determine if it is night
   const phaseLower = selectedPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-  const isNight = ["moon", "night", "bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon"].includes(phaseLower);
+  const isNight = STANDARD_PHASES.slice(2).includes(phaseLower) || phaseLower.includes("moon") || phaseLower.includes("night") || phaseLower.includes("eclipse");
   
   // Get timestamps from the session that provided the selected phase or the most recent one
   const primarySession = activeSessionsList.find(s => s.weather && s.weather.phase === selectedPhase) || activeSessionsList[0];
