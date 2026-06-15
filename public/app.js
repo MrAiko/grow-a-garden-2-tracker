@@ -145,6 +145,7 @@ const weatherOptions = {
   rainbow: { emoji: '🌈', ru: 'Радуга', en: 'Rainbow' },
   snowfall: { emoji: '❄️', ru: 'Снегопад', en: 'Snowfall' },
   rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
+  thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
   solareclipse: { emoji: '🌑', ru: 'Затмение', en: 'Eclipse' }
 };
 
@@ -397,7 +398,10 @@ function updateWeatherUI() {
   if (!phase) {
     phase = w.night ? 'moon' : 'day';
   }
-  const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  if (phaseLower === 'night') {
+    phaseLower = 'moon';
+  }
   const timeValEl = document.getElementById('time-val');
   const timeDetailEl = document.getElementById('time-detail');
   
@@ -470,13 +474,23 @@ function updateWeatherUI() {
             colorStyle = 'var(--rarity-legendary)';
           } else if (name.toLowerCase().includes('rain')) {
             colorStyle = 'var(--rarity-exotic)';
+          } else if (name.toLowerCase().includes('storm') || name.toLowerCase().includes('lightning')) {
+            colorStyle = 'var(--color-danger)';
           } else {
             colorStyle = 'var(--rarity-rare)';
           }
           
+          let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+          if (optKey === 'lightning') optKey = 'thunderstorm';
+          const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
+          const allOptions = { ...weatherOptions, ...discovered };
+          const opt = allOptions[optKey];
+          const displayName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : name;
+          const emoji = opt ? opt.emoji : '🌦️';
+          
           weatherBox.innerHTML = `
             <span class="weather-label">${t.weatherLabelActive}</span>
-            <span class="weather-val" style="color: ${colorStyle}">${name}</span>
+            <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
             <span class="weather-detail weather-timer-countdown">--:--:--</span>
           `;
           weatherContainer.appendChild(weatherBox);
@@ -656,7 +670,21 @@ function checkForNotifications(newData) {
   }
 }
 
+// Cross-tab notification deduplication check (prevents duplicate sounds/flashes across open tabs)
+function canShowNotification(key) {
+  const now = Date.now();
+  const lastTime = parseInt(localStorage.getItem('last_notif_time_' + key) || '0', 10);
+  if (now - lastTime < 10000) { // 10 seconds threshold
+    return false;
+  }
+  localStorage.setItem('last_notif_time_' + key, now.toString());
+  return true;
+}
+
 function triggerNotification(item) {
+  if (!canShowNotification('item_' + item.name)) {
+    return;
+  }
   const t = translations[currentLang];
   const title = t.pushTitle(item.name);
   const options = {
@@ -878,6 +906,12 @@ function discoverEnvironments(w) {
   
   // 1. Discover Phase
   let phase = w.phase || '';
+  if (phase) {
+    let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    if (phaseLower === 'night') {
+      phase = 'Moon';
+    }
+  }
   if (phase && phase !== 'Day' && phase !== 'Moon' && phase !== 'Sunset' && phase !== 'day' && phase !== 'moon' && phase !== 'sunset') {
     let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
     if (!weatherOptions[phaseLower] && !discovered[phaseLower]) {
@@ -894,6 +928,7 @@ function discoverEnvironments(w) {
   if (w.weathers) {
     for (let name of Object.keys(w.weathers)) {
       let lowerName = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (lowerName === 'lightning') lowerName = 'thunderstorm';
       if (!weatherOptions[lowerName] && !discovered[lowerName]) {
         discovered[lowerName] = {
           emoji: '🌦️',
@@ -930,6 +965,9 @@ function checkForWeatherNotifications(newData) {
   oldPhase = oldPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   newPhase = newPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   
+  if (oldPhase === 'night') oldPhase = 'moon';
+  if (newPhase === 'night') newPhase = 'moon';
+  
   if (oldPhase !== newPhase) {
     const trackedKey = 'env:' + newPhase;
     if (trackedItems.has(trackedKey)) {
@@ -942,7 +980,9 @@ function checkForWeatherNotifications(newData) {
   if (oldW.weathers) {
     for (const [name, info] of Object.entries(oldW.weathers)) {
       if (info.playing) {
-        oldWeathers.add(name.toLowerCase());
+        let lowerName = name.toLowerCase();
+        if (lowerName === 'lightning') lowerName = 'thunderstorm';
+        oldWeathers.add(lowerName);
       }
     }
   }
@@ -950,11 +990,12 @@ function checkForWeatherNotifications(newData) {
   if (newW.weathers) {
     for (const [name, info] of Object.entries(newW.weathers)) {
       if (info.playing) {
-        const lowerName = name.toLowerCase();
+        let lowerName = name.toLowerCase();
+        if (lowerName === 'lightning') lowerName = 'thunderstorm';
         if (!oldWeathers.has(lowerName)) {
           const trackedKey = 'env:' + lowerName;
           if (trackedItems.has(trackedKey)) {
-            triggerWeatherNotification(null, name);
+            triggerWeatherNotification(null, lowerName === 'thunderstorm' ? 'Thunderstorm' : name);
           }
         }
       }
@@ -964,6 +1005,10 @@ function checkForWeatherNotifications(newData) {
 
 // Display push notification for weather changes
 function triggerWeatherNotification(phaseKey, weatherName) {
+  const notifKey = 'weather_' + (phaseKey || weatherName).toLowerCase();
+  if (!canShowNotification(notifKey)) {
+    return;
+  }
   const t = translations[currentLang];
   let title = '';
   let body = '';

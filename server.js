@@ -66,6 +66,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Cache in-memory
 let currentStock = null;
+const activeSessions = {};
+let primaryJobId = null;
+const SESSION_TIMEOUT = 60000; // 60 seconds
 
 // Load Stock Data
 try {
@@ -181,6 +184,31 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
     return res.status(400).json({ error: 'Invalid stock data structure' });
   }
 
+  const jobId = newStock.jobId || 'default';
+  const now = Date.now();
+  
+  // Track/update last seen time for this session
+  activeSessions[jobId] = now;
+  
+  // Check if current primary session is still active
+  let isPrimaryActive = false;
+  if (primaryJobId && activeSessions[primaryJobId]) {
+    if (now - activeSessions[primaryJobId] < SESSION_TIMEOUT) {
+      isPrimaryActive = true;
+    }
+  }
+  
+  // If no primary session is active, or this is the primary session, make it primary
+  if (!isPrimaryActive || primaryJobId === jobId) {
+    if (primaryJobId !== jobId) {
+      console.log(`Switching primary session from ${primaryJobId} to ${jobId}`);
+      primaryJobId = jobId;
+    }
+  } else {
+    // Just respond success to the scraper, but do not update global state
+    return res.json({ success: true, isRestockTimeUpdated: false, message: "Accepted (background session)" });
+  }
+
   // Detect restock changes
   let isRestockTimeUpdated = false;
   if (currentStock && currentStock.restockTimes) {
@@ -222,6 +250,29 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   let nightEndedAt = currentStock && currentStock.weather ? currentStock.weather.nightEndedAt : null;
   
   if (newStock.weather) {
+    // Merge weatherControllerAttributes into newStock.weather.weathers
+    if (newStock.weather.weatherControllerAttributes) {
+      if (!newStock.weather.weathers) {
+        newStock.weather.weathers = {};
+      }
+      for (const [key, value] of Object.entries(newStock.weather.weatherControllerAttributes)) {
+        const lowerKey = key.toLowerCase();
+        if (["rain", "lightning", "thunderstorm", "rainbow", "snowfall", "starfall"].includes(lowerKey)) {
+          const isActive = (value === true || value === "true");
+          const targetName = lowerKey === "lightning" ? "Thunderstorm" : (key.charAt(0).toUpperCase() + key.slice(1));
+          
+          if (newStock.weather.weathers[targetName]) {
+            newStock.weather.weathers[targetName].playing = isActive;
+          } else {
+            newStock.weather.weathers[targetName] = {
+              playing: isActive,
+              endTime: 0
+            };
+          }
+        }
+      }
+    }
+
     const wasNight = currentStock && currentStock.weather ? currentStock.weather.night : false;
     const isNight = newStock.weather.night;
     const nowSec = Math.floor(Date.now() / 1000);
