@@ -67,8 +67,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Cache in-memory
 let currentStock = null;
 const activeSessions = {};
-let primaryJobId = null;
-const SESSION_TIMEOUT = 60000; // 60 seconds
+const SPECIAL_PHASES = ["bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon", "solareclipse"];
 
 // Load Stock Data
 try {
@@ -173,6 +172,83 @@ async function resolveAssetThumbnail(assetId) {
   return null;
 }
 
+function getMergedWeather() {
+  const now = Date.now();
+  const activeSessionsList = [];
+  
+  for (const [jobId, session] of Object.entries(activeSessions)) {
+    if (now - session.lastUpdate < 120000) {
+      activeSessionsList.push(session);
+    } else {
+      delete activeSessions[jobId];
+    }
+  }
+  
+  if (activeSessionsList.length === 0) {
+    return null;
+  }
+  
+  // Sort sessions by lastUpdate desc (newest first)
+  activeSessionsList.sort((a, b) => b.lastUpdate - a.lastUpdate);
+  
+  // Find phase
+  let selectedPhase = activeSessionsList[0].weather.phase || 'Day';
+  for (const session of activeSessionsList) {
+    if (session.weather && session.weather.phase) {
+      const phase = session.weather.phase;
+      const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (SPECIAL_PHASES.includes(phaseLower)) {
+        selectedPhase = phase; // Prioritize special phase
+        break;
+      }
+    }
+  }
+  
+  // Merge weathers
+  const mergedWeathers = {};
+  for (const session of activeSessionsList) {
+    if (session.weather && session.weather.weathers) {
+      const weathers = session.weather.weathers;
+      for (const [name, info] of Object.entries(weathers)) {
+        if (info.playing) {
+          if (!mergedWeathers[name]) {
+            mergedWeathers[name] = { playing: true, endTime: info.endTime };
+          } else {
+            mergedWeathers[name].endTime = Math.max(mergedWeathers[name].endTime, info.endTime);
+          }
+        }
+      }
+    }
+  }
+  
+  // Determine if it is night
+  const phaseLower = selectedPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  const isNight = ["moon", "night", "bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon"].includes(phaseLower);
+  
+  // Get timestamps from the session that provided the selected phase or the most recent one
+  const primarySession = activeSessionsList.find(s => s.weather && s.weather.phase === selectedPhase) || activeSessionsList[0];
+  
+  if (!primarySession.weather) {
+    return {
+      night: isNight,
+      phase: selectedPhase,
+      weathers: mergedWeathers
+    };
+  }
+  
+  return {
+    night: isNight,
+    phase: selectedPhase,
+    weathers: mergedWeathers,
+    nightStartedAt: primarySession.weather.nightStartedAt,
+    nightEndedAt: primarySession.weather.nightEndedAt,
+    charAttributes: primarySession.weather.charAttributes,
+    controllerAttributes: primarySession.weather.controllerAttributes,
+    lightingAttributes: primarySession.weather.lightingAttributes,
+    weatherControllerAttributes: primarySession.weather.weatherControllerAttributes
+  };
+}
+
 app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   const reqPassword = req.headers['x-api-password'] || req.body.password;
   if (reqPassword !== API_PASSWORD) {
@@ -187,26 +263,41 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   const jobId = newStock.jobId || 'default';
   const now = Date.now();
   
-  // Track/update last seen time for this session
-  activeSessions[jobId] = now;
-  
-  // Check if current primary session is still active
-  let isPrimaryActive = false;
-  if (primaryJobId && activeSessions[primaryJobId]) {
-    if (now - activeSessions[primaryJobId] < SESSION_TIMEOUT) {
-      isPrimaryActive = true;
+  if (newStock.weather) {
+    // Normalize weatherControllerAttributes into newStock.weather.weathers immediately
+    if (newStock.weather.weatherControllerAttributes) {
+      if (!newStock.weather.weathers) {
+        newStock.weather.weathers = {};
+      }
+      for (const [key, value] of Object.entries(newStock.weather.weatherControllerAttributes)) {
+        const lowerKey = key.toLowerCase();
+        if (["rain", "lightning", "thunderstorm", "rainbow", "snowfall", "starfall"].includes(lowerKey)) {
+          const isActive = (value === true || value === "true");
+          const targetName = lowerKey === "lightning" ? "Thunderstorm" : (key.charAt(0).toUpperCase() + key.slice(1));
+          
+          if (newStock.weather.weathers[targetName]) {
+            newStock.weather.weathers[targetName].playing = isActive;
+          } else {
+            newStock.weather.weathers[targetName] = {
+              playing: isActive,
+              endTime: 0
+            };
+          }
+        }
+      }
     }
   }
-  
-  // If no primary session is active, or this is the primary session, make it primary
-  if (!isPrimaryActive || primaryJobId === jobId) {
-    if (primaryJobId !== jobId) {
-      console.log(`Switching primary session from ${primaryJobId} to ${jobId}`);
-      primaryJobId = jobId;
-    }
-  } else {
-    // Just respond success to the scraper, but do not update global state
-    return res.json({ success: true, isRestockTimeUpdated: false, message: "Accepted (background session)" });
+
+  // Track/update last seen weather data and timestamps for this session
+  activeSessions[jobId] = {
+    weather: newStock.weather,
+    lastUpdate: now
+  };
+
+  // Compute merged weather across all active sessions to prevent oscillations
+  const mergedWeather = getMergedWeather();
+  if (mergedWeather) {
+    newStock.weather = mergedWeather;
   }
 
   // Detect restock changes
@@ -250,29 +341,6 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   let nightEndedAt = currentStock && currentStock.weather ? currentStock.weather.nightEndedAt : null;
   
   if (newStock.weather) {
-    // Merge weatherControllerAttributes into newStock.weather.weathers
-    if (newStock.weather.weatherControllerAttributes) {
-      if (!newStock.weather.weathers) {
-        newStock.weather.weathers = {};
-      }
-      for (const [key, value] of Object.entries(newStock.weather.weatherControllerAttributes)) {
-        const lowerKey = key.toLowerCase();
-        if (["rain", "lightning", "thunderstorm", "rainbow", "snowfall", "starfall"].includes(lowerKey)) {
-          const isActive = (value === true || value === "true");
-          const targetName = lowerKey === "lightning" ? "Thunderstorm" : (key.charAt(0).toUpperCase() + key.slice(1));
-          
-          if (newStock.weather.weathers[targetName]) {
-            newStock.weather.weathers[targetName].playing = isActive;
-          } else {
-            newStock.weather.weathers[targetName] = {
-              playing: isActive,
-              endTime: 0
-            };
-          }
-        }
-      }
-    }
-
     const wasNight = currentStock && currentStock.weather ? currentStock.weather.night : false;
     const isNight = newStock.weather.night;
     const nowSec = Math.floor(Date.now() / 1000);
