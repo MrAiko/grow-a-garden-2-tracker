@@ -152,6 +152,39 @@ const weatherOptions = {
 // Notification Subscriptions
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
 
+// Auto-migrate legacy/incorrect keys from trackedItems to keep settings consistent across devices
+(function() {
+  let hasLegacy = false;
+  if (trackedItems.has('env:lightning')) {
+    trackedItems.delete('env:lightning');
+    trackedItems.add('env:thunderstorm');
+    hasLegacy = true;
+  }
+  if (trackedItems.has('env:night')) {
+    trackedItems.delete('env:night');
+    trackedItems.add('env:moon');
+    hasLegacy = true;
+  }
+  // Remove any invalid legacy weather keys that might have been saved in early versions
+  // to prevent hidden/ghost notifications that the user cannot see or toggle off
+  const validKeys = [
+    'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
+    'rainbowmoon', 'starfall', 'rainbow', 'snowfall', 'rain', 'thunderstorm', 'solareclipse'
+  ];
+  for (const item of Array.from(trackedItems)) {
+    if (item.startsWith('env:')) {
+      const key = item.substring(4);
+      if (!validKeys.includes(key)) {
+        trackedItems.delete(item);
+        hasLegacy = true;
+      }
+    }
+  }
+  if (hasLegacy) {
+    localStorage.setItem('trackedItems', JSON.stringify(Array.from(trackedItems)));
+  }
+})();
+
 // DOM Elements
 const searchInput = document.getElementById('search-input');
 const filterBtns = document.querySelectorAll('.filter-btn');
