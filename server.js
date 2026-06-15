@@ -265,25 +265,67 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   const now = Date.now();
   
   if (newStock.weather) {
-    // Normalize weatherControllerAttributes into newStock.weather.weathers immediately
+    // 1. Normalize any existing weather names in newStock.weather.weathers (e.g. Raining -> Rain)
+    if (newStock.weather.weathers) {
+      const normalizedWeathers = {};
+      for (const [name, info] of Object.entries(newStock.weather.weathers)) {
+        const lowerName = name.toLowerCase();
+        let targetName = name;
+        if (lowerName === "rain" || lowerName === "raining" || lowerName === "rainy") {
+          targetName = "Rain";
+        } else if (lowerName === "lightning" || lowerName === "thunderstorm") {
+          targetName = "Thunderstorm";
+        } else if (name.length > 0) {
+          targetName = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        
+        if (!normalizedWeathers[targetName]) {
+          normalizedWeathers[targetName] = info;
+        } else {
+          normalizedWeathers[targetName].playing = normalizedWeathers[targetName].playing || info.playing;
+          if (info.endTime) {
+            normalizedWeathers[targetName].endTime = Math.max(normalizedWeathers[targetName].endTime || 0, info.endTime);
+          }
+        }
+      }
+      newStock.weather.weathers = normalizedWeathers;
+    }
+
+    // 2. Normalize weatherControllerAttributes into newStock.weather.weathers immediately
     if (newStock.weather.weatherControllerAttributes) {
       if (!newStock.weather.weathers) {
         newStock.weather.weathers = {};
       }
       for (const [key, value] of Object.entries(newStock.weather.weatherControllerAttributes)) {
         const lowerKey = key.toLowerCase();
-        if (["rain", "lightning", "thunderstorm", "rainbow", "snowfall", "starfall"].includes(lowerKey)) {
-          const isActive = (value === true || value === "true");
-          const targetName = lowerKey === "lightning" ? "Thunderstorm" : (key.charAt(0).toUpperCase() + key.slice(1));
-          
-          if (newStock.weather.weathers[targetName]) {
-            newStock.weather.weathers[targetName].playing = isActive;
-          } else {
-            newStock.weather.weathers[targetName] = {
-              playing: isActive,
-              endTime: 0
-            };
-          }
+        
+        // Skip moon phases/eclipses (they are phases, not weather)
+        if (lowerKey.includes("moon") || lowerKey.includes("eclipse")) {
+          continue;
+        }
+        
+        // Parse active weather states (value is true or "true")
+        const isActive = (value === true || value === "true");
+        
+        // Normalize name
+        let targetName;
+        if (lowerKey === "rain" || lowerKey === "raining" || lowerKey === "rainy") {
+          targetName = "Rain";
+        } else if (lowerKey === "lightning" || lowerKey === "thunderstorm") {
+          targetName = "Thunderstorm";
+        } else if (key.length > 0) {
+          targetName = key.charAt(0).toUpperCase() + key.slice(1);
+        } else {
+          continue;
+        }
+        
+        if (newStock.weather.weathers[targetName]) {
+          newStock.weather.weathers[targetName].playing = isActive;
+        } else {
+          newStock.weather.weathers[targetName] = {
+            playing: isActive,
+            endTime: 0
+          };
         }
       }
     }
