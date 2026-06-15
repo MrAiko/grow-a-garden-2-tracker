@@ -373,7 +373,10 @@ function updateWeatherUI() {
   const w = stockData.weather;
   
   // 1. Time cycle phase / day phase
-  const phase = w.phase || '';
+  let phase = w.phase || '';
+  if (!phase) {
+    phase = w.night ? 'moon' : 'day';
+  }
   const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   const timeValEl = document.getElementById('time-val');
   const timeDetailEl = document.getElementById('time-detail');
