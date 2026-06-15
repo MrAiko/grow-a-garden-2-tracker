@@ -48,6 +48,14 @@ const translations = {
     timeDay: 'День ☀️',
     timeNight: 'Ночь 🌙',
     weatherNone: 'Нет ☀️',
+    phasechainedmoon: 'Цепная луна ⛓️',
+    phasegoldmoon: 'Золотая луна 🟡',
+    phasebloodmoon: 'Кровавая луна 🔴',
+    phasepizzamoon: 'Пицца-луна 🍕',
+    phaserainbowmoon: 'Радужная луна 🌈',
+    phasesunset: 'Закат 🌇',
+    phaseday: 'День ☀️',
+    phasemoon: 'Ночь 🌙',
     timeStarted: 'Начало в {}',
     timeEnded: 'Конец в {}',
     weatherEndsIn: 'Закончится через: {}'
@@ -100,6 +108,14 @@ const translations = {
     timeDay: 'Day ☀️',
     timeNight: 'Night 🌙',
     weatherNone: 'None ☀️',
+    phasechainedmoon: 'Chained Moon ⛓️',
+    phasegoldmoon: 'Goldmoon 🟡',
+    phasebloodmoon: 'Blood Moon 🔴',
+    phasepizzamoon: 'Pizza Moon 🍕',
+    phaserainbowmoon: 'Rainbow Moon 🌈',
+    phasesunset: 'Sunset 🌇',
+    phaseday: 'Day ☀️',
+    phasemoon: 'Night 🌙',
     timeStarted: 'Started at {}',
     timeEnded: 'Ended at {}',
     weatherEndsIn: 'Ends in: {}'
@@ -356,30 +372,46 @@ function updateWeatherUI() {
   
   const w = stockData.weather;
   
-  // 1. Time of Day (Night / Day)
-  const isNight = w.night;
+  // 1. Time cycle phase / day phase
+  const phase = w.phase || '';
+  const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   const timeValEl = document.getElementById('time-val');
   const timeDetailEl = document.getElementById('time-detail');
   
   if (timeValEl && timeDetailEl) {
-    if (isNight) {
-      timeValEl.textContent = t.timeNight;
-      timeValEl.style.color = 'var(--rarity-epic)';
-      if (w.nightStartedAt) {
-        const date = new Date(w.nightStartedAt * 1000);
-        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
-      } else {
-        timeDetailEl.textContent = '--:--:--';
-      }
+    const phaseTranslationKey = 'phase' + phaseLower;
+    let phaseText = t[phaseTranslationKey];
+    
+    // Fallback if phase translation is missing
+    if (!phaseText) {
+      phaseText = w.night ? t.timeNight : t.timeDay;
+    }
+    
+    timeValEl.textContent = phaseText;
+    
+    // Stylize phase color based on category
+    if (phaseLower === 'day' || phaseLower === 'sunset' || phaseLower === 'goldmoon') {
+      timeValEl.style.color = 'var(--rarity-legendary)'; // Gold / Orange
+    } else if (phaseLower === 'bloodmoon') {
+      timeValEl.style.color = 'var(--color-danger)'; // Red
+    } else if (phaseLower === 'chainedmoon') {
+      timeValEl.style.color = 'var(--text-secondary)'; // Gray
+    } else if (phaseLower === 'pizzamoon') {
+      timeValEl.style.color = 'var(--color-grass)'; // Green
+    } else if (phaseLower === 'rainbowmoon') {
+      timeValEl.style.color = 'var(--rarity-rare)'; // Blue
     } else {
-      timeValEl.textContent = t.timeDay;
-      timeValEl.style.color = 'var(--color-warning)';
-      if (w.nightEndedAt) {
-        const date = new Date(w.nightEndedAt * 1000);
-        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
-      } else {
-        timeDetailEl.textContent = '--:--:--';
-      }
+      timeValEl.style.color = 'var(--rarity-epic)'; // Purple/Epic default night moon
+    }
+    
+    if (w.night && w.nightStartedAt) {
+      const date = new Date(w.nightStartedAt * 1000);
+      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+    } else if (!w.night && w.nightEndedAt) {
+      const date = new Date(w.nightEndedAt * 1000);
+      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+    } else {
+      timeDetailEl.textContent = '--:--:--';
     }
   }
   
