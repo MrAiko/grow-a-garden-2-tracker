@@ -275,6 +275,7 @@ async function fetchData() {
       const newStockData = await stockRes.json();
       checkForNotifications(newStockData);
       checkForWeatherNotifications(newStockData);
+      discoverEnvironments(newStockData.weather);
       stockData = newStockData;
     }
     
@@ -404,9 +405,10 @@ function updateWeatherUI() {
     const phaseTranslationKey = 'phase' + phaseLower;
     let phaseText = t[phaseTranslationKey];
     
-    // Fallback if phase translation is missing
+    // Fallback if phase translation is missing (dynamically format the name)
     if (!phaseText) {
-      phaseText = w.night ? t.timeNight : t.timeDay;
+      const formattedPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
+      phaseText = w.night ? `🌙 ${formattedPhase}` : `☀️ ${formattedPhase}`;
     }
     
     timeValEl.textContent = phaseText;
@@ -783,8 +785,12 @@ function renderWeatherSettings() {
   
   const t = translations[currentLang];
   
-  Object.keys(weatherOptions).forEach(key => {
-    const opt = weatherOptions[key];
+  // Merge static options and discovered options
+  const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
+  const allOptions = { ...weatherOptions, ...discovered };
+  
+  Object.keys(allOptions).forEach(key => {
+    const opt = allOptions[key];
     const name = currentLang === 'ru' ? opt.ru : opt.en;
     const isTracked = trackedItems.has('env:' + key);
     
@@ -837,7 +843,9 @@ async function toggleWeatherTracking(envKey, btn) {
     icon.className = 'fa-solid fa-bell';
     btn.setAttribute('title', t.bellUntrack);
     
-    const opt = weatherOptions[envKey];
+    const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
+    const allOptions = { ...weatherOptions, ...discovered };
+    const opt = allOptions[envKey] || { emoji: '🌍', ru: envKey, en: envKey };
     const envName = currentLang === 'ru' ? opt.ru : opt.en;
     
     const testTitle = t.notifTrackedTitle;
@@ -859,6 +867,48 @@ async function toggleWeatherTracking(envKey, btn) {
 
   localStorage.setItem('trackedItems', JSON.stringify(Array.from(trackedItems)));
   renderWeatherSettings();
+}
+
+// Discover and save newly encountered environment phases/weathers dynamically
+function discoverEnvironments(w) {
+  if (!w) return;
+  
+  let discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
+  let changed = false;
+  
+  // 1. Discover Phase
+  let phase = w.phase || '';
+  if (phase && phase !== 'Day' && phase !== 'Moon' && phase !== 'Sunset' && phase !== 'day' && phase !== 'moon' && phase !== 'sunset') {
+    let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    if (!weatherOptions[phaseLower] && !discovered[phaseLower]) {
+      discovered[phaseLower] = {
+        emoji: w.night ? '🌙' : '☀️',
+        ru: phase,
+        en: phase
+      };
+      changed = true;
+    }
+  }
+  
+  // 2. Discover Weathers
+  if (w.weathers) {
+    for (let name of Object.keys(w.weathers)) {
+      let lowerName = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (!weatherOptions[lowerName] && !discovered[lowerName]) {
+        discovered[lowerName] = {
+          emoji: '🌦️',
+          ru: name,
+          en: name
+        };
+        changed = true;
+      }
+    }
+  }
+  
+  if (changed) {
+    localStorage.setItem('discoveredEnvs', JSON.stringify(discovered));
+    renderWeatherSettings();
+  }
 }
 
 // Compare current weather state with last fetched and notify on transition
