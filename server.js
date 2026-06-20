@@ -87,11 +87,27 @@ function saveStockData() {
   }
 }
 
+// Track active visitors
+const activeVisitors = new Map();
+
+function getActiveVisitorsCount() {
+  const now = Date.now();
+  for (const [ip, lastSeen] of activeVisitors.entries()) {
+    if (now - lastSeen > 30000) { // 30 seconds timeout
+      activeVisitors.delete(ip);
+    }
+  }
+  return activeVisitors.size || 1;
+}
+
 // API Routes
 app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
   if (!currentStock) {
     return res.status(404).json({ error: 'No stock data available yet' });
   }
+  
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  activeVisitors.set(ip, Date.now());
   
   // Clone currentStock and rewrite image URLs to proxy URLs
   const responseData = JSON.parse(JSON.stringify(currentStock));
@@ -106,6 +122,7 @@ app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
     }
   }
   
+  responseData.visitorCount = getActiveVisitorsCount();
   res.json(responseData);
 });
 
@@ -233,7 +250,8 @@ function getMergedWeather() {
     return {
       night: isNight,
       phase: selectedPhase,
-      weathers: mergedWeathers
+      weathers: mergedWeathers,
+      endTime: 0
     };
   }
   
@@ -241,6 +259,7 @@ function getMergedWeather() {
     night: isNight,
     phase: selectedPhase,
     weathers: mergedWeathers,
+    endTime: primarySession.weather.endTime || 0,
     nightStartedAt: primarySession.weather.nightStartedAt,
     nightEndedAt: primarySession.weather.nightEndedAt,
     charAttributes: primarySession.weather.charAttributes,
@@ -300,7 +319,7 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
         const lowerKey = key.toLowerCase();
         
         // Skip moon phases/eclipses (they are phases, not weather)
-        if (lowerKey.includes("moon") || lowerKey.includes("eclipse")) {
+        if (lowerKey.includes("moon") || lowerKey.includes("eclipse") || ["gold", "blood", "chained", "pizza"].includes(lowerKey)) {
           continue;
         }
         

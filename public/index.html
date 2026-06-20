@@ -71,9 +71,16 @@
         </div>
 
         <div class="header-status">
-          <div class="status-badge" id="api-status-badge">
-            <span class="status-dot pulsing"></span>
-            <span class="status-text">Офлайн</span>
+          <div class="status-badges-container" style="display: flex; gap: 8px;">
+            <div class="status-badge" id="api-status-badge">
+              <span class="status-dot pulsing"></span>
+              <span class="status-text">Офлайн</span>
+            </div>
+            <div class="status-badge" id="users-online-badge" style="display: none;">
+              <span class="status-dot online pulsing"></span>
+              <i class="fa-solid fa-user" style="font-size: 11px; margin-right: -2px;"></i>
+              <span id="users-online-text">1 онлайн</span>
+            </div>
           </div>
           <div class="last-updated" id="last-updated-text">Последнее обновление: Никогда</div>
         </div>

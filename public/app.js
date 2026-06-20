@@ -58,7 +58,18 @@ const translations = {
     phasemoon: 'Ночь 🌙',
     timeStarted: 'Начало в {}',
     timeEnded: 'Конец в {}',
-    weatherEndsIn: 'Закончится через: {}'
+    weatherEndsIn: 'Закончится через: {}',
+    usersOnline: (count) => {
+      const lastDigit = count % 10;
+      const lastTwoDigits = count % 100;
+      if (lastDigit === 1 && lastTwoDigits !== 11) {
+        return `${count} человек пользуется`;
+      } else if ([2, 3, 4].includes(lastDigit) && ![12, 13, 14].includes(lastTwoDigits)) {
+        return `${count} человека пользуются`;
+      } else {
+        return `${count} человек пользуются`;
+      }
+    }
   },
   en: {
     title: 'Grow a Garden 2',
@@ -118,7 +129,8 @@ const translations = {
     phasemoon: 'Night 🌙',
     timeStarted: 'Started at {}',
     timeEnded: 'Ended at {}',
-    weatherEndsIn: 'Ends in: {}'
+    weatherEndsIn: 'Ends in: {}',
+    usersOnline: (count) => count === 1 ? '1 user' : `${count} users`
   }
 };
 
@@ -137,16 +149,19 @@ const weatherOptions = {
   sunset: { emoji: '🌇', ru: 'Закат', en: 'Sunset' },
   moon: { emoji: '🌙', ru: 'Ночь', en: 'Night' },
   bloodmoon: { emoji: '🔴', ru: 'Кровавая луна', en: 'Blood Moon' },
-  goldmoon: { emoji: '🟡', ru: 'Золотая луна', en: 'Goldmoon' },
+  goldmoon: { emoji: '🟡', ru: 'Золотая луна', en: 'Gold Moon' },
   chainedmoon: { emoji: '⛓️', ru: 'Цепная луна', en: 'Chained Moon' },
   pizzamoon: { emoji: '🍕', ru: 'Пицца-луна', en: 'Pizza Moon' },
   rainbowmoon: { emoji: '🌈', ru: 'Радужная луна', en: 'Rainbow Moon' },
+  solareclipse: { emoji: '🌑', ru: 'Солнечное затмение', en: 'Solar Eclipse' },
   starfall: { emoji: '🌠', ru: 'Звездопад', en: 'Starfall' },
   rainbow: { emoji: '🌈', ru: 'Радуга', en: 'Rainbow' },
   snowfall: { emoji: '❄️', ru: 'Снегопад', en: 'Snowfall' },
   rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
   thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
-  solareclipse: { emoji: '🌑', ru: 'Затмение', en: 'Eclipse' }
+  acidrain: { emoji: '🧪', ru: 'Кислотный дождь', en: 'Acid Rain' },
+  aurora: { emoji: '🌌', ru: 'Аврора', en: 'Aurora' },
+  windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' }
 };
 
 // Notification Subscriptions
@@ -169,7 +184,8 @@ let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[
   // to prevent hidden/ghost notifications that the user cannot see or toggle off
   const validKeys = [
     'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
-    'rainbowmoon', 'starfall', 'rainbow', 'snowfall', 'rain', 'thunderstorm', 'solareclipse'
+    'rainbowmoon', 'solareclipse', 'starfall', 'rainbow', 'snowfall', 'rain', 
+    'thunderstorm', 'acidrain', 'aurora', 'windy'
   ];
   for (const item of Array.from(trackedItems)) {
     if (item.startsWith('env:')) {
@@ -311,6 +327,9 @@ async function fetchData() {
       checkForWeatherNotifications(newStockData);
       discoverEnvironments(newStockData.weather);
       stockData = newStockData;
+      
+      // Update online users count
+      updateUsersOnlineUI(newStockData.visitorCount);
     }
     
     if (statusRes.ok) {
@@ -348,11 +367,27 @@ function updateStatusUI(status) {
   }
 }
 
+function updateUsersOnlineUI(visitorCount) {
+  const badge = document.getElementById('users-online-badge');
+  const text = document.getElementById('users-online-text');
+  if (!badge || !text) return;
+  
+  if (visitorCount !== undefined && visitorCount !== null) {
+    text.textContent = translations[currentLang].usersOnline(visitorCount);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 function updateOfflineStatus() {
   const dot = apiStatusBadge.querySelector('.status-dot');
   const text = apiStatusBadge.querySelector('.status-text');
   dot.className = 'status-dot';
   text.textContent = translations[currentLang].statusOffline;
+  
+  const usersBadge = document.getElementById('users-online-badge');
+  if (usersBadge) usersBadge.style.display = 'none';
 }
 
 // Countdown Timers Engine
