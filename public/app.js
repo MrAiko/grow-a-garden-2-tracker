@@ -270,6 +270,12 @@ function updateStaticTranslations() {
   
   // Notification Banner
   document.querySelector('.notification-banner p').innerHTML = t.notificationBanner;
+
+  // Telegram promo banner: swap RU/EN text from data attributes
+  document.querySelectorAll('.tg-promo-banner [data-ru]').forEach(el => {
+    const val = el.getAttribute('data-' + currentLang);
+    if (val) el.textContent = val;
+  });
   
   // Filters
   searchInput.placeholder = t.searchPlaceholder;
@@ -673,8 +679,8 @@ function renderShopGrid(gridElement, items) {
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
     const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
 
-    const imageHtml = item.image 
-      ? `<div class="item-image-wrapper"><img src="${item.image}" alt="${item.name}" class="item-card-image" loading="lazy"></div>`
+    const imageHtml = item.image
+      ? `<div class="item-image-wrapper"><img src="${item.image}" alt="${item.name}" class="item-card-image" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentNode.classList.add('img-failed');this.remove();"></div>`
       : '';
 
     card.className = cardClass;
