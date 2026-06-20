@@ -59,17 +59,7 @@ const translations = {
     timeStarted: 'Начало в {}',
     timeEnded: 'Конец в {}',
     weatherEndsIn: 'Закончится через: {}',
-    usersOnline: (count) => {
-      const lastDigit = count % 10;
-      const lastTwoDigits = count % 100;
-      if (lastDigit === 1 && lastTwoDigits !== 11) {
-        return `${count} человек пользуется`;
-      } else if ([2, 3, 4].includes(lastDigit) && ![12, 13, 14].includes(lastTwoDigits)) {
-        return `${count} человека пользуются`;
-      } else {
-        return `${count} человек пользуются`;
-      }
-    }
+    usersOnline: (count) => `${count}`
   },
   en: {
     title: 'Grow a Garden 2',
@@ -130,7 +120,7 @@ const translations = {
     timeStarted: 'Started at {}',
     timeEnded: 'Ended at {}',
     weatherEndsIn: 'Ends in: {}',
-    usersOnline: (count) => count === 1 ? '1 user' : `${count} users`
+    usersOnline: (count) => `${count}`
   }
 };
 
@@ -323,7 +313,7 @@ langEnBtn.addEventListener('click', () => setLanguage('en'));
 async function fetchData() {
   try {
     const [stockRes, statusRes] = await Promise.all([
-      fetch('/api/stock'),
+      fetch('/api/stock?client=web'),
       fetch('/api/status')
     ]);
 

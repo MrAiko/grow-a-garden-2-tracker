@@ -106,8 +106,24 @@ app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
     return res.status(404).json({ error: 'No stock data available yet' });
   }
   
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  activeVisitors.set(ip, Date.now());
+  const clientType = req.query.client;
+  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+  const isBot = !userAgent || 
+                userAgent.includes('bot') || 
+                userAgent.includes('crawler') || 
+                userAgent.includes('spider') || 
+                userAgent.includes('python') || 
+                userAgent.includes('aiohttp') || 
+                userAgent.includes('requests') || 
+                userAgent.includes('axios') || 
+                userAgent.includes('roblox') || 
+                userAgent.includes('curl') || 
+                userAgent.includes('wget');
+
+  if (clientType === 'web' && !isBot) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    activeVisitors.set(ip, Date.now());
+  }
   
   // Clone currentStock and rewrite image URLs to proxy URLs
   const responseData = JSON.parse(JSON.stringify(currentStock));
