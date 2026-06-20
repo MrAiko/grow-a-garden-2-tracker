@@ -8,12 +8,12 @@
   "theme_color": "#6366f1",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png",
+      "src": "/favicon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/MrAiko/icon/main/2026-06-13_01-19-10.png",
+      "src": "/favicon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
