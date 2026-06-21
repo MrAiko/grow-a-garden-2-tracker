@@ -245,10 +245,11 @@ function getMergedWeather() {
       const weathers = session.weather.weathers;
       for (const [name, info] of Object.entries(weathers)) {
         if (info.playing) {
+          const endTime = normalizeEndTime(info.endTime);
           if (!mergedWeathers[name]) {
-            mergedWeathers[name] = { playing: true, endTime: info.endTime };
+            mergedWeathers[name] = { playing: true, endTime };
           } else {
-            mergedWeathers[name].endTime = Math.max(mergedWeathers[name].endTime, info.endTime);
+            mergedWeathers[name].endTime = Math.max(normalizeEndTime(mergedWeathers[name].endTime), endTime);
           }
         }
       }
@@ -275,7 +276,7 @@ function getMergedWeather() {
     night: isNight,
     phase: selectedPhase,
     weathers: mergedWeathers,
-    endTime: primarySession.weather.endTime || 0,
+    endTime: getMaxWeatherEndTime(activeSessionsList, mergedWeathers),
     nightStartedAt: primarySession.weather.nightStartedAt,
     nightEndedAt: primarySession.weather.nightEndedAt,
     charAttributes: primarySession.weather.charAttributes,
@@ -283,6 +284,25 @@ function getMergedWeather() {
     lightingAttributes: primarySession.weather.lightingAttributes,
     weatherControllerAttributes: primarySession.weather.weatherControllerAttributes
   };
+}
+
+function normalizeEndTime(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if (n > 1_000_000_000_000) return Math.floor(n / 1000);
+  if (n < 86_400) return Math.floor(Date.now() / 1000 + n);
+  return Math.floor(n);
+}
+
+function getMaxWeatherEndTime(sessions, mergedWeathers = {}) {
+  let maxEndTime = 0;
+  for (const session of sessions) {
+    maxEndTime = Math.max(maxEndTime, normalizeEndTime(session.weather && session.weather.endTime));
+  }
+  for (const info of Object.values(mergedWeathers)) {
+    maxEndTime = Math.max(maxEndTime, normalizeEndTime(info && info.endTime));
+  }
+  return maxEndTime;
 }
 
 app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
@@ -316,10 +336,11 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
         
         if (!normalizedWeathers[targetName]) {
           normalizedWeathers[targetName] = info;
+          normalizedWeathers[targetName].endTime = normalizeEndTime(info.endTime);
         } else {
           normalizedWeathers[targetName].playing = normalizedWeathers[targetName].playing || info.playing;
           if (info.endTime) {
-            normalizedWeathers[targetName].endTime = Math.max(normalizedWeathers[targetName].endTime || 0, info.endTime);
+            normalizedWeathers[targetName].endTime = Math.max(normalizeEndTime(normalizedWeathers[targetName].endTime), normalizeEndTime(info.endTime));
           }
         }
       }
@@ -356,10 +377,13 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
         
         if (newStock.weather.weathers[targetName]) {
           newStock.weather.weathers[targetName].playing = isActive;
+          if (isActive && !normalizeEndTime(newStock.weather.weathers[targetName].endTime)) {
+            newStock.weather.weathers[targetName].endTime = normalizeEndTime(newStock.weather.endTime);
+          }
         } else {
           newStock.weather.weathers[targetName] = {
             playing: isActive,
-            endTime: 0
+            endTime: isActive ? normalizeEndTime(newStock.weather.endTime) : 0
           };
         }
       }
