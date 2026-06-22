@@ -74,7 +74,8 @@ const translations = {
     predictionInHour: 'час',
     predictionMin: 'мин',
     predictionHour: 'ч',
-    sidebarMultipliers: 'Множители продажи'
+    sidebarMultipliers: 'Множители продажи',
+    predictionsWarning: '⚠️ Будущие завозы могут быть неточными из-за изменений на стороне игры.'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -150,7 +151,8 @@ const translations = {
     predictionInHour: 'hour',
     predictionMin: 'm',
     predictionHour: 'h',
-    sidebarMultipliers: 'Sell Multipliers'
+    sidebarMultipliers: 'Sell Multipliers',
+    predictionsWarning: '⚠️ Future stocks may be inaccurate due to in-game changes.'
   }
 };
 
@@ -469,6 +471,12 @@ function updateStaticTranslations() {
   const multList = document.getElementById('multipliers-list');
   if (multList && (!stockData || !stockData.fruitMultipliers || Object.keys(stockData.fruitMultipliers).length === 0)) {
     multList.innerHTML = `<div class="loading-placeholder">${t.loadingPlaceholder}</div>`;
+  }
+
+  // Predictions Warning
+  const predWarning = document.getElementById('predictions-warning');
+  if (predWarning) {
+    predWarning.textContent = t.predictionsWarning;
   }
   
   // API Section
@@ -848,51 +856,131 @@ function getFruitEmoji(name) {
   return '🌱';
 }
 
+// Normalizes the fruitMultipliers payload into a list of {name, image, rate}.
+// Supports BOTH the new list format [{name,image,key,multiplier}] and the legacy
+// dict format {name: rate}, so the website keeps working regardless of scraper version.
+function normalizeFruitMultipliers(raw) {
+  if (!raw) return [];
+  const out = [];
+  if (Array.isArray(raw)) {
+    raw.forEach(entry => {
+      if (!entry || typeof entry !== 'object') return;
+      const key = entry.key || entry.name;
+      const rate = parseFloat(entry.multiplier ?? entry.rate);
+      if (key == null || isNaN(rate)) return;
+      out.push({
+        name: entry.name || String(key),
+        image: entry.image || null,
+        key: String(key),
+        rate
+      });
+    });
+  } else if (typeof raw === 'object') {
+    Object.entries(raw).forEach(([key, val]) => {
+      const rate = parseFloat(val);
+      if (isNaN(rate)) return;
+      // Legacy dict: a key like "Asset_123" carries the image asset id.
+      const m = /^Asset_(\d+)$/.exec(key);
+      out.push({
+        name: key,
+        image: m ? m[1] : null,
+        key,
+        rate
+      });
+    });
+  }
+  return out;
+}
+
+// Resolve a Roblox asset thumbnail via the dedicated /api/fruit-image endpoint
+// (two-step: thumbnails API -> CDN image, both server-side to bypass ISP throttling).
+// Returns '' if no asset id is available.
+function fruitThumbUrl(assetId) {
+  if (!assetId) return '';
+  return `/api/fruit-image?asset=${encodeURIComponent(assetId)}`;
+}
+
+let multipliersPage = 0;
+const MULTIPLIERS_PER_PAGE = 10;
+
 function renderMultipliers() {
   const listContainer = document.getElementById('multipliers-list');
   if (!listContainer) return;
-  
-  if (!stockData || !stockData.fruitMultipliers || Object.keys(stockData.fruitMultipliers).length === 0) {
+
+  const items = normalizeFruitMultipliers(stockData && stockData.fruitMultipliers)
+    .sort((a, b) => b.rate - a.rate);
+
+  if (items.length === 0) {
     listContainer.innerHTML = `<div class="loading-placeholder">${translations[currentLang].loadingPlaceholder}</div>`;
     return;
   }
-  
+
+  const totalPages = Math.max(1, Math.ceil(items.length / MULTIPLIERS_PER_PAGE));
+  if (multipliersPage > totalPages - 1) multipliersPage = totalPages - 1;
+  if (multipliersPage < 0) multipliersPage = 0;
+  const start = multipliersPage * MULTIPLIERS_PER_PAGE;
+  const pageItems = items.slice(start, start + MULTIPLIERS_PER_PAGE);
+
   listContainer.innerHTML = '';
-  
-  const items = Object.entries(stockData.fruitMultipliers).map(([name, rate]) => ({
-    name,
-    rate: parseFloat(rate) || 1.0
-  })).sort((a, b) => b.rate - a.rate);
-  
-  items.forEach(({ name, rate }) => {
+
+  pageItems.forEach(({ name, image, rate }) => {
     const itemEl = document.createElement('div');
     itemEl.className = 'multiplier-item';
-    
+
     let displayName = name;
     if (currentLang === 'ru') {
       const translated = itemTranslations[name.toLowerCase().trim()];
       if (translated) displayName = translated;
     }
-    
+
     const emoji = getFruitEmoji(name);
-    
+    const isAsset = /^Asset_\d+$/.test(name);
+    // Prefer a real thumbnail image; fall back to emoji; for Asset_ names show the image
+    // even when there's no readable name.
+    const imgUrl = fruitThumbUrl(image);
+    const iconHtml = imgUrl
+      ? `<img src="${imgUrl}" alt="${name}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='${emoji}';">`
+      : `<span>${emoji}</span>`;
+
     let rateClass = '';
     if (rate >= 3.0) {
       rateClass = ' rate-exotic';
     } else if (rate >= 2.0) {
       rateClass = ' rate-high';
     }
-    
+
     itemEl.innerHTML = `
       <div class="multiplier-info">
-        <span>${emoji}</span>
-        <span title="${name}">${displayName}</span>
+        ${iconHtml}
+        <span title="${name}">${isAsset ? '🌱 ' + displayName : displayName}</span>
       </div>
       <span class="multiplier-val${rateClass}">x${rate.toFixed(1)}</span>
     `;
     listContainer.appendChild(itemEl);
   });
+
+  // Pagination controls (only when more than one page).
+  if (totalPages > 1) {
+    const nav = document.createElement('div');
+    nav.className = 'mult-pagination';
+    const prevBtn = multipliersPage > 0
+      ? `<button class="mult-nav-btn" data-mult-page="${multipliersPage - 1}">⬅️</button>`
+      : `<span class="mult-nav-btn disabled">⬅️</span>`;
+    const nextBtn = multipliersPage < totalPages - 1
+      ? `<button class="mult-nav-btn" data-mult-page="${multipliersPage + 1}">➡️</button>`
+      : `<span class="mult-nav-btn disabled">➡️</span>`;
+    nav.innerHTML = `${prevBtn}<span class="mult-page-info">${multipliersPage + 1}/${totalPages}</span>${nextBtn}`;
+    listContainer.appendChild(nav);
+  }
 }
+
+// Event delegation for multiplier pagination buttons.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-mult-page]');
+  if (!btn) return;
+  multipliersPage = parseInt(btn.getAttribute('data-mult-page'), 10) || 0;
+  renderMultipliers();
+});
 
 function renderShopGrid(gridElement, items) {
   gridElement.innerHTML = '';

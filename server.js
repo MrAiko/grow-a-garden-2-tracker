@@ -201,6 +201,48 @@ app.get('/api/proxy-image', async (req, res) => {
   }
 });
 
+// Fruit image resolver: given a Roblox asset id, resolve its thumbnail via the
+// thumbnails API (two-step), then proxy the resulting CDN image. This bypasses
+// Russian ISP throttling of tr.rbxcdn.com and lets the website show fruit icons
+// even when only an asset id (no readable name) is available.
+app.get('/api/fruit-image', rateLimiter(60, 60000), async (req, res) => {
+  const assetId = req.query.asset;
+  if (!assetId || !/^\d+$/.test(assetId)) {
+    return res.status(400).send('Invalid asset id');
+  }
+
+  try {
+    const imageUrl = await resolveAssetThumbnail(assetId);
+    if (!imageUrl) {
+      return res.status(404).send('Asset image not found');
+    }
+
+    // Serve from the proxied image cache if present.
+    if (proxiedImageCache.has(imageUrl)) {
+      const cached = proxiedImageCache.get(imageUrl);
+      res.setHeader('Content-Type', cached.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(cached.buffer);
+    }
+
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      return res.status(response.status).send('Failed to fetch asset image');
+    }
+    const contentType = response.headers.get('content-type') || 'image/png';
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    proxiedImageCache.set(imageUrl, { contentType, buffer });
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    res.send(buffer);
+  } catch (err) {
+    console.error(`Error serving fruit image for asset ${assetId}:`, err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // Cache for resolved asset images to avoid making redundant API calls
 const resolvedImageCache = new Map();
 

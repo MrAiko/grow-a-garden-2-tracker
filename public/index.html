@@ -49,7 +49,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=2.1.0">
+  <link rel="stylesheet" href="style.css?v=2.2.0">
 </head>
 <body>
   <div class="bg-glow"></div>
@@ -216,6 +216,7 @@
         <button class="prediction-tab-btn" data-tab="props"><i class="fa-solid fa-box-open"></i> Ящики</button>
         <button class="prediction-tab-btn" data-tab="weathers"><i class="fa-solid fa-cloud-moon"></i> Погода и Луны</button>
       </div>
+      <div class="predictions-warning" id="predictions-warning"></div>
       <div class="predictions-content">
         <div class="prediction-grid active" id="prediction-seeds-grid">
           <div class="loading-placeholder">Ожидание данных...</div>
@@ -337,6 +338,6 @@ print("Будущие семена:", data["seeds"])</code></pre>
     </footer>
   </div>
 
-  <script src="app.js?v=2.1.0"></script>
+  <script src="app.js?v=2.2.0"></script>
 </body>
 </html>

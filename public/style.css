@@ -1581,6 +1581,57 @@ body::before {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* Fruit thumbnail shown next to the name when an image asset is available
+   (replaces the emoji placeholder so Asset_<id> fruits still display visually). */
+.fruit-thumb {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+/* Multiplier list pagination controls. */
+.mult-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.mult-nav-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(139, 90, 43, 0.3);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-title);
+}
+
+.mult-nav-btn:not(.disabled):hover {
+  background: var(--color-wood);
+  border-color: var(--color-wood);
+}
+
+.mult-nav-btn.disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mult-page-info {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  min-width: 34px;
+  text-align: center;
+}
+
 /* Premium highlights and glows for prediction cards */
 .prediction-card {
   position: relative;
@@ -1760,6 +1811,19 @@ body::before {
 .prediction-card:not(.past-item).pred-phase-acidrain:hover {
   border-color: #32cd32;
   box-shadow: 0 0 25px rgba(50, 205, 50, 0.25);
+}
+
+.predictions-warning {
+  background: rgba(255, 179, 0, 0.05);
+  border: 1px solid rgba(255, 179, 0, 0.15);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #ffb300;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (max-width: 1024px) {
