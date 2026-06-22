@@ -20,6 +20,7 @@ const translations = {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение (Gears)',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Обычные семена (Seeds)',
+    sectionExclusiveSeeds: '<i class="fa-solid fa-gem"></i> Эксклюзивные семена (Exclusive Seeds)',
     sectionApi: '<i class="fa-solid fa-code"></i> Открытый API для разработчиков',
     apiDescription: 'Используйте наш открытый API для интеграции с вашими Telegram-ботами, Discord-ботами или другими сайтами.',
     apiShowSample: 'Показать пример ответа (JSON) и код интеграции',
@@ -81,6 +82,7 @@ const translations = {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Crate Shop',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Gear Shop',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Normal Seeds',
+    sectionExclusiveSeeds: '<i class="fa-solid fa-gem"></i> Exclusive Seeds',
     sectionApi: '<i class="fa-solid fa-code"></i> Developer Open API',
     apiDescription: 'Use our open API to integrate with your Telegram bots, Discord bots, or other websites.',
     apiShowSample: 'Show JSON response example and integration code',
@@ -202,6 +204,7 @@ const langEnBtn = document.getElementById('lang-en-btn');
 const crateGrid = document.getElementById('crate-shop-grid');
 const gearGrid = document.getElementById('gear-shop-grid');
 const seedGrid = document.getElementById('seed-shop-grid');
+const exclusiveSeedGrid = document.getElementById('exclusive-seed-shop-grid');
 
 // Translation Functions
 function setLanguage(lang) {
@@ -283,6 +286,7 @@ function updateStaticTranslations() {
   document.querySelector('#crates-section .section-title').innerHTML = t.sectionCrates;
   document.querySelector('#gears-section .section-title').innerHTML = t.sectionGears;
   document.querySelector('#seeds-section .section-title').innerHTML = t.sectionSeeds;
+  document.querySelector('#exclusive-seeds-section .section-title').innerHTML = t.sectionExclusiveSeeds;
   
   // API Section
   document.querySelector('.api-docs-section .section-title').innerHTML = t.sectionApi;
@@ -302,6 +306,7 @@ function updateStaticTranslations() {
     crateGrid.innerHTML = loaderHTML;
     gearGrid.innerHTML = loaderHTML;
     seedGrid.innerHTML = loaderHTML;
+    exclusiveSeedGrid.innerHTML = loaderHTML;
   }
 }
 
@@ -608,6 +613,7 @@ function renderDashboard() {
   renderShopGrid(crateGrid, stockData.shops.CrateShop || []);
   renderShopGrid(gearGrid, stockData.shops.GearShop || []);
   renderShopGrid(seedGrid, stockData.shops.SeedShop_Normal || []);
+  renderShopGrid(exclusiveSeedGrid, stockData.shops.SeedShop_Exclusive || []);
 }
 
 function renderShopGrid(gridElement, items) {
@@ -713,7 +719,7 @@ function checkForNotifications(newData) {
     });
 
     // Determine if this shop just restocked (compare next timestamp)
-    const restockKey = shopKey === 'SeedShop_Normal' ? 'SeedShop' : shopKey;
+    const restockKey = (shopKey === 'SeedShop_Normal' || shopKey === 'SeedShop_Exclusive') ? 'SeedShop' : shopKey;
     const oldNext = stockData.restockTimes[restockKey] ? stockData.restockTimes[restockKey].next : 0;
     const newNext = newData.restockTimes[restockKey] ? newData.restockTimes[restockKey].next : 0;
     const shopRestocked = oldNext !== newNext && newNext > 0;
