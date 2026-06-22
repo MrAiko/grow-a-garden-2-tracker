@@ -1535,13 +1535,23 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
 }
 
 .multiplier-item:hover {
-  transform: translateX(4px);
-  border-color: rgba(139, 90, 43, 0.4);
-  background: #2d1d12;
+  transform: scale(1.04) translateX(2px);
+  border-color: rgba(255, 179, 0, 0.45);
+  background: #2f1f13;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.multiplier-item:hover .multiplier-info span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 .multiplier-info {
