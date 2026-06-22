@@ -168,8 +168,20 @@
       </div>
     </section>
 
-    <!-- Main Content: Shops -->
-    <main class="shops-container">
+    <!-- Main Content Layout wrapper -->
+    <div class="main-layout">
+      <!-- Left Sidebar: Sell Multipliers -->
+      <aside class="sidebar-left glass" id="multipliers-sidebar">
+        <h3 class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Множители продажи</h3>
+        <div class="multipliers-list" id="multipliers-list">
+          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+        </div>
+      </aside>
+
+      <!-- Right Area: Shops and Predictions -->
+      <div class="main-content-area">
+        <!-- Main Content: Shops -->
+        <main class="shops-container">
       <!-- Crate Shop Section -->
       <section class="shop-section glass" id="crates-section">
         <h2 class="section-title"><i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)</h2>
@@ -219,6 +231,8 @@
         </div>
       </div>
     </section>
+      </div>
+    </div>
 
 
     <!-- Developer API Section -->
@@ -226,15 +240,25 @@
       <h2 class="section-title"><i class="fa-solid fa-code"></i> Открытый API для разработчиков</h2>
       <div class="api-docs-content">
         <p>Используйте наш открытый API для интеграции с вашими Telegram-ботами, Discord-ботами или другими сайтами.</p>
-        <div class="api-endpoint-box">
-          <span class="badge-method">GET</span>
-          <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/stock</code>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+          <div class="api-endpoint-box" style="margin-bottom: 0;">
+            <span class="badge-method">GET</span>
+            <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/stock</code>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">(Текущие магазины и погода)</span>
+          </div>
+          
+          <div class="api-endpoint-box" style="margin-bottom: 0;">
+            <span class="badge-method">GET</span>
+            <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/predictions</code>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">(Будущие завозы и фазы лун)</span>
+          </div>
         </div>
         
         <details class="api-details">
-          <summary>Показать пример ответа (JSON) и код интеграции</summary>
+          <summary>Показать примеры ответов (JSON) и код интеграции</summary>
           <div class="details-body">
-            <h5>Пример JSON ответа:</h5>
+            <h5>Пример JSON ответа (/api/stock):</h5>
             <pre><code>{
   "restockTimes": {
     "CrateShop": { "last": 1781286539, "next": 1781288039 },
@@ -244,28 +268,39 @@
   "shops": {
     "CrateShop": [
       { "name": "Ladder Crate", "stock": 1, "price": "3K¢", "rarity": "Common" }
-    ],
-    "GearShop": [
-      { "name": "Common Watering Can", "stock": 3, "price": "2K¢", "rarity": "Common" }
-    ],
-    "SeedShop_Normal": [
-      { "name": "Carrot", "stock": 4, "price": "1¢", "rarity": "Common" }
     ]
   },
   "updatedAt": 1781287318259
 }</code></pre>
             
-            <h5>Пример на Python:</h5>
+            <h5>Пример JSON ответа (/api/predictions):</h5>
+            <pre><code>{
+  "updatedAt": 1782133826000,
+  "seeds": [
+    { "name": "Carrot", "relativeText": "", "timestamp": 1782122700 }
+  ],
+  "gears": [
+    { "name": "Common Watering Can", "relativeText": "", "timestamp": 1782122700 }
+  ],
+  "props": [
+    { "name": "Ladder Crate", "relativeText": "", "timestamp": 1782122700 }
+  ],
+  "weathers": [
+    { "name": "Rainbow Moon", "relativeText": "", "timestamp": 1782136680 }
+  ]
+}</code></pre>
+
+            <h5>Пример получения предсказаний на Python:</h5>
             <pre><code>import requests
 
-response = requests.get("https://grow-a-garden-2-tracker.onrender.com/api/stock")
+response = requests.get("https://grow-a-garden-2-tracker.onrender.com/api/predictions")
 data = response.json()
-print("Магазин ящиков:", data["shops"]["CrateShop"])</code></pre>
+print("Будущие семена:", data["seeds"])</code></pre>
 
-            <h5>Пример на JavaScript (Node.js):</h5>
-            <pre><code>fetch("https://grow-a-garden-2-tracker.onrender.com/api/stock")
+            <h5>Пример получения предсказаний на JavaScript (Node.js):</h5>
+            <pre><code>fetch("https://grow-a-garden-2-tracker.onrender.com/api/predictions")
   .then(res => res.json())
-  .then(data => console.log(data.shops.CrateShop));</code></pre>
+  .then(data => console.log(data.seeds));</code></pre>
           </div>
         </details>
       </div>

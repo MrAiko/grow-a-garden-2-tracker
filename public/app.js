@@ -73,7 +73,8 @@ const translations = {
     predictionTimeJustNow: 'Только что',
     predictionInHour: 'час',
     predictionMin: 'мин',
-    predictionHour: 'ч'
+    predictionHour: 'ч',
+    sidebarMultipliers: 'Множители продажи'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -148,7 +149,8 @@ const translations = {
     predictionTimeJustNow: 'Just now',
     predictionInHour: 'hour',
     predictionMin: 'm',
-    predictionHour: 'h'
+    predictionHour: 'h',
+    sidebarMultipliers: 'Sell Multipliers'
   }
 };
 
@@ -329,6 +331,7 @@ const weatherOptions = {
 
 // Notification Subscriptions
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
+let trackedPredictions = new Set(JSON.parse(localStorage.getItem('trackedPredictions') || '[]'));
 
 // Auto-migrate legacy/incorrect keys from trackedItems to keep settings consistent across devices
 (function() {
@@ -456,6 +459,17 @@ function updateStaticTranslations() {
   document.querySelector('#crates-section .section-title').innerHTML = t.sectionCrates;
   document.querySelector('#gears-section .section-title').innerHTML = t.sectionGears;
   document.querySelector('#seeds-section .section-title').innerHTML = t.sectionSeeds;
+  
+  // Multipliers Sidebar Title
+  const multSidebarTitle = document.querySelector('#multipliers-sidebar .sidebar-title');
+  if (multSidebarTitle) {
+    multSidebarTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> ${t.sidebarMultipliers}`;
+  }
+
+  const multList = document.getElementById('multipliers-list');
+  if (multList && (!stockData || !stockData.fruitMultipliers || Object.keys(stockData.fruitMultipliers).length === 0)) {
+    multList.innerHTML = `<div class="loading-placeholder">${t.loadingPlaceholder}</div>`;
+  }
   
   // API Section
   document.querySelector('.api-docs-section .section-title').innerHTML = t.sectionApi;
@@ -781,6 +795,103 @@ function renderDashboard() {
   renderShopGrid(crateGrid, stockData.shops.CrateShop || []);
   renderShopGrid(gearGrid, stockData.shops.GearShop || []);
   renderShopGrid(seedGrid, stockData.shops.SeedShop_Normal || []);
+  renderMultipliers();
+}
+
+function getFruitEmoji(name) {
+  const n = name.toLowerCase().trim();
+  if (n.includes('carrot')) return '🥕';
+  if (n.includes('strawberry')) return '🍓';
+  if (n.includes('watermelon')) return '🍉';
+  if (n.includes('pumpkin')) return '🎃';
+  if (n.includes('sunflower')) return '🌻';
+  if (n.includes('wheat')) return '🌾';
+  if (n.includes('tomato')) return '🍅';
+  if (n.includes('potato')) return '🥔';
+  if (n.includes('onion')) return '🧅';
+  if (n.includes('corn')) return '🌽';
+  if (n.includes('pineapple')) return '🍍';
+  if (n.includes('cabbage')) return '🥬';
+  if (n.includes('dragonfruit') || n.includes('dragon fruit')) return '🐉';
+  if (n.includes('starfruit')) return '⭐';
+  if (n.includes('chili')) return '🌶️';
+  if (n.includes('blueberry')) return '🫐';
+  if (n.includes('blackberry')) return '🍇';
+  if (n.includes('raspberry')) return '🍓';
+  if (n.includes('apple')) return '🍎';
+  if (n.includes('grape')) return '🍇';
+  if (n.includes('orange')) return '🍊';
+  if (n.includes('lemon')) return '🍋';
+  if (n.includes('banana')) return '🍌';
+  if (n.includes('cherry')) return '🍒';
+  if (n.includes('berry')) return '🍒';
+  if (n.includes('coconut')) return '🥥';
+  if (n.includes('cactus')) return '🌵';
+  if (n.includes('bonsai')) return '🪴';
+  if (n.includes('bamboo')) return '🎋';
+  if (n.includes('rose')) return '🌹';
+  if (n.includes('tulip')) return '🌷';
+  if (n.includes('lily')) return '🌸';
+  if (n.includes('orchid')) return '🌺';
+  if (n.includes('lavender')) return '🪻';
+  if (n.includes('acorn')) return '🌰';
+  if (n.includes('mango')) return '🥭';
+  if (n.includes('pomegranate')) return '🍎';
+  if (n.includes('moon bloom') || n.includes('moonbloom')) return '🌙';
+  if (n.includes('spitter') || n.includes('venom')) return '🧪';
+  if (n.includes('mushroom')) return '🍄';
+  if (n.includes('melon')) return '🍈';
+  if (n.includes('pot')) return '🏺';
+  if (n.includes('can')) return '🪣';
+  if (n.includes('spore')) return '🍄';
+  if (n.includes('seed')) return '🌱';
+  return '🌱';
+}
+
+function renderMultipliers() {
+  const listContainer = document.getElementById('multipliers-list');
+  if (!listContainer) return;
+  
+  if (!stockData || !stockData.fruitMultipliers || Object.keys(stockData.fruitMultipliers).length === 0) {
+    listContainer.innerHTML = `<div class="loading-placeholder">${translations[currentLang].loadingPlaceholder}</div>`;
+    return;
+  }
+  
+  listContainer.innerHTML = '';
+  
+  const items = Object.entries(stockData.fruitMultipliers).map(([name, rate]) => ({
+    name,
+    rate: parseFloat(rate) || 1.0
+  })).sort((a, b) => b.rate - a.rate);
+  
+  items.forEach(({ name, rate }) => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'multiplier-item';
+    
+    let displayName = name;
+    if (currentLang === 'ru') {
+      const translated = itemTranslations[name.toLowerCase().trim()];
+      if (translated) displayName = translated;
+    }
+    
+    const emoji = getFruitEmoji(name);
+    
+    let rateClass = '';
+    if (rate >= 3.0) {
+      rateClass = ' rate-exotic';
+    } else if (rate >= 2.0) {
+      rateClass = ' rate-high';
+    }
+    
+    itemEl.innerHTML = `
+      <div class="multiplier-info">
+        <span>${emoji}</span>
+        <span title="${name}">${displayName}</span>
+      </div>
+      <span class="multiplier-val${rateClass}">x${rate.toFixed(1)}</span>
+    `;
+    listContainer.appendChild(itemEl);
+  });
 }
 
 function renderShopGrid(gridElement, items) {
@@ -1041,6 +1152,82 @@ document.addEventListener('click', (e) => {
     toggleTracking(name, bell);
   }
 });
+
+// Event Delegation for Prediction Bell Buttons
+document.addEventListener('click', (e) => {
+  const bell = e.target.closest('.prediction-bell-btn');
+  if (bell) {
+    const name = bell.getAttribute('data-name');
+    const timestamp = parseInt(bell.getAttribute('data-timestamp'), 10);
+    const isWeather = bell.getAttribute('data-isweather') === 'true';
+    togglePredictionTracking(name, timestamp, isWeather, bell);
+  }
+});
+
+async function togglePredictionTracking(name, timestamp, isWeather, btn) {
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert(translations[currentLang].notificationGrantedAlert);
+      return;
+    }
+  } else if (Notification.permission === 'denied') {
+    alert(translations[currentLang].notificationBlockedAlert);
+    return;
+  }
+
+  const predKey = `${name}:${timestamp}`;
+  const icon = btn.querySelector('i');
+  const t = translations[currentLang];
+
+  if (trackedPredictions.has(predKey)) {
+    trackedPredictions.delete(predKey);
+    btn.classList.remove('bell-active');
+    icon.className = 'fa-regular fa-bell';
+    btn.setAttribute('title', t.bellTrack);
+  } else {
+    trackedPredictions.add(predKey);
+    btn.classList.add('bell-active');
+    icon.className = 'fa-solid fa-bell';
+    btn.setAttribute('title', t.bellUntrack);
+    
+    // Test notification for subscription feedback
+    let displayName = name;
+    if (isWeather) {
+      let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const opt = weatherOptions[optKey];
+      if (opt) {
+        displayName = currentLang === 'ru' ? opt.ru : opt.en;
+      }
+    } else {
+      if (currentLang === 'ru') {
+        const translatedName = itemTranslations[name.toLowerCase().trim()];
+        if (translatedName) {
+          displayName = translatedName;
+        }
+      }
+    }
+
+    const testTitle = t.notifTrackedTitle;
+    const testOptions = {
+      body: t.notifTrackedBody(displayName),
+      icon: '/logo.png',
+      badge: '/logo.png'
+    };
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(testTitle, testOptions);
+      });
+    } else {
+      new Notification(testTitle, testOptions);
+    }
+    playAlertSound();
+  }
+
+  localStorage.setItem('trackedPredictions', JSON.stringify(Array.from(trackedPredictions)));
+}
 
 // Render weather subscription toggles inside settings panel
 function renderWeatherSettings() {
@@ -1368,7 +1555,18 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
   sortedItems.forEach(item => {
     const card = document.createElement('div');
     const isPast = item.timestamp <= now;
-    card.className = isPast ? 'prediction-card past-item' : 'prediction-card';
+    let extraClass = '';
+    if (!isPast) {
+      if (gridId === 'prediction-seeds-grid') extraClass = ' pred-card-seeds';
+      else if (gridId === 'prediction-gears-grid') extraClass = ' pred-card-gears';
+      else if (gridId === 'prediction-props-grid') extraClass = ' pred-card-props';
+      else if (gridId === 'prediction-weathers-grid') {
+        extraClass = ' pred-card-weathers';
+        const phaseName = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+        extraClass += ` pred-phase-${phaseName}`;
+      }
+    }
+    card.className = isPast ? 'prediction-card past-item' : `prediction-card${extraClass}`;
     
     // Determine translation and emoji
     let displayName = item.name;
@@ -1428,9 +1626,24 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       }
     }
     
+    const predKey = `${item.name}:${item.timestamp}`;
+    const isTracked = trackedPredictions.has(predKey);
+    const bellClass = isTracked ? 'bell-active' : '';
+    const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
+    const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
+
+    const bellHtml = isPast ? '' : `
+      <button class="prediction-bell-btn ${bellClass}" data-name="${item.name}" data-timestamp="${item.timestamp}" data-isweather="${isWeather}" title="${bellTitle}">
+        <i class="${bellIcon}"></i>
+      </button>
+    `;
+
     card.innerHTML = `
       <div class="prediction-info">
-        <span class="prediction-name">${emoji}${displayName}</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          ${bellHtml}
+          <span class="prediction-name">${emoji}${displayName}</span>
+        </div>
         <span class="prediction-sub">${subText}</span>
       </div>
       <div class="prediction-time-container">
@@ -1470,12 +1683,93 @@ fetchPredictions();
 setInterval(fetchData, 5000); // Poll API data every 5 seconds
 setInterval(fetchPredictions, 30000); // Poll predictions data every 30 seconds
 
+function triggerPredictionStartNotification(name, timestamp) {
+  const notifKey = `pred_${name}_${timestamp}`;
+  if (!canShowNotification(notifKey)) {
+    return;
+  }
+
+  // Find if this prediction is a weather/moon event or an item
+  let isWeather = false;
+  if (predictionData && predictionData.weathers) {
+    isWeather = predictionData.weathers.some(w => w.name === name && w.timestamp === timestamp);
+  }
+
+  const t = translations[currentLang];
+  let displayName = name;
+  let title = '';
+  let body = '';
+
+  if (isWeather) {
+    let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    if (optKey === 'lightning') optKey = 'thunderstorm';
+    const opt = weatherOptions[optKey];
+    if (opt) {
+      displayName = currentLang === 'ru' ? opt.ru : opt.en;
+    }
+    title = currentLang === 'ru' ? '🔔 Событие началось!' : '🔔 Event Started!';
+    body = currentLang === 'ru' ? `Событие "${displayName}" началось прямо сейчас!` : `Event "${displayName}" has started right now!`;
+  } else {
+    if (currentLang === 'ru') {
+      const translatedName = itemTranslations[name.toLowerCase().trim()];
+      if (translatedName) {
+        displayName = translatedName;
+      }
+    }
+    title = currentLang === 'ru' ? '🔔 Предсказание началось!' : '🔔 Prediction Started!';
+    body = currentLang === 'ru' ? `Предмет "${displayName}" должен появиться в продаже прямо сейчас!` : `Item "${displayName}" is expected to be in stock right now!`;
+  }
+
+  const options = {
+    body: body,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: 'pred-alert-' + name + '-' + timestamp,
+    requireInteraction: true
+  };
+
+  if (Notification.permission === 'granted') {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, options);
+      });
+    } else {
+      new Notification(title, options);
+    }
+    playAlertSound();
+  }
+}
+
 // Tick timers and update weather UI every second
 setInterval(() => {
   updateTimers();
   updateWeatherUI();
   if (predictionData) {
     renderPredictions();
+  }
+
+  // Check prediction alerts
+  const nowSec = Math.floor(Date.now() / 1000);
+  let predictionsChanged = false;
+
+  for (const predKey of Array.from(trackedPredictions)) {
+    const parts = predKey.split(':');
+    if (parts.length < 2) continue;
+    const timestamp = parseInt(parts[parts.length - 1], 10);
+    const name = parts.slice(0, parts.length - 1).join(':');
+
+    if (nowSec >= timestamp) {
+      triggerPredictionStartNotification(name, timestamp);
+      trackedPredictions.delete(predKey);
+      predictionsChanged = true;
+    }
+  }
+
+  if (predictionsChanged) {
+    localStorage.setItem('trackedPredictions', JSON.stringify(Array.from(trackedPredictions)));
+    if (predictionData) {
+      renderPredictions();
+    }
   }
 }, 1000);
 

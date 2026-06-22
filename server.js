@@ -503,10 +503,18 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
     }
   }
 
+  let fruitMultipliers = {};
+  if (newStock.fruitMultipliers) {
+    fruitMultipliers = newStock.fruitMultipliers;
+  } else if (currentStock && currentStock.fruitMultipliers) {
+    fruitMultipliers = currentStock.fruitMultipliers;
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
     weather: newStock.weather,
+    fruitMultipliers: fruitMultipliers,
     updatedAt: Date.now()
   };
 
@@ -712,7 +720,7 @@ async function fetchDiscordPredictions() {
 // Start background scraper if token is configured
 if (DISCORD_TOKEN) {
   fetchDiscordPredictions();
-  setInterval(fetchDiscordPredictions, 2 * 60 * 1000);
+  setInterval(fetchDiscordPredictions, 15 * 1000);
 }
 
 app.listen(PORT, () => {

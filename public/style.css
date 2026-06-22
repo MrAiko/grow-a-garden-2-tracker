@@ -639,6 +639,32 @@ body::before {
   filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.6));
 }
 
+.prediction-bell-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.prediction-bell-btn:hover {
+  color: var(--color-warning);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.15);
+}
+
+.prediction-bell-btn.bell-active {
+  color: var(--color-warning);
+  filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.6));
+}
+
 /* Rarity badge (Not absolutely positioned to let flex row flow naturally) */
 .item-badge {
   font-size: 8px;
@@ -1454,3 +1480,293 @@ body::before {
   }
 }
 
+
+
+/* Main content layout with left sidebar and right content area */
+.main-layout {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.main-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Left Sidebar Multipliers style */
+.sidebar-left {
+  padding: 24px;
+  border-top: 3px solid var(--border-wood);
+  position: sticky;
+  top: 24px;
+  z-index: 10;
+}
+
+.sidebar-title {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-title i {
+  color: var(--color-warning);
+}
+
+.multipliers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.multiplier-item {
+  background: var(--bg-card); /* mahogany wood plank */
+  border: 1px solid rgba(139, 90, 43, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.multiplier-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(139, 90, 43, 0.4);
+  background: #2d1d12;
+}
+
+.multiplier-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.multiplier-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--color-warning);
+  border: 1px solid rgba(255, 179, 0, 0.25);
+  box-shadow: 0 0 6px rgba(255, 179, 0, 0.1);
+}
+
+/* Specific multiplier badge styles based on rate */
+.multiplier-val.rate-high {
+  color: var(--color-grass);
+  border-color: rgba(76, 175, 80, 0.35);
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
+}
+
+.multiplier-val.rate-exotic {
+  color: #fff;
+  background: linear-gradient(135deg, var(--rarity-exotic), var(--rarity-secret));
+  border-color: var(--rarity-exotic);
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Premium highlights and glows for prediction cards */
+.prediction-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Border accents on the left edge */
+.prediction-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+/* Category card overrides for upcoming items only (past items are dimmed anyway) */
+.prediction-card:not(.past-item).pred-card-seeds::before {
+  background: var(--color-grass);
+}
+.prediction-card:not(.past-item).pred-card-seeds {
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.05), inset 0 0 10px rgba(76, 175, 80, 0.03);
+}
+.prediction-card:not(.past-item).pred-card-seeds:hover {
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.prediction-card:not(.past-item).pred-card-gears::before {
+  background: var(--rarity-rare);
+}
+.prediction-card:not(.past-item).pred-card-gears {
+  box-shadow: 0 4px 12px rgba(41, 182, 246, 0.05), inset 0 0 10px rgba(41, 182, 246, 0.03);
+}
+.prediction-card:not(.past-item).pred-card-gears:hover {
+  box-shadow: 0 8px 20px rgba(41, 182, 246, 0.12);
+  border-color: rgba(41, 182, 246, 0.3);
+}
+
+.prediction-card:not(.past-item).pred-card-props::before {
+  background: var(--color-wood);
+}
+.prediction-card:not(.past-item).pred-card-props {
+  box-shadow: 0 4px 12px rgba(161, 98, 7, 0.05), inset 0 0 10px rgba(161, 98, 7, 0.03);
+}
+.prediction-card:not(.past-item).pred-card-props:hover {
+  box-shadow: 0 8px 20px rgba(161, 98, 7, 0.12);
+  border-color: rgba(161, 98, 7, 0.3);
+}
+
+/* Special Moons premium styling */
+.prediction-card:not(.past-item).pred-phase-goldmoon::before {
+  background: var(--rarity-legendary);
+}
+.prediction-card:not(.past-item).pred-phase-goldmoon {
+  border-color: rgba(255, 202, 40, 0.3);
+  box-shadow: 0 0 15px rgba(255, 202, 40, 0.12), inset 0 0 15px rgba(255, 202, 40, 0.05);
+}
+.prediction-card:not(.past-item).pred-phase-goldmoon:hover {
+  border-color: var(--rarity-legendary);
+  box-shadow: 0 0 25px rgba(255, 202, 40, 0.25);
+}
+
+.prediction-card:not(.past-item).pred-phase-bloodmoon::before {
+  background: var(--color-danger);
+}
+.prediction-card:not(.past-item).pred-phase-bloodmoon {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.12), inset 0 0 15px rgba(239, 68, 68, 0.05);
+}
+.prediction-card:not(.past-item).pred-phase-bloodmoon:hover {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+}
+
+.prediction-card:not(.past-item).pred-phase-rainbowmoon::before {
+  background: linear-gradient(to bottom, #ff007f, #ffaa00, #33ff33, #00aaff, #aa00ff);
+}
+.prediction-card:not(.past-item).pred-phase-rainbowmoon {
+  border-color: rgba(171, 71, 188, 0.3);
+  box-shadow: 0 0 15px rgba(171, 71, 188, 0.15), inset 0 0 15px rgba(171, 71, 188, 0.06);
+}
+.prediction-card:not(.past-item).pred-phase-rainbowmoon:hover {
+  border-color: var(--rarity-epic);
+  box-shadow: 0 0 25px rgba(171, 71, 188, 0.3), inset 0 0 15px rgba(171, 71, 188, 0.1);
+  animation: rainbowBorder 4s linear infinite;
+}
+
+@keyframes rainbowBorder {
+  0%, 100% { border-color: #ff007f; }
+  25% { border-color: #ffaa00; }
+  50% { border-color: #33ff33; }
+  75% { border-color: #00aaff; }
+}
+
+.prediction-card:not(.past-item).pred-card-weathers::before {
+  background: var(--rarity-epic);
+}
+.prediction-card:not(.past-item).pred-card-weathers {
+  box-shadow: 0 4px 12px rgba(171, 71, 188, 0.05), inset 0 0 10px rgba(171, 71, 188, 0.03);
+}
+.prediction-card:not(.past-item).pred-card-weathers:hover {
+  box-shadow: 0 8px 20px rgba(171, 71, 188, 0.12);
+  border-color: rgba(171, 71, 188, 0.3);
+}
+
+.prediction-card:not(.past-item).pred-phase-chainedmoon::before {
+  background: #708090;
+}
+.prediction-card:not(.past-item).pred-phase-chainedmoon {
+  border-color: rgba(112, 128, 144, 0.3);
+  box-shadow: 0 0 15px rgba(112, 128, 144, 0.12), inset 0 0 15px rgba(112, 128, 144, 0.05);
+}
+.prediction-card:not(.past-item).pred-phase-chainedmoon:hover {
+  border-color: #708090;
+  box-shadow: 0 0 25px rgba(112, 128, 144, 0.25);
+}
+
+.prediction-card:not(.past-item).pred-phase-pizzamoon::before {
+  background: linear-gradient(to bottom, #ff5722, #ffeb3b, #4caf50);
+}
+.prediction-card:not(.past-item).pred-phase-pizzamoon {
+  border-color: rgba(255, 235, 59, 0.3);
+  box-shadow: 0 0 15px rgba(255, 235, 59, 0.12), inset 0 0 15px rgba(255, 235, 59, 0.05);
+}
+.prediction-card:not(.past-item).pred-phase-pizzamoon:hover {
+  border-color: #ffeb3b;
+  box-shadow: 0 0 25px rgba(255, 235, 59, 0.25);
+}
+
+.prediction-card:not(.past-item).pred-phase-solareclipse::before {
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+}
+.prediction-card:not(.past-item).pred-phase-solareclipse {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15), inset 0 0 15px rgba(0, 0, 0, 0.6);
+}
+.prediction-card:not(.past-item).pred-phase-solareclipse:hover {
+  border-color: #ffffff;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+.prediction-card:not(.past-item).pred-phase-starfall::before {
+  background: linear-gradient(to bottom, #00bfff, #ffd700);
+}
+.prediction-card:not(.past-item).pred-phase-starfall {
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.15), inset 0 0 15px rgba(0, 191, 255, 0.06);
+}
+.prediction-card:not(.past-item).pred-phase-starfall:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+}
+
+.prediction-card:not(.past-item).pred-phase-aurora::before {
+  background: linear-gradient(to bottom, #00ffcc, #3333ff, #ff00ff);
+}
+.prediction-card:not(.past-item).pred-phase-aurora {
+  border-color: rgba(0, 255, 204, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.15), inset 0 0 15px rgba(255, 0, 255, 0.06);
+}
+.prediction-card:not(.past-item).pred-phase-aurora:hover {
+  border-color: #00ffcc;
+  box-shadow: 0 0 25px rgba(0, 255, 204, 0.35);
+}
+
+.prediction-card:not(.past-item).pred-phase-acidrain::before {
+  background: #32cd32;
+}
+.prediction-card:not(.past-item).pred-phase-acidrain {
+  border-color: rgba(50, 205, 50, 0.3);
+  box-shadow: 0 0 15px rgba(50, 205, 50, 0.12);
+}
+.prediction-card:not(.past-item).pred-phase-acidrain:hover {
+  border-color: #32cd32;
+  box-shadow: 0 0 25px rgba(50, 205, 50, 0.25);
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-left {
+    position: static;
+  }
+}
