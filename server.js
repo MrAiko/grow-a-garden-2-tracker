@@ -645,7 +645,7 @@ function extractTextFromComponents(components) {
   return texts;
 }
 
-const DISCORD_TOKEN = 'MTQ1NzYwNTUxNzc3NzE3NDU3OQ.G89uuk.ZngeiS_MenH1n56w3IoDPfX8MJg9hmV6SkAgIg';
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
 
 async function fetchDiscordPredictions() {
@@ -657,11 +657,15 @@ async function fetchDiscordPredictions() {
   try {
     // Fetch last 10 messages to avoid welcome/role messages at index 0
     const url = `https://discord.com/api/v9/channels/${PREDICTIONS_CHANNEL_ID}/messages?limit=10`;
-    let response = await fetch(url, { headers: { 'Authorization': DISCORD_TOKEN } });
+    const headers = {
+      'Authorization': DISCORD_TOKEN,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    };
+    let response = await fetch(url, { headers });
     
     // Auto-fallback: if raw token fails with 401, retry with "Bot " prefix
     if (response.status === 401 && !DISCORD_TOKEN.startsWith('Bot ')) {
-      response = await fetch(url, { headers: { 'Authorization': `Bot ${DISCORD_TOKEN}` } });
+      response = await fetch(url, { headers: { ...headers, 'Authorization': `Bot ${DISCORD_TOKEN}` } });
     }
     
     if (!response.ok) {

@@ -60,7 +60,7 @@ const translations = {
     timeEnded: 'Конец в {}',
     weatherEndsIn: 'Закончится через: {}',
     usersOnline: (count) => `${count}`,
-    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Будущие завозы и погода (Predictions)',
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Будущие завозы и погода',
     predictionTabSeeds: '<i class="fa-solid fa-leaf"></i> Семена',
     predictionTabGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение',
     predictionTabCrates: '<i class="fa-solid fa-box-open"></i> Ящики',
