@@ -59,7 +59,21 @@ const translations = {
     timeStarted: 'Начало в {}',
     timeEnded: 'Конец в {}',
     weatherEndsIn: 'Закончится через: {}',
-    usersOnline: (count) => `${count}`
+    usersOnline: (count) => `${count}`,
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Будущие завозы и погода (Predictions)',
+    predictionTabSeeds: '<i class="fa-solid fa-leaf"></i> Семена',
+    predictionTabGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение',
+    predictionTabCrates: '<i class="fa-solid fa-box-open"></i> Ящики',
+    predictionTabWeather: '<i class="fa-solid fa-cloud-moon"></i> Погода и Луны',
+    predictionStatusUpcoming: 'Будущие',
+    predictionStatusPast: 'Прошедшие',
+    predictionTimeIn: 'через {}',
+    predictionTimeAgo: '{} назад',
+    predictionTimeSoon: 'Скоро',
+    predictionTimeJustNow: 'Только что',
+    predictionInHour: 'час',
+    predictionMin: 'мин',
+    predictionHour: 'ч'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -120,8 +134,164 @@ const translations = {
     timeStarted: 'Started at {}',
     timeEnded: 'Ended at {}',
     weatherEndsIn: 'Ends in: {}',
-    usersOnline: (count) => `${count}`
+    usersOnline: (count) => `${count}`,
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Future Predictions',
+    predictionTabSeeds: '<i class="fa-solid fa-leaf"></i> Seeds',
+    predictionTabGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Gears',
+    predictionTabCrates: '<i class="fa-solid fa-box-open"></i> Crates',
+    predictionTabWeather: '<i class="fa-solid fa-cloud-moon"></i> Weather & Moons',
+    predictionStatusUpcoming: 'Upcoming',
+    predictionStatusPast: 'Past',
+    predictionTimeIn: 'in {}',
+    predictionTimeAgo: '{} ago',
+    predictionTimeSoon: 'Soon',
+    predictionTimeJustNow: 'Just now',
+    predictionInHour: 'hour',
+    predictionMin: 'm',
+    predictionHour: 'h'
   }
+};
+
+// English to Russian item name translation mapping
+const itemTranslations = {
+  "acorn": "Желудь",
+  "carrot": "Морковь",
+  "strawberry": "Клубника",
+  "watermelon": "Арбуз",
+  "pumpkin": "Тыква",
+  "sunflower": "Подсолнух",
+  "wheat": "Пшеница",
+  "tomato": "Помидор",
+  "potato": "Картогель",
+  "onion": "Лук",
+  "corn": "Кукуруза",
+  "pineapple": "Ананас",
+  "cabbage": "Капуста",
+  "dragonfruit": "Драконий фрукт",
+  "starfruit": "Старфрут",
+  "chili": "Перец чили",
+  "blueberry": "Черника",
+  "blackberry": "Ежевика",
+  "raspberry": "Малина",
+  "apple": "Яблоко",
+  "grape": "Виноград",
+  "orange": "Апельсин",
+  "lemon": "Лимон",
+  "banana": "Банан",
+  "cherry": "Вишня",
+  "berry": "Ягода",
+  "coconut": "Кокос",
+  "cactus": "Кактус",
+  "bonsai": "Бонсай",
+  "bamboo": "Бамбук",
+  "rose": "Роза",
+  "tulip": "Тюльпан",
+  "lily": "Лилия",
+  "orchid": "Орхидея",
+  "lavender": "Лаванда",
+  "golden apple": "Золотое яблоко",
+  "golden carrot": "Золотая морковь",
+  "magic seed": "Волшебные семена",
+  "ancient seed": "Древние семена",
+  "mushroom spore": "Споры грибов",
+  "mushroom spores": "Споры грибов",
+  "dragon fruit": "Драконий фрукт",
+  "dragon's breath": "Дыхание дракона",
+  "green bean": "Зеленая фасоль",
+  "mango": "Манго",
+  "moon bloom": "Лунное цветение",
+  "mushroom": "Гриб",
+  "poison apple": "Ядовитое яблоко",
+  "pomegranate": "Гранат",
+  "venus fly trap": "Венерина мухоловка",
+  "horned melon": "Рогатая дыня",
+  "baby cactus": "Маленький кактус",
+  "glow mushroom": "Светящийся гриб",
+  "poison ivy": "Ядовитый плющ",
+  "ghost pepper": "Призрачный перец",
+  "venom spitter": "Плюющийся ядом",
+  "venom spitter seed": "Семена плюющегося ядом",
+  "venom spitter seeds": "Семена плюющегося ядом",
+  "megaphone": "Мегафон",
+  "player magnet": "Магнит игроков",
+  "pet teleporter": "Телепорт питомцев",
+  "pet teleporters": "Телепорты питомцев",
+  "bear": "Медведь",
+  "gnome": "Гном",
+  "ladder crate": "Ящик с лестницей",
+  "bench crate": "Ящик со скамейкой",
+  "light crate": "Световой ящик",
+  "sign crate": "Ящик с вывесками",
+  "arch crate": "Ящик с арками",
+  "roleplay crate": "Ролевой ящик",
+  "owner door crate": "Ящик с дверью владельца",
+  "wood crate": "Деревянный ящик",
+  "stone crate": "Каменный ящик",
+  "iron crate": "Железный ящик",
+  "gold crate": "Золотой ящик",
+  "diamond crate": "Алмазный ящик",
+  "toy crate": "Ящик с игрушками",
+  "decoration crate": "Декоративный ящик",
+  "furniture crate": "Ящик с мебелью",
+  "garden crate": "Садовый ящик",
+  "tool crate": "Ящик с инструментами",
+  "basic crate": "Обычный ящик",
+  "rare crate": "Редкий ящик",
+  "epic crate": "Эпический ящик",
+  "legendary crate": "Легендарный ящик",
+  "tropical crate": "Тропический ящик",
+  "medieval crate": "Средневековый ящик",
+  "sci-fi crate": "Научно-фантастический ящик",
+  "cyberpunk crate": "Ящик в стиле киберпанк",
+  "halloween crate": "Хэллоуинский ящик",
+  "christmas crate": "Новогодний ящик",
+  "bridge crate": "Ящик с мостами",
+  "spring crate": "Ящик с пружинами",
+  "seesaw crate": "Ящик с качелями",
+  "conveyor crate": "Конвейерный ящик",
+  "common watering can": "Обычная лейка",
+  "trowel": "Садовая лопатка",
+  "rare sprinkler": "Редкий спринклер",
+  "basic pot": "Обычный горшок",
+  "watering can": "Лейка",
+  "super watering can": "Супер-лейка",
+  "golden watering can": "Золотая лейка",
+  "diamond watering can": "Алмазная лейка",
+  "sprinkler": "Спринклер",
+  "rusty shovel": "Ржавая лопата",
+  "shovel": "Лопата",
+  "golden shovel": "Золотая лопата",
+  "diamond shovel": "Алмазная лопата",
+  "axe": "Топор",
+  "golden axe": "Золотой топор",
+  "diamond axe": "Алмазный топор",
+  "pickaxe": "Кирка",
+  "golden pickaxe": "Золотая кирка",
+  "diamond pickaxe": "Алмазная кирка",
+  "scissor": "Ножницы",
+  "shears": "Секатор",
+  "fertilizer": "Удобрение",
+  "super fertilizer": "Суперудобрение",
+  "speed grow": "Ускоритель роста",
+  "pest spray": "Спрей от вредителей",
+  "scythe": "Коса",
+  "golden scythe": "Золотая коса",
+  "diamond scythe": "Алмазная коса",
+  "gloves": "Садовые перчатки",
+  "gardening gloves": "Садовые перчатки",
+  "hose": "Шланг",
+  "water hose": "Водяной шланг",
+  "auto-planter": "Авто-сажалка",
+  "harvester": "Харвестер",
+  "sign": "Вывеска",
+  "lantern": "Фонарь",
+  "wheelbarrow": "Тачка",
+  "vine wrapper": "Виноградный обмотчик",
+  "freeze ray": "Замораживающий луч",
+  "rainbow carpet": "Радужный ковер",
+  "jump mushroom": "Гриб прыгучести",
+  "speed mushroom": "Гриб скорости",
+  "invisibility mushroom": "Гриб невидимости"
 };
 
 // State Management
@@ -132,6 +302,9 @@ let activeRarityFilter = 'all'; // 'all', 'rare+', 'epic+'
 let activeStockFilter = false; // true/false
 let searchQuery = '';
 let lastWeatherKey = '';
+let predictionData = null;
+let activePredictionTab = 'seeds';
+
 
 // Weather & Moon Configuration Options
 const weatherOptions = {
@@ -1131,16 +1304,181 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+// Prediction rendering and fetching logic
+async function fetchPredictions() {
+  try {
+    const res = await fetch('/api/predictions');
+    if (res.ok) {
+      predictionData = await res.json();
+      renderPredictions();
+    }
+  } catch (err) {
+    console.error('Error fetching predictions:', err);
+  }
+}
+
+function renderPredictions() {
+  if (!predictionData) return;
+  
+  const t = translations[currentLang];
+  
+  // Update section title
+  const secTitle = document.querySelector('#predictions-section .section-title');
+  if (secTitle) {
+    secTitle.innerHTML = t.predictionsHeader;
+  }
+  
+  // Update tab buttons text
+  const tabBtns = document.querySelectorAll('.prediction-tab-btn');
+  tabBtns.forEach(btn => {
+    const tabType = btn.getAttribute('data-tab');
+    if (tabType === 'seeds') btn.innerHTML = t.predictionTabSeeds;
+    else if (tabType === 'gears') btn.innerHTML = t.predictionTabGears;
+    else if (tabType === 'props') btn.innerHTML = t.predictionTabCrates;
+    else if (tabType === 'weathers') btn.innerHTML = t.predictionTabWeather;
+  });
+  
+  // Render grids
+  renderPredictionGrid('prediction-seeds-grid', predictionData.seeds || []);
+  renderPredictionGrid('prediction-gears-grid', predictionData.gears || []);
+  renderPredictionGrid('prediction-props-grid', predictionData.props || []);
+  renderPredictionGrid('prediction-weathers-grid', predictionData.weathers || [], true);
+}
+
+function renderPredictionGrid(gridId, items, isWeather = false) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="loading-placeholder">${translations[currentLang].loadingPlaceholder}</div>`;
+    return;
+  }
+  
+  const now = Math.floor(Date.now() / 1000);
+  const t = translations[currentLang];
+  
+  // Sort: upcoming items first (by timestamp asc), past items last (by timestamp desc)
+  const upcoming = items.filter(i => i.timestamp > now).sort((a, b) => a.timestamp - b.timestamp);
+  const past = items.filter(i => i.timestamp <= now).sort((a, b) => b.timestamp - a.timestamp);
+  
+  const sortedItems = [...upcoming, ...past];
+  
+  grid.innerHTML = '';
+  
+  sortedItems.forEach(item => {
+    const card = document.createElement('div');
+    const isPast = item.timestamp <= now;
+    card.className = isPast ? 'prediction-card past-item' : 'prediction-card';
+    
+    // Determine translation and emoji
+    let displayName = item.name;
+    let emoji = '';
+    
+    if (isWeather) {
+      let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const opt = weatherOptions[optKey];
+      if (opt) {
+        emoji = opt.emoji + ' ';
+        displayName = currentLang === 'ru' ? opt.ru : opt.en;
+      }
+    } else {
+      if (currentLang === 'ru') {
+        const translatedName = itemTranslations[item.name.toLowerCase().trim()];
+        if (translatedName) {
+          displayName = translatedName;
+        }
+      }
+    }
+    
+    let subText = item.name;
+    if (currentLang === 'en' || displayName === item.name) {
+      subText = isWeather ? 'Weather / Moon' : 'Item';
+    }
+    
+    const statusText = isPast ? t.predictionStatusPast : t.predictionStatusUpcoming;
+    const badgeClass = isPast ? 'prediction-badge past' : 'prediction-badge upcoming';
+    
+    const diff = item.timestamp - now;
+    let timerText = '';
+    if (isPast) {
+      const absDiff = Math.abs(diff);
+      if (absDiff < 60) {
+        timerText = t.predictionTimeJustNow;
+      } else {
+        const mins = Math.floor(absDiff / 60);
+        if (mins < 60) {
+          timerText = t.predictionTimeAgo.replace('{}', `${mins}${t.predictionMin}`);
+        } else {
+          const hours = Math.floor(mins / 60);
+          timerText = t.predictionTimeAgo.replace('{}', `${hours}${t.predictionHour}`);
+        }
+      }
+    } else {
+      if (diff < 60) {
+        timerText = t.predictionTimeSoon;
+      } else {
+        const mins = Math.floor(diff / 60);
+        if (mins < 60) {
+          timerText = t.predictionTimeIn.replace('{}', `${mins}${t.predictionMin}`);
+        } else {
+          const hours = Math.floor(mins / 60);
+          timerText = t.predictionTimeIn.replace('{}', `${hours}${t.predictionHour}`);
+        }
+      }
+    }
+    
+    card.innerHTML = `
+      <div class="prediction-info">
+        <span class="prediction-name">${emoji}${displayName}</span>
+        <span class="prediction-sub">${subText}</span>
+      </div>
+      <div class="prediction-time-container">
+        <span class="prediction-timer">${timerText}</span>
+        <span class="${badgeClass}">${statusText}</span>
+      </div>
+    `;
+    
+    grid.appendChild(card);
+  });
+}
+
+// Prediction Tab Event Listeners
+document.addEventListener('click', (e) => {
+  const tabBtn = e.target.closest('.prediction-tab-btn');
+  if (tabBtn) {
+    const tabType = tabBtn.getAttribute('data-tab');
+    activePredictionTab = tabType;
+    
+    // Toggle active tab button
+    document.querySelectorAll('.prediction-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn === tabBtn);
+    });
+    
+    // Toggle active grid
+    document.querySelectorAll('.prediction-grid').forEach(grid => {
+      const isTarget = grid.id === `prediction-${tabType}-grid`;
+      grid.classList.toggle('active', isTarget);
+    });
+  }
+});
+
 // Init and Loops
 setLanguage(currentLang); // Setup initial translation language
 fetchData();
+fetchPredictions();
 setInterval(fetchData, 5000); // Poll API data every 5 seconds
+setInterval(fetchPredictions, 30000); // Poll predictions data every 30 seconds
 
 // Tick timers and update weather UI every second
 setInterval(() => {
   updateTimers();
   updateWeatherUI();
+  if (predictionData) {
+    renderPredictions();
+  }
 }, 1000);
+
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {

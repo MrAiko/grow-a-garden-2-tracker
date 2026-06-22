@@ -8,6 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_PASSWORD = process.env.API_PASSWORD || 'test_password';
 const STOCK_DATA_FILE = path.join(__dirname, process.env.STOCK_DATA_FILE || 'stock_data.json');
+const PREDICTIONS_DATA_FILE = path.join(__dirname, process.env.PREDICTIONS_DATA_FILE || 'predictions_data.json');
+
 
 // Security Headers Middleware (standard anti-exploit & clickjacking headers)
 app.use((req, res, next) => {
@@ -78,6 +80,16 @@ try {
   console.error('Error loading stock data:', err);
 }
 
+// Load Predictions Data
+let currentPredictions = null;
+try {
+  if (fs.existsSync(PREDICTIONS_DATA_FILE)) {
+    currentPredictions = JSON.parse(fs.readFileSync(PREDICTIONS_DATA_FILE, 'utf8'));
+  }
+} catch (err) {
+  console.error('Error loading predictions data:', err);
+}
+
 // Save Stock Data
 function saveStockData() {
   try {
@@ -86,6 +98,16 @@ function saveStockData() {
     console.error('Error saving stock data:', err);
   }
 }
+
+// Save Predictions Data
+function savePredictionsData() {
+  try {
+    fs.writeFileSync(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving predictions data:', err);
+  }
+}
+
 
 // Track active visitors
 const activeVisitors = new Map();
@@ -493,6 +515,14 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   res.json({ success: true, isRestockTimeUpdated });
 });
 
+// Serve predictions API
+app.get('/api/predictions', rateLimiter(60, 60000), (req, res) => {
+  if (!currentPredictions) {
+    return res.status(404).json({ error: 'No prediction data available yet' });
+  }
+  res.json(currentPredictions);
+});
+
 // Serve web app status endpoint
 app.get('/api/status', rateLimiter(60, 60000), (req, res) => {
   res.json({
@@ -500,6 +530,186 @@ app.get('/api/status', rateLimiter(60, 60000), (req, res) => {
     lastUpdated: currentStock ? currentStock.updatedAt : null
   });
 });
+
+
+function parseRelativeTime(str) {
+  str = str.trim().toLowerCase();
+  
+  if (str.startsWith('через') || str.startsWith('in')) {
+    const val = str.replace('через', '').replace('in', '').trim();
+    if (val === 'час' || val === 'an hour' || val === 'hour') return 3600;
+    if (val === 'минуту' || val === 'a minute' || val === 'minute') return 60;
+    
+    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
+    if (minMatch) return parseInt(minMatch[1], 10) * 60;
+    
+    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
+    if (hourMatch) return parseInt(hourMatch[1], 10) * 3600;
+  }
+  
+  if (str.endsWith('назад') || str.endsWith('ago')) {
+    const val = str.replace('назад', '').replace('ago', '').trim();
+    if (val === 'час' || val === 'an hour' || val === 'hour') return -3600;
+    if (val === 'минуту' || val === 'a minute' || val === 'minute') return -60;
+    
+    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
+    if (minMatch) return -parseInt(minMatch[1], 10) * 60;
+    
+    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
+    if (hourMatch) return -parseInt(hourMatch[1], 10) * 3600;
+  }
+  
+  if (str === 'час назад' || str === 'an hour ago') return -3600;
+  if (str === 'через час' || str === 'in an hour') return 3600;
+
+  return 0;
+}
+
+function parseDiscordMessage(text, msgTimestampSec) {
+  const lines = text.split('\n');
+  const result = {
+    updatedAt: msgTimestampSec * 1000,
+    seeds: [],
+    gears: [],
+    props: [],
+    weathers: []
+  };
+  
+  let currentSection = null;
+  
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+    
+    const lineLower = line.toLowerCase();
+    
+    // Detect section headers
+    if (lineLower.includes('seeds')) {
+      currentSection = 'seeds';
+      continue;
+    } else if (lineLower.includes('gears')) {
+      currentSection = 'gears';
+      continue;
+    } else if (lineLower.includes('props')) {
+      currentSection = 'props';
+      continue;
+    } else if (lineLower.includes('weather')) {
+      currentSection = 'weathers';
+      continue;
+    }
+    
+    if (!currentSection) continue;
+    
+    // Parse items: Name — <t:TIMESTAMP:R> or Name — Relative Time
+    const tsMatch = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*<t:(\d+)(?::\w+)?>/);
+    if (tsMatch) {
+      const name = tsMatch[1].trim();
+      const timestamp = parseInt(tsMatch[2], 10);
+      result[currentSection].push({
+        name,
+        relativeText: '', // Will be rendered relative to client time
+        timestamp: timestamp
+      });
+    } else {
+      const match = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*(.+)$/);
+      if (match) {
+        const name = match[1].trim();
+        const relativeText = match[2].trim();
+        const offsetSeconds = parseRelativeTime(relativeText);
+        const absoluteTimestamp = msgTimestampSec + offsetSeconds;
+        
+        result[currentSection].push({
+          name,
+          relativeText,
+          timestamp: absoluteTimestamp
+        });
+      }
+    }
+  }
+  
+  return result;
+}
+
+function extractTextFromComponents(components) {
+  let texts = [];
+  if (!components) return texts;
+  
+  for (const component of components) {
+    if (component.content) {
+      texts.push(component.content);
+    }
+    if (component.components) {
+      texts = texts.concat(extractTextFromComponents(component.components));
+    }
+  }
+  return texts;
+}
+
+const DISCORD_TOKEN = 'MTQ1NzYwNTUxNzc3NzE3NDU3OQ.G89uuk.ZngeiS_MenH1n56w3IoDPfX8MJg9hmV6SkAgIg';
+const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
+
+async function fetchDiscordPredictions() {
+  if (!DISCORD_TOKEN) {
+    console.warn('DISCORD_TOKEN is not set in .env. Discord predictions scraper is disabled.');
+    return;
+  }
+  
+  try {
+    // Fetch last 10 messages to avoid welcome/role messages at index 0
+    const url = `https://discord.com/api/v9/channels/${PREDICTIONS_CHANNEL_ID}/messages?limit=10`;
+    let response = await fetch(url, { headers: { 'Authorization': DISCORD_TOKEN } });
+    
+    // Auto-fallback: if raw token fails with 401, retry with "Bot " prefix
+    if (response.status === 401 && !DISCORD_TOKEN.startsWith('Bot ')) {
+      response = await fetch(url, { headers: { 'Authorization': `Bot ${DISCORD_TOKEN}` } });
+    }
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch Discord messages: ${response.status} ${response.statusText}`);
+      return;
+    }
+    
+    const messages = await response.json();
+    if (!messages || messages.length === 0) {
+      console.warn('No messages found in the Discord prediction channel.');
+      return;
+    }
+    
+    // Search the last 10 messages for predictions message (from Grow A Garden 2 or containing Seeds header)
+    const msg = messages.find(m => {
+      const hasContent = m.content && (m.content.includes('Seeds') || m.content.includes('Next Seen'));
+      const hasComponents = m.components && m.components.length > 0;
+      return hasContent || hasComponents;
+    });
+    
+    if (!msg) {
+      console.warn('No predictions message found in the last 10 messages.');
+      return;
+    }
+    
+    // Extract text from component layouts recursively
+    const componentTexts = extractTextFromComponents(msg.components);
+    const fullText = (msg.content || '') + '\n' + componentTexts.join('\n');
+    
+    const baseTime = msg.edited_timestamp || msg.timestamp;
+    const baseTimeSec = Math.floor(new Date(baseTime).getTime() / 1000);
+    
+    const parsed = parseDiscordMessage(fullText, baseTimeSec);
+    if (parsed) {
+      currentPredictions = parsed;
+      savePredictionsData();
+      console.log('Successfully fetched and updated predictions from Discord.');
+    }
+  } catch (err) {
+    console.error('Error in Discord predictions scraper:', err);
+  }
+}
+
+// Start background scraper if token is configured
+if (DISCORD_TOKEN) {
+  fetchDiscordPredictions();
+  setInterval(fetchDiscordPredictions, 2 * 60 * 1000);
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
