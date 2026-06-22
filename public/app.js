@@ -939,8 +939,8 @@ function renderMultipliers() {
     // even when there's no readable name.
     const imgUrl = fruitThumbUrl(image);
     const iconHtml = imgUrl
-      ? `<img src="${imgUrl}" alt="${name}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='${emoji}';">`
-      : `<span>${emoji}</span>`;
+      ? `<span class="fruit-icon-wrapper"><img src="${imgUrl}" alt="${name}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='${emoji}';"></span>`
+      : `<span class="fruit-icon-wrapper">${emoji}</span>`;
 
     let rateClass = '';
     if (rate >= 3.0) {

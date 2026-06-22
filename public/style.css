@@ -1591,6 +1591,15 @@ body::before {
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
+.fruit-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 /* Multiplier list pagination controls. */
 .mult-pagination {
   display: flex;
