@@ -160,6 +160,14 @@ app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
     }
   }
   
+  if (responseData.fruitMultipliers && Array.isArray(responseData.fruitMultipliers)) {
+    responseData.fruitMultipliers.forEach(item => {
+      if (item.image && item.image.startsWith('http')) {
+        item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
+      }
+    });
+  }
+  
   responseData.visitorCount = getActiveVisitorsCount();
   res.json(responseData);
 });
@@ -522,8 +530,9 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   }
 
   // Resolve all asset images asynchronously
+  const promises = [];
+
   if (newStock.shops) {
-    const promises = [];
     for (const shopKey of Object.keys(newStock.shops)) {
       const items = newStock.shops[shopKey] || [];
       items.forEach(item => {
@@ -540,9 +549,24 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
         }
       });
     }
-    if (promises.length > 0) {
-      await Promise.all(promises);
-    }
+  }
+
+  if (newStock.fruitMultipliers && Array.isArray(newStock.fruitMultipliers)) {
+    newStock.fruitMultipliers.forEach(item => {
+      if (item.image && !item.image.startsWith('http')) {
+        const assetId = item.image;
+        const promise = resolveAssetThumbnail(assetId).then(resolvedUrl => {
+          if (resolvedUrl) {
+            item.image = resolvedUrl;
+          }
+        });
+        promises.push(promise);
+      }
+    });
+  }
+
+  if (promises.length > 0) {
+    await Promise.all(promises);
   }
 
   let fruitMultipliers = {};
