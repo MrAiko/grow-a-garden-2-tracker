@@ -934,12 +934,11 @@ function renderMultipliers() {
     }
 
     const emoji = getFruitEmoji(name);
-    const isAsset = /^Asset_\d+$/.test(name);
     // Prefer a real thumbnail image; fall back to emoji; for Asset_ names show the image
     // even when there's no readable name.
     const imgUrl = fruitThumbUrl(image);
     const iconHtml = imgUrl
-      ? `<span class="fruit-icon-wrapper"><img src="${imgUrl}" alt="${name}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='${emoji}';"></span>`
+      ? `<span class="fruit-icon-wrapper"><span class="fruit-emoji-fallback">${emoji}</span><img src="${imgUrl}" alt="${displayName}" class="fruit-thumb" loading="lazy" onload="this.style.display='inline-block'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none'; this.previousElementSibling.style.display='inline-block';" style="display: none;"></span>`
       : `<span class="fruit-icon-wrapper">${emoji}</span>`;
 
     let rateClass = '';
@@ -952,7 +951,7 @@ function renderMultipliers() {
     itemEl.innerHTML = `
       <div class="multiplier-info">
         ${iconHtml}
-        <span title="${name}">${isAsset ? '🌱 ' + displayName : displayName}</span>
+        <span title="${name}">${displayName}</span>
       </div>
       <span class="multiplier-val${rateClass}">x${rate.toFixed(1)}</span>
     `;
@@ -963,12 +962,13 @@ function renderMultipliers() {
   if (totalPages > 1) {
     const nav = document.createElement('div');
     nav.className = 'mult-pagination';
-    const prevBtn = multipliersPage > 0
-      ? `<button class="mult-nav-btn" data-mult-page="${multipliersPage - 1}">⬅️</button>`
-      : `<span class="mult-nav-btn disabled">⬅️</span>`;
-    const nextBtn = multipliersPage < totalPages - 1
-      ? `<button class="mult-nav-btn" data-mult-page="${multipliersPage + 1}">➡️</button>`
-      : `<span class="mult-nav-btn disabled">➡️</span>`;
+    
+    const prevDisabled = multipliersPage <= 0 ? ' disabled' : '';
+    const nextDisabled = multipliersPage >= totalPages - 1 ? ' disabled' : '';
+    
+    const prevBtn = `<button class="mult-nav-btn${prevDisabled}" data-mult-page="${multipliersPage - 1}"${prevDisabled ? ' disabled' : ''}><i class="fa-solid fa-chevron-left"></i></button>`;
+    const nextBtn = `<button class="mult-nav-btn${nextDisabled}" data-mult-page="${multipliersPage + 1}"${nextDisabled ? ' disabled' : ''}><i class="fa-solid fa-chevron-right"></i></button>`;
+    
     nav.innerHTML = `${prevBtn}<span class="mult-page-info">${multipliersPage + 1}/${totalPages}</span>${nextBtn}`;
     listContainer.appendChild(nav);
   }
