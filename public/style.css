@@ -1590,6 +1590,38 @@ body::before {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.multiplier-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.multiplier-bell-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.multiplier-bell-btn:hover {
+  color: var(--color-warning);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.15);
+}
+
+.multiplier-bell-btn.bell-active {
+  color: var(--color-warning);
+  filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.6));
+}
+
 /* Fruit thumbnail shown next to the name when an image asset is available
    (replaces the emoji placeholder so Asset_<id> fruits still display visually). */
 .fruit-thumb {

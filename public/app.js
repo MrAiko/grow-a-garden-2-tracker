@@ -75,7 +75,13 @@ const translations = {
     predictionMin: 'мин',
     predictionHour: 'ч',
     sidebarMultipliers: 'Множители продажи',
-    predictionsWarning: '⚠️ Будущие завозы могут быть неточными из-за изменений на стороне игры.'
+    predictionsWarning: '⚠️ Будущие завозы могут быть неточными из-за изменений на стороне игры.',
+    bellTrackMultiplier: 'Оповестить при высоком множителе',
+    bellUntrackMultiplier: 'Отключить уведомление о множителе',
+    multiplierPushTitle: (name) => `📈 Высокий множитель: ${name}!`,
+    multiplierPushBody: (rate, threshold) => `Текущий множитель x${rate} (порог уведомления: >= x${threshold})`,
+    enterMultiplierPrompt: 'Введите минимальный множитель для оповещения (например, 2.0 или 1.5):',
+    invalidMultiplierAlert: 'Пожалуйста, введите корректное число больше 0.'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -152,7 +158,13 @@ const translations = {
     predictionMin: 'm',
     predictionHour: 'h',
     sidebarMultipliers: 'Sell Multipliers',
-    predictionsWarning: '⚠️ Future stocks may be inaccurate due to in-game changes.'
+    predictionsWarning: '⚠️ Future stocks may be inaccurate due to in-game changes.',
+    bellTrackMultiplier: 'Notify when high multiplier',
+    bellUntrackMultiplier: 'Mute multiplier notifications',
+    multiplierPushTitle: (name) => `📈 High Multiplier: ${name}!`,
+    multiplierPushBody: (rate, threshold) => `Current rate is x${rate} (alert threshold: >= x${threshold})`,
+    enterMultiplierPrompt: 'Enter minimum multiplier for alert (e.g., 2.0 or 1.5):',
+    invalidMultiplierAlert: 'Please enter a valid number greater than 0.'
   }
 };
 
@@ -334,6 +346,7 @@ const weatherOptions = {
 // Notification Subscriptions
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
 let trackedPredictions = new Set(JSON.parse(localStorage.getItem('trackedPredictions') || '[]'));
+let multiplierAlerts = JSON.parse(localStorage.getItem('multiplierAlerts') || '{}');
 
 // Auto-migrate legacy/incorrect keys from trackedItems to keep settings consistent across devices
 (function() {
@@ -515,6 +528,7 @@ async function fetchData() {
     if (stockRes.ok) {
       const newStockData = await stockRes.json();
       checkForNotifications(newStockData);
+      checkForMultiplierNotifications(newStockData);
       checkForWeatherNotifications(newStockData);
       discoverEnvironments(newStockData.weather);
       stockData = newStockData;
@@ -941,7 +955,7 @@ function renderMultipliers() {
     // even when there's no readable name.
     const imgUrl = fruitThumbUrl(image);
     const iconHtml = imgUrl
-      ? `<span class="fruit-icon-wrapper"><span class="fruit-emoji-fallback">${emoji}</span><img src="${imgUrl}" alt="${displayName}" class="fruit-thumb" loading="lazy" onload="this.style.display='inline-block'; this.previousElementSibling.style.display='none';" onerror="this.style.display='none'; this.previousElementSibling.style.display='inline-block';" style="display: none;"></span>`
+      ? `<span class="fruit-icon-wrapper"><img src="${imgUrl}" alt="${displayName}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"><span class="fruit-emoji-fallback" style="display: none;">${emoji}</span></span>`
       : `<span class="fruit-icon-wrapper">${emoji}</span>`;
 
     let rateClass = '';
@@ -951,12 +965,25 @@ function renderMultipliers() {
       rateClass = ' rate-high';
     }
 
+    const hasAlert = multiplierAlerts[name] !== undefined;
+    const bellClass = hasAlert ? 'bell-active' : '';
+    const bellIcon = hasAlert ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
+    const thresholdText = hasAlert ? ` (>= x${multiplierAlerts[name]})` : '';
+    const bellTitle = hasAlert 
+      ? `${translations[currentLang].bellUntrackMultiplier}${thresholdText}` 
+      : translations[currentLang].bellTrackMultiplier;
+
     itemEl.innerHTML = `
       <div class="multiplier-info">
         ${iconHtml}
         <span title="${name}">${displayName}</span>
       </div>
-      <span class="multiplier-val${rateClass}">x${rate.toFixed(1)}</span>
+      <div class="multiplier-actions">
+        <span class="multiplier-val${rateClass}">x${rate.toFixed(1)}</span>
+        <button class="multiplier-bell-btn ${bellClass}" data-fruit="${name}" title="${bellTitle}">
+          <i class="${bellIcon}"></i>
+        </button>
+      </div>
     `;
     listContainer.appendChild(itemEl);
   });
@@ -982,6 +1009,76 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-mult-page]');
   if (!btn) return;
   multipliersPage = parseInt(btn.getAttribute('data-mult-page'), 10) || 0;
+  renderMultipliers();
+});
+
+// Event delegation for multiplier notification buttons.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.multiplier-bell-btn');
+  if (!btn) return;
+
+  const fruitName = btn.getAttribute('data-fruit');
+  if (!fruitName) return;
+
+  // Request browser permission if default
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert(translations[currentLang].notificationGrantedAlert);
+      return;
+    }
+  } else if (Notification.permission === 'denied') {
+    alert(translations[currentLang].notificationBlockedAlert);
+    return;
+  }
+
+  const hasAlert = multiplierAlerts[fruitName] !== undefined;
+
+  if (hasAlert) {
+    // Untrack
+    delete multiplierAlerts[fruitName];
+  } else {
+    // Track - prompt user for threshold multiplier
+    const promptText = translations[currentLang].enterMultiplierPrompt;
+    const input = prompt(promptText, "2.0");
+    if (input === null) return; // User cancelled
+
+    const threshold = parseFloat(input.replace(',', '.'));
+    if (isNaN(threshold) || threshold <= 0) {
+      alert(translations[currentLang].invalidMultiplierAlert);
+      return;
+    }
+
+    multiplierAlerts[fruitName] = threshold;
+
+    // Send a test notification to verify it works
+    const t = translations[currentLang];
+    let displayName = fruitName;
+    if (currentLang === 'ru') {
+      const translated = itemTranslations[fruitName.toLowerCase().trim()];
+      if (translated) displayName = translated;
+    }
+
+    const testTitle = t.notifTrackedTitle;
+    const testOptions = {
+      body: currentLang === 'ru' 
+        ? `Вы получите звуковое оповещение, когда множитель на "${displayName}" станет >= x${threshold.toFixed(1)}.`
+        : `We will notify you when "${displayName}" multiplier becomes >= x${threshold.toFixed(1)}.`,
+      icon: '/logo.png',
+      tag: 'multiplier-tracked-alert-' + fruitName
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(testTitle, testOptions);
+      });
+    } else {
+      new Notification(testTitle, testOptions);
+    }
+    playAlertSound();
+  }
+
+  localStorage.setItem('multiplierAlerts', JSON.stringify(multiplierAlerts));
   renderMultipliers();
 });
 
@@ -1107,6 +1204,68 @@ function checkForNotifications(newData) {
       }
     });
   }
+}
+
+function checkForMultiplierNotifications(newData) {
+  if (!stockData || !stockData.fruitMultipliers || !newData.fruitMultipliers) {
+    return; // Do not notify on initial load
+  }
+
+  const oldMultipliers = normalizeFruitMultipliers(stockData.fruitMultipliers);
+  const newMultipliers = normalizeFruitMultipliers(newData.fruitMultipliers);
+
+  const oldMultMap = {};
+  oldMultipliers.forEach(item => {
+    oldMultMap[item.name] = item.rate;
+  });
+
+  newMultipliers.forEach(item => {
+    const oldRate = oldMultMap[item.name] !== undefined ? oldMultMap[item.name] : 0;
+    const newRate = item.rate;
+
+    // Check if there is an active alert threshold for this fruit name (e.g. "Banana")
+    const threshold = multiplierAlerts[item.name];
+    if (threshold !== undefined) {
+      // Trigger notification if the new rate is above or equal to threshold
+      // and it EITHER was below the threshold OR it just changed to a new rate.
+      const isEligible = newRate >= threshold && (oldRate < threshold || oldRate !== newRate);
+      if (isEligible) {
+        triggerMultiplierNotification(item.name, newRate, threshold);
+      }
+    }
+  });
+}
+
+function triggerMultiplierNotification(itemName, currentRate, threshold) {
+  // Deduplicate notification triggers (prevent multi-tab notifications or rapid fire)
+  if (!canShowNotification('multiplier_' + itemName + '_' + currentRate)) {
+    return;
+  }
+  const t = translations[currentLang];
+  
+  let displayName = itemName;
+  if (currentLang === 'ru') {
+    const translated = itemTranslations[itemName.toLowerCase().trim()];
+    if (translated) displayName = translated;
+  }
+
+  const title = t.multiplierPushTitle(displayName);
+  const options = {
+    body: t.multiplierPushBody(currentRate, threshold),
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: 'multiplier-alert-' + itemName,
+    requireInteraction: true
+  };
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, options);
+    });
+  } else {
+    new Notification(title, options);
+  }
+  playAlertSound();
 }
 
 // Cross-tab notification deduplication check (prevents duplicate sounds/flashes across open tabs)

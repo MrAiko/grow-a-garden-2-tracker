@@ -619,7 +619,7 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
         const items = newStock.shops[shopKey] || [];
         items.forEach(item => {
           if (item.image && !item.image.startsWith('http')) {
-            item.image = resolvedMap[item.image] || null;
+            item.image = resolvedMap[item.image] || item.image;
           }
         });
       }
@@ -628,7 +628,7 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
     if (newStock.fruitMultipliers && Array.isArray(newStock.fruitMultipliers)) {
       newStock.fruitMultipliers.forEach(item => {
         if (item.image && !item.image.startsWith('http')) {
-          item.image = resolvedMap[item.image] || null;
+          item.image = resolvedMap[item.image] || item.image;
         }
       });
     }
