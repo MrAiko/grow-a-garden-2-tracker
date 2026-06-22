@@ -189,10 +189,7 @@ app.get('/api/proxy-image', async (req, res) => {
   }
   
   try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      return res.status(response.status).send('Failed to fetch image');
-    }
+    const response = await fetchWithRetry(imageUrl);
     
     const contentType = response.headers.get('content-type') || 'image/png';
     const arrayBuffer = await response.arrayBuffer();
@@ -275,6 +272,68 @@ async function resolveAssetThumbnail(assetId) {
     console.error(`Error resolving asset image for ID ${assetId}:`, err);
   }
   return null;
+}
+
+// Helper for fetching image with retries
+async function fetchWithRetry(url, attempts = 3) {
+  let lastError = null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response;
+      lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+    } catch (err) {
+      lastError = err;
+    }
+    if (i < attempts - 1) {
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  throw lastError;
+}
+
+// Batch resolve asset thumbnails from Roblox API (resolves up to 100 IDs per request)
+async function resolveAssetThumbnailsBatch(assetIds) {
+  const uniqueIds = [...new Set(assetIds.filter(id => id && /^\d+$/.test(id)))];
+  if (uniqueIds.length === 0) return {};
+  
+  const results = {};
+  const uncachedIds = [];
+  
+  uniqueIds.forEach(id => {
+    if (resolvedImageCache.has(id)) {
+      results[id] = resolvedImageCache.get(id);
+    } else {
+      uncachedIds.push(id);
+    }
+  });
+  
+  if (uncachedIds.length === 0) return results;
+  
+  const batchSize = 100;
+  for (let i = 0; i < uncachedIds.length; i += batchSize) {
+    const chunk = uncachedIds.slice(i, i + batchSize);
+    try {
+      const url = `https://thumbnails.roblox.com/v1/assets?assetIds=${chunk.join(',')}&size=150x150&format=Png&isCircular=false`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.data) {
+          data.data.forEach(item => {
+            if (item.targetId && item.imageUrl) {
+              const id = String(item.targetId);
+              resolvedImageCache.set(id, item.imageUrl);
+              results[id] = item.imageUrl;
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error resolving batch thumbnails:', err);
+    }
+  }
+  
+  return results;
 }
 
 function getMergedWeather() {
@@ -529,23 +588,15 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
     newStock.weather.nightEndedAt = nightEndedAt;
   }
 
-  // Resolve all asset images asynchronously
-  const promises = [];
+  // Resolve all asset images asynchronously in a single batch request to avoid rate limits
+  const assetIdsToResolve = [];
 
   if (newStock.shops) {
     for (const shopKey of Object.keys(newStock.shops)) {
       const items = newStock.shops[shopKey] || [];
       items.forEach(item => {
         if (item.image && !item.image.startsWith('http')) {
-          const assetId = item.image;
-          const promise = resolveAssetThumbnail(assetId).then(resolvedUrl => {
-            if (resolvedUrl) {
-              item.image = resolvedUrl;
-            } else {
-              item.image = null;
-            }
-          });
-          promises.push(promise);
+          assetIdsToResolve.push(item.image);
         }
       });
     }
@@ -554,19 +605,33 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   if (newStock.fruitMultipliers && Array.isArray(newStock.fruitMultipliers)) {
     newStock.fruitMultipliers.forEach(item => {
       if (item.image && !item.image.startsWith('http')) {
-        const assetId = item.image;
-        const promise = resolveAssetThumbnail(assetId).then(resolvedUrl => {
-          if (resolvedUrl) {
-            item.image = resolvedUrl;
-          }
-        });
-        promises.push(promise);
+        assetIdsToResolve.push(item.image);
       }
     });
   }
 
-  if (promises.length > 0) {
-    await Promise.all(promises);
+  if (assetIdsToResolve.length > 0) {
+    const resolvedMap = await resolveAssetThumbnailsBatch(assetIdsToResolve);
+    
+    // Assign resolved URLs back to items
+    if (newStock.shops) {
+      for (const shopKey of Object.keys(newStock.shops)) {
+        const items = newStock.shops[shopKey] || [];
+        items.forEach(item => {
+          if (item.image && !item.image.startsWith('http')) {
+            item.image = resolvedMap[item.image] || null;
+          }
+        });
+      }
+    }
+    
+    if (newStock.fruitMultipliers && Array.isArray(newStock.fruitMultipliers)) {
+      newStock.fruitMultipliers.forEach(item => {
+        if (item.image && !item.image.startsWith('http')) {
+          item.image = resolvedMap[item.image] || null;
+        }
+      });
+    }
   }
 
   let fruitMultipliers = {};

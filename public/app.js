@@ -897,6 +897,9 @@ function normalizeFruitMultipliers(raw) {
 // Returns '' if no asset id is available.
 function fruitThumbUrl(assetId) {
   if (!assetId) return '';
+  if (assetId.startsWith('/') || assetId.startsWith('http')) {
+    return assetId;
+  }
   return `/api/fruit-image?asset=${encodeURIComponent(assetId)}`;
 }
 
