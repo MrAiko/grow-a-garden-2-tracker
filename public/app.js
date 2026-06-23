@@ -1010,34 +1010,7 @@ document.addEventListener('click', (e) => {
   renderMultipliers();
 });
 
-// ── Fruit refresh countdown ──
-// The server sends fruitRefreshAt as an absolute unix timestamp (seconds) of the next
-// in-game multiplier refresh. We tick a live countdown every second independent of API
-// polling so it stays accurate.
-function renderFruitRefresh() {
-  const box = document.getElementById('mult-refresh-box');
-  const text = document.getElementById('mult-refresh-text');
-  if (!box || !text) return;
-  const refreshAt = stockData && stockData.fruitRefreshAt ? Number(stockData.fruitRefreshAt) : 0;
-  if (!refreshAt) {
-    box.style.display = 'none';
-    return;
-  }
-  let remaining = refreshAt - Math.floor(Date.now() / 1000);
-  if (remaining <= 0) {
-    box.style.display = 'block';
-    text.textContent = (currentLang === 'ru' ? '🔄 Обновляется...' : '🔄 Refreshing...');
-    return;
-  }
-  box.style.display = 'block';
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  const label = currentLang === 'ru' ? 'Обновление через' : 'Refresh in';
-  text.textContent = `${label} ${m}:${String(s).padStart(2, '0')}`;
-}
-
-// Tick the countdown every second.
-setInterval(renderFruitRefresh, 1000);
+// Fruit refresh countdown removed since it's not working in-game currently.
 
 // Event delegation for multiplier notification buttons.
 document.addEventListener('click', async (e) => {
