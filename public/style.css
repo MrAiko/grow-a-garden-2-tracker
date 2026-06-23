@@ -1527,6 +1527,35 @@ body::before {
   gap: 10px;
 }
 
+/* Live countdown to the next fruit multiplier refresh. */
+.mult-refresh-box {
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 179, 0, 0.25);
+  box-shadow: 0 0 6px rgba(255, 179, 0, 0.08);
+}
+
+.mult-refresh-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.mult-refresh-label i {
+  animation: mult-spin 3s linear infinite;
+}
+
+@keyframes mult-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .multiplier-item {
   background: var(--bg-card); /* mahogany wood plank */
   border: 1px solid rgba(139, 90, 43, 0.2);

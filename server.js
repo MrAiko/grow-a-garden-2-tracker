@@ -635,7 +635,7 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   }
 
   let fruitMultipliers = {};
-  const hasIncomingMultipliers = newStock.fruitMultipliers && 
+  const hasIncomingMultipliers = newStock.fruitMultipliers &&
     (Array.isArray(newStock.fruitMultipliers) ? newStock.fruitMultipliers.length > 0 : Object.keys(newStock.fruitMultipliers).length > 0);
 
   if (hasIncomingMultipliers) {
@@ -644,11 +644,22 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
     fruitMultipliers = currentStock.fruitMultipliers;
   }
 
+  // Fruit refresh countdown: the scraper sends the remaining seconds until the next
+  // in-game multiplier refresh. We convert it to an ABSOLUTE unix timestamp so the
+  // website can run a live countdown without depending on scrape timing. Keep the last
+  // known value if the scraper didn't send one this tick.
+  let fruitRefreshAt = currentStock && currentStock.fruitRefreshAt ? currentStock.fruitRefreshAt : 0;
+  if (typeof newStock.fruitRefreshTimer === 'number' && newStock.fruitRefreshTimer > 0) {
+    fruitRefreshAt = Math.floor(Date.now() / 1000) + newStock.fruitRefreshTimer;
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
     weather: newStock.weather,
     fruitMultipliers: fruitMultipliers,
+    // Absolute unix timestamp (seconds) when the next fruit refresh happens.
+    fruitRefreshAt: fruitRefreshAt,
     updatedAt: Date.now()
   };
 
