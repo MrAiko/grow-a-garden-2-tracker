@@ -664,6 +664,10 @@ app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
   };
 
   saveStockData();
+  broadcast({
+    type: 'stock',
+    stock: currentStock
+  });
 
   res.json({ success: true, isRestockTimeUpdated });
 });
@@ -904,6 +908,10 @@ async function fetchDiscordPredictions() {
     if (parsed) {
       currentPredictions = parsed;
       savePredictionsData();
+      broadcast({
+        type: 'predictions',
+        predictions: currentPredictions
+      });
       console.log('Successfully fetched and updated predictions from Discord.');
     }
   } catch (err) {
@@ -917,6 +925,55 @@ if (DISCORD_TOKEN) {
   setInterval(fetchDiscordPredictions, 180 * 1000);
 }
 
-app.listen(PORT, () => {
+const http = require('http');
+const server = http.createServer(app);
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ server });
+
+// WebSocket clients pool
+const wsClients = new Set();
+
+wss.on('connection', (ws) => {
+  wsClients.add(ws);
+  
+  // Immediately push the current data to the connecting client
+  ws.send(JSON.stringify({
+    type: 'init',
+    stock: currentStock,
+    predictions: currentPredictions
+  }));
+  
+  ws.on('close', () => {
+    wsClients.delete(ws);
+  });
+  
+  ws.on('error', () => {
+    wsClients.delete(ws);
+  });
+});
+
+// Heartbeat to keep connection alive and prune dead ones
+const interval = setInterval(() => {
+  for (const client of wsClients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.ping();
+    }
+  }
+}, 30000);
+
+wss.on('close', () => {
+  clearInterval(interval);
+});
+
+function broadcast(data) {
+  const payload = JSON.stringify(data);
+  for (const client of wsClients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  }
+}
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

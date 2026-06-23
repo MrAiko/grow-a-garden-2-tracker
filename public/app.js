@@ -1955,8 +1955,111 @@ document.addEventListener('click', (e) => {
 setLanguage(currentLang); // Setup initial translation language
 fetchData();
 fetchPredictions();
-setInterval(fetchData, 5000); // Poll API data every 5 seconds
-setInterval(fetchPredictions, 30000); // Poll predictions data every 30 seconds
+
+// WebSocket Connection Setup
+let ws = null;
+let reconnectDelay = 1000;
+const maxReconnectDelay = 16000;
+
+function connectWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}`;
+  
+  console.log(`Connecting to WebSocket: ${wsUrl}`);
+  ws = new WebSocket(wsUrl);
+  
+  ws.onopen = () => {
+    console.log('WebSocket connection established.');
+    reconnectDelay = 1000; // Reset reconnect delay on successful connection
+    
+    // Update API status UI to show online
+    if (statusData) {
+      statusData.status = 'online';
+      updateStatusUI(statusData);
+    } else {
+      updateStatusUI({ status: 'online', lastUpdated: stockData ? stockData.updatedAt : null });
+    }
+  };
+  
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (!data) return;
+      
+      console.log('Received WebSocket message of type:', data.type);
+      
+      if (data.type === 'init') {
+        if (data.stock) {
+          checkForNotifications(data.stock);
+          checkForMultiplierNotifications(data.stock);
+          checkForWeatherNotifications(data.stock);
+          discoverEnvironments(data.stock.weather);
+          stockData = data.stock;
+          
+          updateUsersOnlineUI(data.stock.visitorCount);
+          renderDashboard();
+        }
+        if (data.predictions) {
+          predictionData = data.predictions;
+          renderPredictions();
+        }
+        
+        // Update status indicators
+        statusData = {
+          status: 'online',
+          lastUpdated: stockData ? stockData.updatedAt : null
+        };
+        updateStatusUI(statusData);
+      } else if (data.type === 'stock') {
+        if (data.stock) {
+          checkForNotifications(data.stock);
+          checkForMultiplierNotifications(data.stock);
+          checkForWeatherNotifications(data.stock);
+          discoverEnvironments(data.stock.weather);
+          stockData = data.stock;
+          
+          updateUsersOnlineUI(data.stock.visitorCount);
+          renderDashboard();
+          
+          statusData = {
+            status: 'online',
+            lastUpdated: stockData ? stockData.updatedAt : null
+          };
+          updateStatusUI(statusData);
+        }
+      } else if (data.type === 'predictions') {
+        if (data.predictions) {
+          predictionData = data.predictions;
+          renderPredictions();
+        }
+      }
+    } catch (err) {
+      console.error('Error handling WebSocket message:', err);
+    }
+  };
+  
+  ws.onclose = (event) => {
+    console.warn(`WebSocket connection closed (code: ${event.code}). Reconnecting...`);
+    updateOfflineStatus();
+    scheduleReconnect();
+  };
+  
+  ws.onerror = (err) => {
+    console.error('WebSocket encountered error:', err);
+    ws.close(); // Ensure close handler triggers reconnection
+  };
+}
+
+function scheduleReconnect() {
+  const jitter = Math.random() * 1000;
+  const delay = Math.min(reconnectDelay, maxReconnectDelay) + jitter;
+  console.log(`Scheduling WebSocket reconnect in ${Math.round(delay)}ms`);
+  reconnectDelay *= 2;
+  setTimeout(connectWebSocket, delay);
+}
+
+connectWebSocket();
+
 
 function triggerPredictionStartNotification(name, timestamp) {
   const notifKey = `pred_${name}_${timestamp}`;
