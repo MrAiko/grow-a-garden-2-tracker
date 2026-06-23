@@ -1837,6 +1837,9 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
           displayName = translatedName;
         }
       }
+      if (item.multiplier) {
+        displayName = `${item.multiplier} ${displayName}`;
+      }
     }
     
     let subText = item.name;

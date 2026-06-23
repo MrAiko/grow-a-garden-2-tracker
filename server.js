@@ -739,26 +739,46 @@ function parseDiscordMessage(text, msgTimestampSec) {
     
     if (!currentSection) continue;
     
+    // Helper to clean name and extract multiplier
+    const parseItemName = (rawName) => {
+      // Strip asterisks
+      const cleanRaw = rawName.replace(/\*/g, '').trim();
+      // Match multiplier prefix like 2x, 11x, etc.
+      const multMatch = cleanRaw.match(/^(\d+x)\s+(.+)$/i);
+      if (multMatch) {
+        return {
+          name: multMatch[2].trim(),
+          multiplier: multMatch[1]
+        };
+      }
+      return {
+        name: cleanRaw,
+        multiplier: ''
+      };
+    };
+    
     // Parse items: Name — <t:TIMESTAMP:R> or Name — Relative Time
     const tsMatch = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*<t:(\d+)(?::\w+)?>/);
     if (tsMatch) {
-      const name = tsMatch[1].trim();
+      const parsedItem = parseItemName(tsMatch[1]);
       const timestamp = parseInt(tsMatch[2], 10);
       result[currentSection].push({
-        name,
+        name: parsedItem.name,
+        multiplier: parsedItem.multiplier,
         relativeText: '', // Will be rendered relative to client time
         timestamp: timestamp
       });
     } else {
       const match = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*(.+)$/);
       if (match) {
-        const name = match[1].trim();
+        const parsedItem = parseItemName(match[1]);
         const relativeText = match[2].trim();
         const offsetSeconds = parseRelativeTime(relativeText);
         const absoluteTimestamp = msgTimestampSec + offsetSeconds;
         
         result[currentSection].push({
-          name,
+          name: parsedItem.name,
+          multiplier: parsedItem.multiplier,
           relativeText,
           timestamp: absoluteTimestamp
         });
