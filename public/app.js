@@ -2032,6 +2032,10 @@ function connectWebSocket() {
           predictionData = data.predictions;
           renderPredictions();
         }
+      } else if (data.type === 'users') {
+        if (data.count !== undefined) {
+          updateUsersOnlineUI(data.count);
+        }
       }
     } catch (err) {
       console.error('Error handling WebSocket message:', err);

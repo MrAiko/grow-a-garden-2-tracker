@@ -10,6 +10,9 @@ const API_PASSWORD = process.env.API_PASSWORD || 'test_password';
 const STOCK_DATA_FILE = path.join(__dirname, process.env.STOCK_DATA_FILE || 'stock_data.json');
 const PREDICTIONS_DATA_FILE = path.join(__dirname, process.env.PREDICTIONS_DATA_FILE || 'predictions_data.json');
 
+// WebSocket clients pool
+const wsClients = new Set();
+
 
 // Security Headers Middleware (standard anti-exploit & clickjacking headers)
 app.use((req, res, next) => {
@@ -109,49 +112,13 @@ function savePredictionsData() {
 }
 
 
-// Track active visitors
-const activeVisitors = new Map();
-
-function getActiveVisitorsCount() {
-  const now = Date.now();
-  for (const [ip, lastSeen] of activeVisitors.entries()) {
-    if (now - lastSeen > 30000) { // 30 seconds timeout
-      activeVisitors.delete(ip);
-    }
-  }
-  return activeVisitors.size || 1;
-}
-
-// API Routes
-app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
-  if (!currentStock) {
-    return res.status(404).json({ error: 'No stock data available yet' });
-  }
+function prepareStockResponse(stock) {
+  if (!stock) return null;
+  const data = JSON.parse(JSON.stringify(stock));
   
-  const clientType = req.query.client;
-  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
-  const isBot = !userAgent || 
-                userAgent.includes('bot') || 
-                userAgent.includes('crawler') || 
-                userAgent.includes('spider') || 
-                userAgent.includes('python') || 
-                userAgent.includes('aiohttp') || 
-                userAgent.includes('requests') || 
-                userAgent.includes('axios') || 
-                userAgent.includes('roblox') || 
-                userAgent.includes('curl') || 
-                userAgent.includes('wget');
-
-  if (clientType === 'web' && !isBot) {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    activeVisitors.set(ip, Date.now());
-  }
-  
-  // Clone currentStock and rewrite image URLs to proxy URLs
-  const responseData = JSON.parse(JSON.stringify(currentStock));
-  if (responseData.shops) {
-    for (const shopKey of Object.keys(responseData.shops)) {
-      const items = responseData.shops[shopKey] || [];
+  if (data.shops) {
+    for (const shopKey of Object.keys(data.shops)) {
+      const items = data.shops[shopKey] || [];
       items.forEach(item => {
         if (item.image && item.image.startsWith('http')) {
           item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
@@ -160,16 +127,25 @@ app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
     }
   }
   
-  if (responseData.fruitMultipliers && Array.isArray(responseData.fruitMultipliers)) {
-    responseData.fruitMultipliers.forEach(item => {
+  if (data.fruitMultipliers && Array.isArray(data.fruitMultipliers)) {
+    data.fruitMultipliers.forEach(item => {
       if (item.image && item.image.startsWith('http')) {
         item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
       }
     });
   }
   
-  responseData.visitorCount = getActiveVisitorsCount();
-  res.json(responseData);
+  data.visitorCount = Math.max(wsClients.size, 1);
+  return data;
+}
+
+// API Routes
+app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
+  if (!currentStock) {
+    return res.status(404).json({ error: 'No stock data available yet' });
+  }
+  
+  res.json(prepareStockResponse(currentStock));
 });
 
 // Cache for proxied image buffers to bypass Russian IP throttling on Roblox CDNs
@@ -660,7 +636,7 @@ async function handleUpdateStock(newStock) {
   saveStockData();
   broadcast({
     type: 'stock',
-    stock: currentStock
+    stock: prepareStockResponse(currentStock)
   });
 
   return { success: true, isRestockTimeUpdated };
@@ -939,16 +915,21 @@ const server = http.createServer(app);
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
 
-// WebSocket clients pool
-const wsClients = new Set();
+function broadcastUserCount() {
+  broadcast({
+    type: 'users',
+    count: Math.max(wsClients.size, 1)
+  });
+}
 
 wss.on('connection', (ws) => {
   wsClients.add(ws);
+  broadcastUserCount();
   
   // Immediately push the current data to the connecting client
   ws.send(JSON.stringify({
     type: 'init',
-    stock: currentStock,
+    stock: prepareStockResponse(currentStock),
     predictions: currentPredictions
   }));
   
@@ -973,10 +954,12 @@ wss.on('connection', (ws) => {
   
   ws.on('close', () => {
     wsClients.delete(ws);
+    broadcastUserCount();
   });
   
   ws.on('error', () => {
     wsClients.delete(ws);
+    broadcastUserCount();
   });
 });
 
