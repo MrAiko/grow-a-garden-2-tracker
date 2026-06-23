@@ -838,7 +838,12 @@ async function fetchDiscordPredictions() {
     }
     
     if (!response.ok) {
-      console.error(`Failed to fetch Discord messages: ${response.status} ${response.statusText}`);
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('retry-after');
+        console.error(`Failed to fetch Discord messages: 429 Too Many Requests (retry-after: ${retryAfter || 'unknown'}s)`);
+      } else {
+        console.error(`Failed to fetch Discord messages: ${response.status} ${response.statusText}`);
+      }
       return;
     }
     
@@ -878,10 +883,10 @@ async function fetchDiscordPredictions() {
   }
 }
 
-// Start background scraper if token is configured
+// Start background scraper if token is configured (every 3 minutes to avoid Discord rate limiting)
 if (DISCORD_TOKEN) {
   fetchDiscordPredictions();
-  setInterval(fetchDiscordPredictions, 15 * 1000);
+  setInterval(fetchDiscordPredictions, 180 * 1000);
 }
 
 app.listen(PORT, () => {
