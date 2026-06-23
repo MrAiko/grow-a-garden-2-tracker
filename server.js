@@ -436,7 +436,7 @@ function getMaxWeatherEndTime(sessions, mergedWeathers = {}) {
   return maxEndTime;
 }
 
-app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
+app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
   const reqPassword = req.headers['x-api-password'] || req.body.password;
   if (reqPassword !== API_PASSWORD) {
     return res.status(401).json({ error: 'Unauthorized' });
