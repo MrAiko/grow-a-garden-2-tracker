@@ -520,13 +520,35 @@ langEnBtn.addEventListener('click', () => setLanguage('en'));
 // API Poll Functions
 async function fetchData() {
   try {
-    const [stockRes, statusRes] = await Promise.all([
-      fetch('/api/stock?client=web'),
-      fetch('/api/status')
-    ]);
+    let newStockData = null;
+    
+    // 1. Fetch Stock Data
+    try {
+      const stockRes = await fetch('/api/stock?client=web');
+      if (stockRes.ok) {
+        newStockData = await stockRes.json();
+      } else if (stockRes.status === 429) {
+        console.warn('Stock API rate limited (429)');
+      }
+    } catch (err) {
+      console.error('Error fetching stock:', err);
+    }
 
-    if (stockRes.ok) {
-      const newStockData = await stockRes.json();
+    // 2. Fetch API Status
+    try {
+      const statusRes = await fetch('/api/status');
+      if (statusRes.ok) {
+        statusData = await statusRes.json();
+        updateStatusUI(statusData);
+      } else if (statusRes.status === 429) {
+        console.warn('Status API rate limited (429)');
+      }
+    } catch (err) {
+      console.error('Error fetching status:', err);
+    }
+    
+    // 3. Process new data if successfully fetched
+    if (newStockData) {
       checkForNotifications(newStockData);
       checkForMultiplierNotifications(newStockData);
       checkForWeatherNotifications(newStockData);
@@ -535,19 +557,16 @@ async function fetchData() {
       
       // Update online users count
       updateUsersOnlineUI(newStockData.visitorCount);
-    }
-    
-    if (statusRes.ok) {
-      statusData = await statusRes.json();
-      updateStatusUI(statusData);
-    }
-    
-    if (stockData) {
       renderDashboard();
+    } else if (!stockData) {
+      // Only set offline if we don't have any cached data at all
+      updateOfflineStatus();
     }
   } catch (err) {
     console.error('Error fetching dashboard data:', err);
-    updateOfflineStatus();
+    if (!stockData) {
+      updateOfflineStatus();
+    }
   }
 }
 

@@ -123,7 +123,7 @@ function getActiveVisitorsCount() {
 }
 
 // API Routes
-app.get('/api/stock', rateLimiter(60, 60000), (req, res) => {
+app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
   if (!currentStock) {
     return res.status(404).json({ error: 'No stock data available yet' });
   }
@@ -210,7 +210,7 @@ app.get('/api/proxy-image', async (req, res) => {
 // thumbnails API (two-step), then proxy the resulting CDN image. This bypasses
 // Russian ISP throttling of tr.rbxcdn.com and lets the website show fruit icons
 // even when only an asset id (no readable name) is available.
-app.get('/api/fruit-image', rateLimiter(60, 60000), async (req, res) => {
+app.get('/api/fruit-image', rateLimiter(300, 60000), async (req, res) => {
   const assetId = req.query.asset;
   if (!assetId || !/^\d+$/.test(assetId)) {
     return res.status(400).send('Invalid asset id');
@@ -665,7 +665,7 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
 });
 
 // Serve predictions API
-app.get('/api/predictions', rateLimiter(60, 60000), (req, res) => {
+app.get('/api/predictions', rateLimiter(300, 60000), (req, res) => {
   if (!currentPredictions) {
     return res.status(404).json({ error: 'No prediction data available yet' });
   }
@@ -673,7 +673,7 @@ app.get('/api/predictions', rateLimiter(60, 60000), (req, res) => {
 });
 
 // Serve web app status endpoint
-app.get('/api/status', rateLimiter(60, 60000), (req, res) => {
+app.get('/api/status', rateLimiter(300, 60000), (req, res) => {
   res.json({
     status: 'online',
     lastUpdated: currentStock ? currentStock.updatedAt : null
@@ -814,6 +814,23 @@ function extractTextFromComponents(components) {
   return texts;
 }
 
+function extractTextFromEmbeds(embeds) {
+  let texts = [];
+  if (!embeds) return texts;
+  for (const embed of embeds) {
+    if (embed.title) texts.push(embed.title);
+    if (embed.description) texts.push(embed.description);
+    if (embed.fields) {
+      for (const field of embed.fields) {
+        if (field.name) texts.push(field.name);
+        if (field.value) texts.push(field.value);
+      }
+    }
+    if (embed.footer && embed.footer.text) texts.push(embed.footer.text);
+  }
+  return texts;
+}
+
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
 
@@ -857,7 +874,13 @@ async function fetchDiscordPredictions() {
     const msg = messages.find(m => {
       const hasContent = m.content && (m.content.includes('Seeds') || m.content.includes('Next Seen'));
       const hasComponents = m.components && m.components.length > 0;
-      return hasContent || hasComponents;
+      const hasEmbeds = m.embeds && m.embeds.some(e => {
+        const titleMatch = e.title && (e.title.includes('Seeds') || e.title.includes('Next Seen'));
+        const descMatch = e.description && (e.description.includes('Seeds') || e.description.includes('Next Seen'));
+        const fieldsMatch = e.fields && e.fields.some(f => f.name.includes('Seeds') || f.value.includes('Seeds'));
+        return titleMatch || descMatch || fieldsMatch;
+      });
+      return hasContent || hasComponents || hasEmbeds;
     });
     
     if (!msg) {
@@ -865,9 +888,10 @@ async function fetchDiscordPredictions() {
       return;
     }
     
-    // Extract text from component layouts recursively
+    // Extract text from components and embeds recursively
     const componentTexts = extractTextFromComponents(msg.components);
-    const fullText = (msg.content || '') + '\n' + componentTexts.join('\n');
+    const embedTexts = extractTextFromEmbeds(msg.embeds);
+    const fullText = (msg.content || '') + '\n' + componentTexts.join('\n') + '\n' + embedTexts.join('\n');
     
     const baseTime = msg.edited_timestamp || msg.timestamp;
     const baseTimeSec = Math.floor(new Date(baseTime).getTime() / 1000);
