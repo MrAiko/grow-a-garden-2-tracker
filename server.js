@@ -635,7 +635,10 @@ app.post('/api/update-stock', rateLimiter(20, 60000), async (req, res) => {
   }
 
   let fruitMultipliers = {};
-  if (newStock.fruitMultipliers) {
+  const hasIncomingMultipliers = newStock.fruitMultipliers && 
+    (Array.isArray(newStock.fruitMultipliers) ? newStock.fruitMultipliers.length > 0 : Object.keys(newStock.fruitMultipliers).length > 0);
+
+  if (hasIncomingMultipliers) {
     fruitMultipliers = newStock.fruitMultipliers;
   } else if (currentStock && currentStock.fruitMultipliers) {
     fruitMultipliers = currentStock.fruitMultipliers;
