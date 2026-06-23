@@ -436,15 +436,9 @@ function getMaxWeatherEndTime(sessions, mergedWeathers = {}) {
   return maxEndTime;
 }
 
-app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
-  const reqPassword = req.headers['x-api-password'] || req.body.password;
-  if (reqPassword !== API_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const newStock = req.body;
+async function handleUpdateStock(newStock) {
   if (!newStock || !newStock.shops) {
-    return res.status(400).json({ error: 'Invalid stock data structure' });
+    throw new Error('Invalid stock data structure');
   }
 
   const jobId = newStock.jobId || 'default';
@@ -669,7 +663,22 @@ app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
     stock: currentStock
   });
 
-  res.json({ success: true, isRestockTimeUpdated });
+  return { success: true, isRestockTimeUpdated };
+}
+
+app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
+  const reqPassword = req.headers['x-api-password'] || req.body.password;
+  if (reqPassword !== API_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const result = await handleUpdateStock(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Error in POST /api/update-stock:', err);
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
+  }
 });
 
 // Serve predictions API
@@ -942,6 +951,25 @@ wss.on('connection', (ws) => {
     stock: currentStock,
     predictions: currentPredictions
   }));
+  
+  ws.on('message', async (message) => {
+    try {
+      const payload = JSON.parse(message.toString());
+      if (payload && payload.type === 'update-stock') {
+        const reqPassword = payload.password;
+        if (reqPassword !== API_PASSWORD) {
+          ws.send(JSON.stringify({ type: 'error', error: 'Unauthorized' }));
+          return;
+        }
+        
+        console.log('Received stock update from Roblox via WebSocket.');
+        const result = await handleUpdateStock(payload.data || payload);
+        ws.send(JSON.stringify({ type: 'update-stock-response', success: result.success }));
+      }
+    } catch (err) {
+      console.error('Error handling WebSocket message:', err);
+    }
+  });
   
   ws.on('close', () => {
     wsClients.delete(ws);
