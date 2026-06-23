@@ -418,11 +418,7 @@ function getMergedWeather() {
 }
 
 function normalizeEndTime(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  if (n > 1_000_000_000_000) return Math.floor(n / 1000);
-  if (n < 86_400) return Math.floor(Date.now() / 1000 + n);
-  return Math.floor(n);
+  return 0;
 }
 
 function getMaxWeatherEndTime(sessions, mergedWeathers = {}) {
