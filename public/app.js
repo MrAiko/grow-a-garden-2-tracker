@@ -675,6 +675,7 @@ function updateWeatherUI() {
       weatherBox.innerHTML = `
         <span class="weather-label">${t.weatherLabelActive}</span>
         <span class="weather-val" style="color: var(--text-secondary)">--</span>
+        <span class="weather-detail weather-timer-countdown">--:--:--</span>
       `;
       weatherContainer.appendChild(weatherBox);
     }
@@ -782,6 +783,7 @@ function updateWeatherUI() {
           weatherBox.innerHTML = `
             <span class="weather-label">${t.weatherLabelActive}</span>
             <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
+            <span class="weather-detail weather-timer-countdown">--:--:--</span>
           `;
           weatherContainer.appendChild(weatherBox);
         });
@@ -793,6 +795,7 @@ function updateWeatherUI() {
         weatherBox.innerHTML = `
           <span class="weather-label">${t.weatherLabelActive}</span>
           <span class="weather-val" style="color: var(--text-secondary)">${t.weatherNone}</span>
+          <span class="weather-detail weather-timer-countdown">--:--:--</span>
         `;
         weatherContainer.appendChild(weatherBox);
       }
