@@ -892,6 +892,19 @@ function extractTextFromEmbeds(embeds) {
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
 
+function isPredictionsMessage(fullText) {
+  if (!fullText) return false;
+  const textLower = fullText.toLowerCase();
+  
+  let score = 0;
+  if (textLower.includes('seeds') || textLower.includes('семена')) score++;
+  if (textLower.includes('gears') || textLower.includes('gear') || textLower.includes('снаряжение') || textLower.includes('инструменты')) score++;
+  if (textLower.includes('props') || textLower.includes('crates') || textLower.includes('ящики') || textLower.includes('декор')) score++;
+  if (textLower.includes('weather') || textLower.includes('moon') || textLower.includes('погода') || textLower.includes('лун')) score++;
+  
+  return score >= 2;
+}
+
 async function fetchDiscordPredictions() {
   if (!DISCORD_TOKEN) {
     console.warn('DISCORD_TOKEN is not set in .env. Discord predictions scraper is disabled.');
@@ -928,28 +941,32 @@ async function fetchDiscordPredictions() {
       return;
     }
     
-    // Search the last 10 messages for predictions message (using case-insensitive regex for synonyms)
-    const searchRegex = /seeds|next seen|gears|props|crates|weather|сток|завоз/i;
-    let msg = messages.find(m => {
-      const hasContent = m.content && searchRegex.test(m.content);
-      const hasComponents = m.components && m.components.length > 0;
-      const hasEmbeds = m.embeds && m.embeds.some(e => {
-        const titleMatch = e.title && searchRegex.test(e.title);
-        const descMatch = e.description && searchRegex.test(e.description);
-        const fieldsMatch = e.fields && e.fields.some(f => searchRegex.test(f.name) || searchRegex.test(f.value));
-        return titleMatch || descMatch || fieldsMatch;
-      });
-      return hasContent || hasComponents || hasEmbeds;
-    });
+    // Search the last 10 messages for a predictions message
+    let msg = null;
+    for (const m of messages) {
+      const componentTexts = extractTextFromComponents(m.components);
+      const embedTexts = extractTextFromEmbeds(m.embeds);
+      const fullText = (m.content || '') + '\n' + componentTexts.join('\n') + '\n' + embedTexts.join('\n');
+      
+      if (isPredictionsMessage(fullText)) {
+        msg = m;
+        break;
+      }
+    }
     
-    // Fallback to the latest message in the predictions channel if no strict match was found
+    // Fallback to the latest message only if it contains at least some prediction keywords
     if (!msg && messages.length > 0) {
-      console.warn('No predictions message matched strict criteria. Falling back to the latest message in predictions channel.');
-      msg = messages[0];
+      const firstMsgText = (messages[0].content || '') + '\n' + 
+                           extractTextFromComponents(messages[0].components).join('\n') + '\n' + 
+                           extractTextFromEmbeds(messages[0].embeds).join('\n');
+      if (firstMsgText.toLowerCase().includes('seeds') || firstMsgText.toLowerCase().includes('gears')) {
+        console.warn('No predictions message matched strict criteria. Falling back to the latest message.');
+        msg = messages[0];
+      }
     }
     
     if (!msg) {
-      console.warn('No predictions message found in the last 10 messages.');
+      console.warn('No valid predictions message (containing seeds/gears/props/weather sections) was found in the last 10 messages.');
       return;
     }
     
@@ -959,17 +976,29 @@ async function fetchDiscordPredictions() {
     const fullText = (msg.content || '') + '\n' + componentTexts.join('\n') + '\n' + embedTexts.join('\n');
     
     const baseTime = msg.edited_timestamp || msg.timestamp;
-    const baseTimeSec = Math.floor(new Date(baseTime).getTime() / 1000);
+    let baseTimeSec = Math.floor(new Date(baseTime).getTime() / 1000);
+    if (isNaN(baseTimeSec)) {
+      baseTimeSec = Math.floor(Date.now() / 1000);
+    }
     
     const parsed = parseDiscordMessage(fullText, baseTimeSec);
     if (parsed) {
-      currentPredictions = parsed;
-      savePredictionsData();
-      broadcast({
-        type: 'predictions',
-        predictions: currentPredictions
-      });
-      console.log('Successfully fetched and updated predictions from Discord.');
+      const totalItems = (parsed.seeds?.length || 0) + 
+                         (parsed.gears?.length || 0) + 
+                         (parsed.props?.length || 0) + 
+                         (parsed.weathers?.length || 0);
+                         
+      if (totalItems > 0) {
+        currentPredictions = parsed;
+        savePredictionsData();
+        broadcast({
+          type: 'predictions',
+          predictions: currentPredictions
+        });
+        console.log(`Successfully fetched and updated predictions from Discord (${totalItems} items).`);
+      } else {
+        console.warn('Fetched Discord message contained 0 prediction items. Skipping update to prevent wiping out data.');
+      }
     }
   } catch (err) {
     console.error('Error in Discord predictions scraper:', err);

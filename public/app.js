@@ -1816,17 +1816,21 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
   const now = Math.floor(Date.now() / 1000);
   const t = translations[currentLang];
   
-  // Sort: upcoming items first (by timestamp asc), past items last (by timestamp desc)
-  const upcoming = items.filter(i => i.timestamp > now).sort((a, b) => a.timestamp - b.timestamp);
-  const past = items.filter(i => i.timestamp <= now).sort((a, b) => b.timestamp - a.timestamp);
+  // Separate currently in stock items from future and past predictions
+  const inStock = items.filter(i => i.relativeText && (i.relativeText.toLowerCase().includes('stock') || i.relativeText.toLowerCase().includes('наличии')));
+  const rest = items.filter(i => !inStock.includes(i));
   
-  const sortedItems = [...upcoming, ...past];
+  const upcoming = rest.filter(i => i.timestamp > now).sort((a, b) => a.timestamp - b.timestamp);
+  const past = rest.filter(i => i.timestamp <= now).sort((a, b) => b.timestamp - a.timestamp);
+  
+  const sortedItems = [...inStock, ...upcoming, ...past];
   
   grid.innerHTML = '';
   
   sortedItems.forEach(item => {
     const card = document.createElement('div');
-    const isPast = item.timestamp <= now;
+    const isCurrentlyOnStock = inStock.includes(item);
+    const isPast = !isCurrentlyOnStock && item.timestamp <= now;
     let extraClass = '';
     if (!isPast) {
       if (gridId === 'prediction-seeds-grid') extraClass = ' pred-card-seeds';
@@ -1839,6 +1843,9 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       }
     }
     card.className = isPast ? 'prediction-card past-item' : `prediction-card${extraClass}`;
+    if (isCurrentlyOnStock) {
+      card.className += ' currently-in-stock-card';
+    }
     
     // Determine translation and emoji
     let displayName = item.name;
@@ -1869,12 +1876,18 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       subText = isWeather ? 'Weather / Moon' : 'Item';
     }
     
-    const statusText = isPast ? t.predictionStatusPast : t.predictionStatusUpcoming;
-    const badgeClass = isPast ? 'prediction-badge past' : 'prediction-badge upcoming';
-    
-    const diff = item.timestamp - now;
     let timerText = '';
-    if (isPast) {
+    let statusText = '';
+    let badgeClass = '';
+    
+    if (isCurrentlyOnStock) {
+      timerText = currentLang === 'ru' ? 'В наличии' : 'In Stock';
+      statusText = currentLang === 'ru' ? 'В наличии' : 'In Stock';
+      badgeClass = 'prediction-badge upcoming';
+    } else if (isPast) {
+      statusText = t.predictionStatusPast;
+      badgeClass = 'prediction-badge past';
+      const diff = item.timestamp - now;
       const absDiff = Math.abs(diff);
       if (absDiff < 60) {
         timerText = t.predictionTimeJustNow;
@@ -1888,6 +1901,9 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
     } else {
+      statusText = t.predictionStatusUpcoming;
+      badgeClass = 'prediction-badge upcoming';
+      const diff = item.timestamp - now;
       if (diff < 60) {
         timerText = t.predictionTimeSoon;
       } else {
@@ -1906,13 +1922,14 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     const bellClass = isTracked ? 'bell-active' : '';
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
     const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
-
-    const bellHtml = isPast ? '' : `
+    
+    const showBell = !isPast && !isCurrentlyOnStock;
+    const bellHtml = !showBell ? '' : `
       <button class="prediction-bell-btn ${bellClass}" data-name="${item.name}" data-timestamp="${item.timestamp}" data-isweather="${isWeather}" title="${bellTitle}">
         <i class="${bellIcon}"></i>
       </button>
     `;
-
+    
     card.innerHTML = `
       <div class="prediction-info">
         <div style="display: flex; align-items: center; gap: 8px;">
