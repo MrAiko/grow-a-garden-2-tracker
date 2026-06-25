@@ -580,6 +580,19 @@ async function handleUpdateStock(newStock) {
     });
   }
 
+  if (newStock.weather) {
+    if (newStock.weather.phaseImage && !newStock.weather.phaseImage.startsWith('http')) {
+      assetIdsToResolve.push(newStock.weather.phaseImage);
+    }
+    if (newStock.weather.weathers) {
+      for (const info of Object.values(newStock.weather.weathers)) {
+        if (info.image && !info.image.startsWith('http')) {
+          assetIdsToResolve.push(info.image);
+        }
+      }
+    }
+  }
+
   if (assetIdsToResolve.length > 0) {
     const resolvedMap = await resolveAssetThumbnailsBatch(assetIdsToResolve);
     
@@ -601,6 +614,19 @@ async function handleUpdateStock(newStock) {
           item.image = resolvedMap[item.image] || item.image;
         }
       });
+    }
+
+    if (newStock.weather) {
+      if (newStock.weather.phaseImage && !newStock.weather.phaseImage.startsWith('http')) {
+        newStock.weather.phaseImage = resolvedMap[newStock.weather.phaseImage] || newStock.weather.phaseImage;
+      }
+      if (newStock.weather.weathers) {
+        for (const info of Object.values(newStock.weather.weathers)) {
+          if (info.image && !info.image.startsWith('http')) {
+            info.image = resolvedMap[info.image] || info.image;
+          }
+        }
+      }
     }
   }
 
@@ -677,32 +703,38 @@ app.get('/api/status', rateLimiter(300, 60000), (req, res) => {
 function parseRelativeTime(str) {
   str = str.trim().toLowerCase();
   
+  let multiplier = 1;
+  let val = str;
+  
   if (str.startsWith('через') || str.startsWith('in')) {
-    const val = str.replace('через', '').replace('in', '').trim();
-    if (val === 'час' || val === 'an hour' || val === 'hour') return 3600;
-    if (val === 'минуту' || val === 'a minute' || val === 'minute') return 60;
-    
-    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
-    if (minMatch) return parseInt(minMatch[1], 10) * 60;
-    
-    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
-    if (hourMatch) return parseInt(hourMatch[1], 10) * 3600;
+    multiplier = 1;
+    val = str.replace('через', '').replace('in', '').trim();
+  } else if (str.endsWith('назад') || str.endsWith('ago')) {
+    multiplier = -1;
+    val = str.replace('назад', '').replace('ago', '').trim();
   }
   
-  if (str.endsWith('назад') || str.endsWith('ago')) {
-    const val = str.replace('назад', '').replace('ago', '').trim();
-    if (val === 'час' || val === 'an hour' || val === 'hour') return -3600;
-    if (val === 'минуту' || val === 'a minute' || val === 'minute') return -60;
-    
-    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
-    if (minMatch) return -parseInt(minMatch[1], 10) * 60;
-    
-    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
-    if (hourMatch) return -parseInt(hourMatch[1], 10) * 3600;
-  }
+  if (val === 'час' || val === 'an hour' || val === 'hour') return multiplier * 3600;
+  if (val === 'минуту' || val === 'a minute' || val === 'minute') return multiplier * 60;
+  if (val === 'день' || val === 'a day' || val === 'day') return multiplier * 86400;
+  if (val === 'секунду' || val === 'a second' || val === 'second') return multiplier * 1;
+  
+  const secMatch = val.match(/^(\d+)\s*(?:секунд|сек|sec)/);
+  if (secMatch) return multiplier * parseInt(secMatch[1], 10);
+  
+  const minMatch = val.match(/^(\d+)\s*(?:мину|мин|min)/);
+  if (minMatch) return multiplier * parseInt(minMatch[1], 10) * 60;
+  
+  const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
+  if (hourMatch) return multiplier * parseInt(hourMatch[1], 10) * 3600;
+  
+  const dayMatch = val.match(/^(\d+)\s*(?:ден|дне|дня|day)/);
+  if (dayMatch) return multiplier * parseInt(dayMatch[1], 10) * 86400;
   
   if (str === 'час назад' || str === 'an hour ago') return -3600;
   if (str === 'через час' || str === 'in an hour') return 3600;
+  if (str === 'день назад' || str === 'a day ago') return -86400;
+  if (str === 'через день' || str === 'in a day') return 86400;
 
   return 0;
 }
@@ -758,51 +790,61 @@ function parseDiscordMessage(text, msgTimestampSec) {
     
     const lineLower = line.toLowerCase();
     
-    // 1. Try to match as an item line first to prevent items containing header keywords (like "Crate" or "Moon") from being misclassified
+    // 1. Try to match as an item line first
     const tsRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*<t:(\d+)(?::\w+)?>/;
     const relRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*(.+)$/;
     
     const tsMatch = line.match(tsRegex);
     const relMatch = line.match(relRegex);
     
-    if (tsMatch && currentSection) {
-      const parsedItem = parseItemName(tsMatch[1]);
-      const timestamp = parseInt(tsMatch[2], 10);
-      result[currentSection].push({
-        name: parsedItem.name,
-        multiplier: parsedItem.multiplier,
-        relativeText: '', // Will be rendered relative to client time
-        timestamp: timestamp
-      });
-      continue;
-    } else if (relMatch && currentSection) {
-      const parsedItem = parseItemName(relMatch[1]);
-      const relativeText = relMatch[2].trim();
-      const offsetSeconds = parseRelativeTime(relativeText);
-      const absoluteTimestamp = msgTimestampSec + offsetSeconds;
-      
+    let isItemLine = false;
+    let parsedItem = null;
+    let timestamp = 0;
+    let relativeText = '';
+    
+    if (tsMatch) {
+      isItemLine = true;
+      parsedItem = parseItemName(tsMatch[1]);
+      timestamp = parseInt(tsMatch[2], 10);
+    } else if (relMatch) {
+      relativeText = relMatch[2].trim();
+      const relativeLower = relativeText.toLowerCase();
+      // Ensure the relative text actually represents a relative timestamp offset
+      const hasTimeKeywords = (
+        relativeLower.includes('секунд') || relativeLower.includes('сек') || relativeLower.includes('sec') ||
+        relativeLower.includes('мину') || relativeLower.includes('мин') || relativeLower.includes('min') ||
+        relativeLower.includes('час') || relativeLower.includes('hour') ||
+        relativeLower.includes('ден') || relativeLower.includes('дня') || relativeLower.includes('дне') || relativeLower.includes('day') ||
+        relativeLower.includes('назад') || relativeLower.includes('ago') ||
+        relativeLower.includes('через') || relativeLower.includes('in')
+      );
+      if (hasTimeKeywords) {
+        isItemLine = true;
+        parsedItem = parseItemName(relMatch[1]);
+        const offsetSeconds = parseRelativeTime(relativeText);
+        timestamp = msgTimestampSec + offsetSeconds;
+      }
+    }
+    
+    if (isItemLine && currentSection) {
       result[currentSection].push({
         name: parsedItem.name,
         multiplier: parsedItem.multiplier,
         relativeText,
-        timestamp: absoluteTimestamp
+        timestamp
       });
       continue;
     }
     
-    // 2. If it's not an item line, check if it's a section header with synonym support
+    // 2. If it's not a valid item line, check if it's a section header with synonym support
     if (lineLower.includes('seeds') || lineLower.includes('семена')) {
       currentSection = 'seeds';
-      continue;
     } else if (lineLower.includes('gears') || lineLower.includes('gear') || lineLower.includes('снаряжение') || lineLower.includes('инструменты')) {
       currentSection = 'gears';
-      continue;
     } else if (lineLower.includes('props') || lineLower.includes('crates') || lineLower.includes('crate') || lineLower.includes('prop') || lineLower.includes('ящики') || lineLower.includes('декор')) {
       currentSection = 'props';
-      continue;
     } else if (lineLower.includes('weather') || lineLower.includes('moons') || lineLower.includes('moon') || lineLower.includes('погода') || lineLower.includes('луны')) {
       currentSection = 'weathers';
-      continue;
     }
   }
   
