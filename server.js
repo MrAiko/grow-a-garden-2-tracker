@@ -707,7 +707,24 @@ function parseRelativeTime(str) {
   return 0;
 }
 
+function cleanItemName(name) {
+  if (!name) return '';
+  // 1. Remove Discord custom emojis of format <:name:id> or <a:name:id>
+  let clean = name.replace(/<a?:\w+:\d+>/g, '');
+  // 2. Remove standard Unicode emojis and symbols
+  clean = clean.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{1F1E6}-\u{1F1FF}]/gu, '');
+  // 3. Remove variation selectors and non-breaking spaces
+  clean = clean.replace(/[\uFE00-\uFE0F\u200B-\u200D\uFEFF]/g, '');
+  // 4. Remove asterisks, dashes, bullet points
+  clean = clean.replace(/[*•\-–—]/g, '');
+  // 5. Replace multiple spaces with a single space and trim
+  return clean.replace(/\s+/g, ' ').trim();
+}
+
 function parseDiscordMessage(text, msgTimestampSec) {
+  // Strip Discord custom emojis from the entire message text
+  text = text.replace(/<a?:\w+:\d+>/g, '');
+
   const lines = text.split('\n');
   const result = {
     updatedAt: msgTimestampSec * 1000,
@@ -717,6 +734,22 @@ function parseDiscordMessage(text, msgTimestampSec) {
     weathers: []
   };
   
+  const parseItemName = (rawName) => {
+    const cleaned = cleanItemName(rawName);
+    // Match multiplier prefix like 2x, 11x, etc.
+    const multMatch = cleaned.match(/^(\d+x)\s+(.+)$/i);
+    if (multMatch) {
+      return {
+        name: multMatch[2].trim(),
+        multiplier: multMatch[1]
+      };
+    }
+    return {
+      name: cleaned,
+      multiplier: ''
+    };
+  };
+
   let currentSection = null;
   
   for (let line of lines) {
@@ -725,44 +758,14 @@ function parseDiscordMessage(text, msgTimestampSec) {
     
     const lineLower = line.toLowerCase();
     
-    // Detect section headers
-    if (lineLower.includes('seeds')) {
-      currentSection = 'seeds';
-      continue;
-    } else if (lineLower.includes('gears')) {
-      currentSection = 'gears';
-      continue;
-    } else if (lineLower.includes('props')) {
-      currentSection = 'props';
-      continue;
-    } else if (lineLower.includes('weather')) {
-      currentSection = 'weathers';
-      continue;
-    }
+    // 1. Try to match as an item line first to prevent items containing header keywords (like "Crate" or "Moon") from being misclassified
+    const tsRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*<t:(\d+)(?::\w+)?>/;
+    const relRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*(.+)$/;
     
-    if (!currentSection) continue;
+    const tsMatch = line.match(tsRegex);
+    const relMatch = line.match(relRegex);
     
-    // Helper to clean name and extract multiplier
-    const parseItemName = (rawName) => {
-      // Strip asterisks
-      const cleanRaw = rawName.replace(/\*/g, '').trim();
-      // Match multiplier prefix like 2x, 11x, etc.
-      const multMatch = cleanRaw.match(/^(\d+x)\s+(.+)$/i);
-      if (multMatch) {
-        return {
-          name: multMatch[2].trim(),
-          multiplier: multMatch[1]
-        };
-      }
-      return {
-        name: cleanRaw,
-        multiplier: ''
-      };
-    };
-    
-    // Parse items: Name — <t:TIMESTAMP:R> or Name — Relative Time
-    const tsMatch = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*<t:(\d+)(?::\w+)?>/);
-    if (tsMatch) {
+    if (tsMatch && currentSection) {
       const parsedItem = parseItemName(tsMatch[1]);
       const timestamp = parseInt(tsMatch[2], 10);
       result[currentSection].push({
@@ -771,21 +774,35 @@ function parseDiscordMessage(text, msgTimestampSec) {
         relativeText: '', // Will be rendered relative to client time
         timestamp: timestamp
       });
-    } else {
-      const match = line.match(/^[\-*•\s]*([^—–:-]+?)\s*(?:—|–|-|:)\s*(.+)$/);
-      if (match) {
-        const parsedItem = parseItemName(match[1]);
-        const relativeText = match[2].trim();
-        const offsetSeconds = parseRelativeTime(relativeText);
-        const absoluteTimestamp = msgTimestampSec + offsetSeconds;
-        
-        result[currentSection].push({
-          name: parsedItem.name,
-          multiplier: parsedItem.multiplier,
-          relativeText,
-          timestamp: absoluteTimestamp
-        });
-      }
+      continue;
+    } else if (relMatch && currentSection) {
+      const parsedItem = parseItemName(relMatch[1]);
+      const relativeText = relMatch[2].trim();
+      const offsetSeconds = parseRelativeTime(relativeText);
+      const absoluteTimestamp = msgTimestampSec + offsetSeconds;
+      
+      result[currentSection].push({
+        name: parsedItem.name,
+        multiplier: parsedItem.multiplier,
+        relativeText,
+        timestamp: absoluteTimestamp
+      });
+      continue;
+    }
+    
+    // 2. If it's not an item line, check if it's a section header with synonym support
+    if (lineLower.includes('seeds') || lineLower.includes('семена')) {
+      currentSection = 'seeds';
+      continue;
+    } else if (lineLower.includes('gears') || lineLower.includes('gear') || lineLower.includes('снаряжение') || lineLower.includes('инструменты')) {
+      currentSection = 'gears';
+      continue;
+    } else if (lineLower.includes('props') || lineLower.includes('crates') || lineLower.includes('crate') || lineLower.includes('prop') || lineLower.includes('ящики') || lineLower.includes('декор')) {
+      currentSection = 'props';
+      continue;
+    } else if (lineLower.includes('weather') || lineLower.includes('moons') || lineLower.includes('moon') || lineLower.includes('погода') || lineLower.includes('луны')) {
+      currentSection = 'weathers';
+      continue;
     }
   }
   
@@ -863,18 +880,25 @@ async function fetchDiscordPredictions() {
       return;
     }
     
-    // Search the last 10 messages for predictions message (from Grow A Garden 2 or containing Seeds header)
-    const msg = messages.find(m => {
-      const hasContent = m.content && (m.content.includes('Seeds') || m.content.includes('Next Seen'));
+    // Search the last 10 messages for predictions message (using case-insensitive regex for synonyms)
+    const searchRegex = /seeds|next seen|gears|props|crates|weather|сток|завоз/i;
+    let msg = messages.find(m => {
+      const hasContent = m.content && searchRegex.test(m.content);
       const hasComponents = m.components && m.components.length > 0;
       const hasEmbeds = m.embeds && m.embeds.some(e => {
-        const titleMatch = e.title && (e.title.includes('Seeds') || e.title.includes('Next Seen'));
-        const descMatch = e.description && (e.description.includes('Seeds') || e.description.includes('Next Seen'));
-        const fieldsMatch = e.fields && e.fields.some(f => f.name.includes('Seeds') || f.value.includes('Seeds'));
+        const titleMatch = e.title && searchRegex.test(e.title);
+        const descMatch = e.description && searchRegex.test(e.description);
+        const fieldsMatch = e.fields && e.fields.some(f => searchRegex.test(f.name) || searchRegex.test(f.value));
         return titleMatch || descMatch || fieldsMatch;
       });
       return hasContent || hasComponents || hasEmbeds;
     });
+    
+    // Fallback to the latest message in the predictions channel if no strict match was found
+    if (!msg && messages.length > 0) {
+      console.warn('No predictions message matched strict criteria. Falling back to the latest message in predictions channel.');
+      msg = messages[0];
+    }
     
     if (!msg) {
       console.warn('No predictions message found in the last 10 messages.');
