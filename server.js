@@ -177,6 +177,9 @@ app.get('/api/proxy-image', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=604800'); // Cache for 7 days
     res.send(buffer);
   } catch (err) {
+    if (err.message && err.message.includes('HTTP 404')) {
+      return res.status(404).send('Image not found');
+    }
     console.error('Error proxying image:', err);
     res.status(500).send('Internal Server Error');
   }
