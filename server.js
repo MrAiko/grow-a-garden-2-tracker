@@ -703,33 +703,37 @@ app.get('/api/status', rateLimiter(300, 60000), (req, res) => {
 function parseRelativeTime(str) {
   str = str.trim().toLowerCase();
   
+  let multiplier = 1;
   if (str.startsWith('через') || str.startsWith('in')) {
-    const val = str.replace('через', '').replace('in', '').trim();
-    if (val === 'час' || val === 'an hour' || val === 'hour') return 3600;
-    if (val === 'минуту' || val === 'a minute' || val === 'minute') return 60;
-    
-    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
-    if (minMatch) return parseInt(minMatch[1], 10) * 60;
-    
-    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
-    if (hourMatch) return parseInt(hourMatch[1], 10) * 3600;
+    multiplier = 1;
+  } else if (str.endsWith('назад') || str.endsWith('ago')) {
+    multiplier = -1;
+  } else {
+    multiplier = 1; // Default to positive offset
   }
   
-  if (str.endsWith('назад') || str.endsWith('ago')) {
-    const val = str.replace('назад', '').replace('ago', '').trim();
-    if (val === 'час' || val === 'an hour' || val === 'hour') return -3600;
-    if (val === 'минуту' || val === 'a minute' || val === 'minute') return -60;
-    
-    const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
-    if (minMatch) return -parseInt(minMatch[1], 10) * 60;
-    
-    const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
-    if (hourMatch) return -parseInt(hourMatch[1], 10) * 3600;
-  }
+  let val = str.replace('через', '').replace('in', '').replace('назад', '').replace('ago', '').trim();
+  
+  if (val === 'час' || val === 'an hour' || val === 'hour') return 3600 * multiplier;
+  if (val === 'минуту' || val === 'a minute' || val === 'minute') return 60 * multiplier;
+  if (val === 'секунду' || val === 'a second' || val === 'second') return 1 * multiplier;
+  if (val === 'день' || val === 'a day' || val === 'day') return 86400 * multiplier;
+  
+  const secMatch = val.match(/^(\d+)\s*(?:секу|sec)/);
+  if (secMatch) return parseInt(secMatch[1], 10) * multiplier;
+  
+  const minMatch = val.match(/^(\d+)\s*(?:мину|min)/);
+  if (minMatch) return parseInt(minMatch[1], 10) * 60 * multiplier;
+  
+  const hourMatch = val.match(/^(\d+)\s*(?:час|hour)/);
+  if (hourMatch) return parseInt(hourMatch[1], 10) * 3600 * multiplier;
+  
+  const dayMatch = val.match(/^(\d+)\s*(?:ден|дня|дне|day)/);
+  if (dayMatch) return parseInt(dayMatch[1], 10) * 86400 * multiplier;
   
   if (str === 'час назад' || str === 'an hour ago') return -3600;
   if (str === 'через час' || str === 'in an hour') return 3600;
-
+  
   return 0;
 }
 
@@ -784,7 +788,40 @@ function parseDiscordMessage(text, msgTimestampSec) {
     
     const lineLower = line.toLowerCase();
     
-    // 1. Try to match as an item line first to prevent items containing header keywords (like "Crate" or "Moon") from being misclassified
+    // Check if it's an item line first by checking for duration markers or <t:
+    const isItemLine = line.includes('<t:') || 
+                       lineLower.includes('через') || 
+                       lineLower.includes('назад') || 
+                       lineLower.includes('ago') || 
+                       lineLower.includes('in ') || 
+                       lineLower.includes('секунд') || 
+                       lineLower.includes('минут') || 
+                       lineLower.includes('час') || 
+                       lineLower.includes('ден') || 
+                       lineLower.includes('дня') || 
+                       lineLower.includes('днями') ||
+                       lineLower.includes('day') ||
+                       lineLower.includes('hour') ||
+                       lineLower.includes('minute') ||
+                       lineLower.includes('second');
+                       
+    if (!isItemLine) {
+      // Check section header
+      if (lineLower.includes('seeds') || lineLower.includes('семена')) {
+        currentSection = 'seeds';
+        continue;
+      } else if (lineLower.includes('gears') || lineLower.includes('gear') || lineLower.includes('снаряжение') || lineLower.includes('инструменты')) {
+        currentSection = 'gears';
+        continue;
+      } else if (lineLower.includes('props') || lineLower.includes('crates') || lineLower.includes('crate') || lineLower.includes('prop') || lineLower.includes('ящики') || lineLower.includes('декор')) {
+        currentSection = 'props';
+        continue;
+      } else if (lineLower.includes('weather') || lineLower.includes('moons') || lineLower.includes('moon') || lineLower.includes('погода') || lineLower.includes('луны')) {
+        currentSection = 'weathers';
+        continue;
+      }
+    }
+    
     const tsRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*<t:(\d+)(?::\w+)?>/;
     const relRegex = /^[\-*•\s]*([^—–:➔<>\-]+?)\s*(?:—|–|-|:|➔|->)\s*(.+)$/;
     
@@ -813,21 +850,6 @@ function parseDiscordMessage(text, msgTimestampSec) {
         relativeText,
         timestamp: absoluteTimestamp
       });
-      continue;
-    }
-    
-    // 2. If it's not an item line, check if it's a section header with synonym support
-    if (lineLower.includes('seeds') || lineLower.includes('семена')) {
-      currentSection = 'seeds';
-      continue;
-    } else if (lineLower.includes('gears') || lineLower.includes('gear') || lineLower.includes('снаряжение') || lineLower.includes('инструменты')) {
-      currentSection = 'gears';
-      continue;
-    } else if (lineLower.includes('props') || lineLower.includes('crates') || lineLower.includes('crate') || lineLower.includes('prop') || lineLower.includes('ящики') || lineLower.includes('декор')) {
-      currentSection = 'props';
-      continue;
-    } else if (lineLower.includes('weather') || lineLower.includes('moons') || lineLower.includes('moon') || lineLower.includes('погода') || lineLower.includes('луны')) {
-      currentSection = 'weathers';
       continue;
     }
   }
