@@ -251,18 +251,21 @@ async function resolveAssetThumbnail(assetId) {
 }
 
 // Helper for fetching image with retries
-async function fetchWithRetry(url, attempts = 3) {
+async function fetchWithRetry(url, attempts = 2) {
   let lastError = null;
   for (let i = 0; i < attempts; i++) {
     try {
-      const response = await fetch(url);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (response.ok) return response;
       lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
     } catch (err) {
       lastError = err;
     }
     if (i < attempts - 1) {
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 200));
     }
   }
   throw lastError;

@@ -424,7 +424,7 @@ function getWeatherImageHtml(name, imageId) {
   
   return `
     <span class="weather-icon-img-wrapper">
-      <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+      <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
       <span class="weather-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${emoji}</span>
     </span>
   `;
@@ -515,6 +515,9 @@ function setLanguage(lang) {
   renderWeatherSettings();
   if (stockData) {
     renderDashboard();
+  }
+  if (predictionData) {
+    renderPredictions();
   }
 }
 
@@ -776,9 +779,11 @@ function updateWeatherUI() {
       weatherBox.className = 'weather-box active-weather-item';
       weatherBox.id = 'weather-active-box';
       weatherBox.innerHTML = `
-        <span class="weather-label">${t.weatherLabelActive}</span>
-        <span class="weather-val" style="color: var(--text-secondary)">--</span>
-        <span class="weather-detail weather-timer-countdown">--:--:--</span>
+        <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
+          <span class="weather-label">${t.weatherLabelActive}</span>
+          <span class="weather-val" style="color: var(--text-secondary)">--</span>
+          <span class="weather-detail weather-timer-countdown">--:--:--</span>
+        </div>
       `;
       weatherContainer.appendChild(weatherBox);
     }
@@ -1085,7 +1090,7 @@ function renderMultipliers() {
     // even when there's no readable name.
     const imgUrl = fruitThumbUrl(image);
     const iconHtml = imgUrl
-      ? `<span class="fruit-icon-wrapper"><img src="${imgUrl}" alt="${displayName}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"><span class="fruit-emoji-fallback" style="display: none;">${emoji}</span></span>`
+      ? `<span class="fruit-icon-wrapper"><img src="${imgUrl}" alt="${displayName}" class="fruit-thumb" loading="lazy" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.fruit-emoji-fallback'); if(fb)fb.style.display='inline-flex';"><span class="fruit-emoji-fallback" style="display: none;">${emoji}</span></span>`
       : `<span class="fruit-icon-wrapper">${emoji}</span>`;
 
     let rateClass = '';
@@ -1956,6 +1961,8 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     if (isCurrentlyOnStock) {
       card.className += ' currently-in-stock-card';
     }
+    card.setAttribute('data-timestamp', item.timestamp);
+    card.setAttribute('data-instock', isCurrentlyOnStock ? 'true' : 'false');
     
     // Determine translation and emoji
     let displayName = item.name;
@@ -2073,7 +2080,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       if (srcUrl) {
         imgHtml = `
           <span class="pred-item-image-wrapper">
-            <img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.pred-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
             <span class="pred-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${cleanEmoji}</span>
           </span>
         `;
@@ -2315,12 +2322,91 @@ function triggerPredictionStartNotification(name, timestamp) {
   }
 }
 
+function updatePredictionTimers() {
+  const now = Math.floor(Date.now() / 1000);
+  const t = translations[currentLang];
+  
+  const cards = document.querySelectorAll('.prediction-card');
+  cards.forEach(card => {
+    const timestamp = parseInt(card.getAttribute('data-timestamp') || '0', 10);
+    const isCurrentlyOnStock = card.getAttribute('data-instock') === 'true';
+    
+    if (!timestamp) return;
+    
+    const timerEl = card.querySelector('.prediction-timer');
+    const badgeEl = card.querySelector('.prediction-badge') || card.querySelector('.prediction-badge.upcoming') || card.querySelector('.prediction-badge.past') || card.querySelector('[class^="prediction-badge"]');
+    
+    if (!timerEl || !badgeEl) return;
+    
+    let timerText = '';
+    let statusText = '';
+    let badgeClass = '';
+    let isPast = false;
+    
+    if (isCurrentlyOnStock) {
+      timerText = currentLang === 'ru' ? 'В наличии' : 'In Stock';
+      statusText = currentLang === 'ru' ? 'В наличии' : 'In Stock';
+      badgeClass = 'prediction-badge upcoming';
+    } else if (timestamp <= now) {
+      isPast = true;
+      statusText = t.predictionStatusPast;
+      badgeClass = 'prediction-badge past';
+      const diff = timestamp - now;
+      const absDiff = Math.abs(diff);
+      if (absDiff < 60) {
+        timerText = t.predictionTimeJustNow;
+      } else {
+        const mins = Math.floor(absDiff / 60);
+        if (mins < 60) {
+          timerText = t.predictionTimeAgo.replace('{}', `${mins}${t.predictionMin}`);
+        } else {
+          const hours = Math.floor(mins / 60);
+          timerText = t.predictionTimeAgo.replace('{}', `${hours}${t.predictionHour}`);
+        }
+      }
+    } else {
+      statusText = t.predictionStatusUpcoming;
+      badgeClass = 'prediction-badge upcoming';
+      const diff = timestamp - now;
+      if (diff < 60) {
+        timerText = t.predictionTimeSoon;
+      } else {
+        const mins = Math.floor(diff / 60);
+        if (mins < 60) {
+          timerText = t.predictionTimeIn.replace('{}', `${mins}${t.predictionMin}`);
+        } else {
+          const hours = Math.floor(mins / 60);
+          timerText = t.predictionTimeIn.replace('{}', `${hours}${t.predictionHour}`);
+        }
+      }
+    }
+    
+    if (timerEl.textContent !== timerText) {
+      timerEl.textContent = timerText;
+    }
+    if (badgeEl.textContent !== statusText) {
+      badgeEl.textContent = statusText;
+    }
+    if (badgeEl.className !== badgeClass) {
+      badgeEl.className = badgeClass;
+    }
+    
+    if (isPast) {
+      if (!card.classList.contains('past-item')) {
+        card.classList.add('past-item');
+      }
+    } else {
+      card.classList.remove('past-item');
+    }
+  });
+}
+
 // Tick timers and update weather UI every second
 setInterval(() => {
   updateTimers();
   updateWeatherUI();
   if (predictionData) {
-    renderPredictions();
+    updatePredictionTimers();
   }
 
   // Check prediction alerts
