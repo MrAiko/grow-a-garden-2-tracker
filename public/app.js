@@ -318,11 +318,32 @@ let activeRarityFilter = 'all'; // 'all', 'rare+', 'epic+'
 let activeStockFilter = false; // true/false
 let searchQuery = '';
 let lastWeatherKey = '';
+let lastPhaseKey = '';
 let predictionData = null;
 let activePredictionTab = 'seeds';
 
+const weatherImages = {
+  day: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f31e/512.webp',
+  sunset: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f307/512.webp',
+  moon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f319/512.webp',
+  night: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f319/512.webp',
+  bloodmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
+  goldmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
+  chainedmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
+  pizzamoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f355/512.webp',
+  rainbowmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
+  solareclipse: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f311/512.webp',
+  starfall: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f320/512.webp',
+  rainbow: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f308/512.webp',
+  snowfall: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f328/512.webp',
+  rain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp',
+  thunderstorm: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
+  lightning: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
+  acidrain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f7e2/512.webp',
+  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp',
+  windy: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f32c/512.webp'
+};
 
-// Weather & Moon Configuration Options
 const weatherOptions = {
   day: { emoji: '☀️', ru: 'День', en: 'Day' },
   sunset: { emoji: '🌇', ru: 'Закат', en: 'Sunset' },
@@ -343,7 +364,73 @@ const weatherOptions = {
   windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' }
 };
 
-// Notification Subscriptions
+function applyWeatherImageFilters(imgEl, key) {
+  if (!imgEl) return;
+  const k = key.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  imgEl.style.filter = '';
+  if (k === 'bloodmoon') {
+    imgEl.style.filter = 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)) hue-rotate(320deg) saturate(4) brightness(0.8)';
+  } else if (k === 'goldmoon') {
+    imgEl.style.filter = 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.9)) saturate(1.8) sepia(0.5)';
+  } else if (k === 'rainbowmoon') {
+    imgEl.style.filter = 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) hue-rotate(90deg) saturate(2)';
+  } else if (k === 'chainedmoon') {
+    imgEl.style.filter = 'drop-shadow(0 0 8px rgba(148, 163, 184, 0.9)) grayscale(1) contrast(0.6)';
+  } else if (k === 'acidrain') {
+    imgEl.style.filter = 'hue-rotate(60deg) saturate(2)';
+  }
+}
+
+const itemImageCache = new Map();
+
+function updateItemImageCache(stock) {
+  if (!stock) return;
+  if (stock.shops) {
+    for (const shopKey of Object.keys(stock.shops)) {
+      const items = stock.shops[shopKey] || [];
+      items.forEach(item => {
+        if (item.name && item.image) {
+          itemImageCache.set(item.name.toLowerCase().trim(), item.image);
+        }
+      });
+    }
+  }
+  if (stock.fruitMultipliers && Array.isArray(stock.fruitMultipliers)) {
+    stock.fruitMultipliers.forEach(item => {
+      if (item.name && item.image) {
+        itemImageCache.set(item.name.toLowerCase().trim(), item.image);
+      }
+    });
+  }
+}
+
+function getWeatherImageHtml(name, imageId) {
+  const optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  const fallbackUrl = weatherImages[optKey] || '';
+  let srcUrl = fallbackUrl;
+  if (imageId) {
+    srcUrl = `/api/fruit-image?asset=${imageId}`;
+  }
+  if (!srcUrl) return '';
+  return `<img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.src='${fallbackUrl}'">`;
+}
+
+function getPhaseColor(phaseLower) {
+  if (phaseLower === 'day' || phaseLower === 'sunset' || phaseLower === 'goldmoon') {
+    return 'var(--rarity-legendary)';
+  } else if (phaseLower === 'bloodmoon') {
+    return 'var(--color-danger)';
+  } else if (phaseLower === 'chainedmoon') {
+    return 'var(--text-secondary)';
+  } else if (phaseLower === 'pizzamoon') {
+    return 'var(--color-grass)';
+  } else if (phaseLower === 'rainbowmoon') {
+    return 'var(--rarity-rare)';
+  } else {
+    return 'var(--rarity-epic)';
+  }
+}
+
 let trackedItems = new Set(JSON.parse(localStorage.getItem('trackedItems') || '[]'));
 let trackedPredictions = new Set(JSON.parse(localStorage.getItem('trackedPredictions') || '[]'));
 let multiplierAlerts = JSON.parse(localStorage.getItem('multiplierAlerts') || '{}');
@@ -554,6 +641,7 @@ async function fetchData() {
       checkForWeatherNotifications(newStockData);
       discoverEnvironments(newStockData.weather);
       stockData = newStockData;
+      updateItemImageCache(stockData);
       
       // Update online users count
       updateUsersOnlineUI(newStockData.visitorCount);
@@ -694,44 +782,44 @@ function updateWeatherUI() {
   if (phaseLower === 'night') {
     phaseLower = 'moon';
   }
-  const timeValEl = document.getElementById('time-val');
-  const timeDetailEl = document.getElementById('time-detail');
   
-  if (timeValEl && timeDetailEl) {
-    const phaseTranslationKey = 'phase' + phaseLower;
-    let phaseText = t[phaseTranslationKey];
-    
-    // Fallback if phase translation is missing (dynamically format the name)
-    if (!phaseText) {
-      const formattedPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
-      phaseText = w.night ? `🌙 ${formattedPhase}` : `☀️ ${formattedPhase}`;
+  const phaseKey = `${phase}:${w.phaseImage || ''}:${currentLang}`;
+  if (timeBox) {
+    if (phaseKey !== lastPhaseKey) {
+      lastPhaseKey = phaseKey;
+      
+      const phaseTranslationKey = 'phase' + phaseLower;
+      let phaseText = t[phaseTranslationKey];
+      
+      // Fallback if phase translation is missing (dynamically format the name)
+      if (!phaseText) {
+        const formattedPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
+        phaseText = w.night ? `🌙 ${formattedPhase}` : `☀️ ${formattedPhase}`;
+      }
+      
+      const imgHtml = getWeatherImageHtml(phase, w.phaseImage);
+      
+      timeBox.innerHTML = `
+        ${imgHtml}
+        <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
+          <span class="weather-label">${t.weatherLabelTime}</span>
+          <span class="weather-val" id="time-val" style="color: ${getPhaseColor(phaseLower)}">${phaseText}</span>
+          <span class="weather-detail" id="time-detail">--:--:--</span>
+        </div>
+      `;
     }
     
-    timeValEl.textContent = phaseText;
-    
-    // Stylize phase color based on category
-    if (phaseLower === 'day' || phaseLower === 'sunset' || phaseLower === 'goldmoon') {
-      timeValEl.style.color = 'var(--rarity-legendary)'; // Gold / Orange
-    } else if (phaseLower === 'bloodmoon') {
-      timeValEl.style.color = 'var(--color-danger)'; // Red
-    } else if (phaseLower === 'chainedmoon') {
-      timeValEl.style.color = 'var(--text-secondary)'; // Gray
-    } else if (phaseLower === 'pizzamoon') {
-      timeValEl.style.color = 'var(--color-grass)'; // Green
-    } else if (phaseLower === 'rainbowmoon') {
-      timeValEl.style.color = 'var(--rarity-rare)'; // Blue
-    } else {
-      timeValEl.style.color = 'var(--rarity-epic)'; // Purple/Epic default night moon
-    }
-    
-    if (w.night && w.nightStartedAt) {
-      const date = new Date(w.nightStartedAt * 1000);
-      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
-    } else if (!w.night && w.nightEndedAt) {
-      const date = new Date(w.nightEndedAt * 1000);
-      timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
-    } else {
-      timeDetailEl.textContent = '--:--:--';
+    const timeDetailEl = document.getElementById('time-detail');
+    if (timeDetailEl) {
+      if (w.night && w.nightStartedAt) {
+        const date = new Date(w.nightStartedAt * 1000);
+        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+      } else if (!w.night && w.nightEndedAt) {
+        const date = new Date(w.nightEndedAt * 1000);
+        timeDetailEl.textContent = t.timeStarted.replace('{}', date.toLocaleTimeString());
+      } else {
+        timeDetailEl.textContent = '--:--:--';
+      }
     }
   }
   
@@ -740,7 +828,7 @@ function updateWeatherUI() {
   if (w.weathers) {
     for (const [name, info] of Object.entries(w.weathers)) {
       if (info.playing) {
-        activeWeathers.push({ name, endTime: info.endTime });
+        activeWeathers.push({ name, endTime: info.endTime, image: info.image || null });
       }
     }
   }
@@ -755,7 +843,7 @@ function updateWeatherUI() {
       childrenToRemove.forEach(child => child.remove());
       
       if (activeWeathers.length > 0) {
-        activeWeathers.forEach(({ name, endTime }) => {
+        activeWeathers.forEach(({ name, endTime, image }) => {
           const weatherBox = document.createElement('div');
           weatherBox.className = 'weather-box active-weather-item';
           weatherBox.setAttribute('data-name', name);
@@ -780,10 +868,15 @@ function updateWeatherUI() {
           const displayName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : name;
           const emoji = opt ? opt.emoji : '🌦️';
           
+          const imgHtml = getWeatherImageHtml(name, image);
+          
           weatherBox.innerHTML = `
-            <span class="weather-label">${t.weatherLabelActive}</span>
-            <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
-            <span class="weather-detail weather-timer-countdown">--:--:--</span>
+            ${imgHtml}
+            <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
+              <span class="weather-label">${t.weatherLabelActive}</span>
+              <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
+              <span class="weather-detail weather-timer-countdown">--:--:--</span>
+            </div>
           `;
           weatherContainer.appendChild(weatherBox);
         });
@@ -793,9 +886,11 @@ function updateWeatherUI() {
         weatherBox.className = 'weather-box active-weather-item';
         weatherBox.id = 'weather-active-box';
         weatherBox.innerHTML = `
-          <span class="weather-label">${t.weatherLabelActive}</span>
-          <span class="weather-val" style="color: var(--text-secondary)">${t.weatherNone}</span>
-          <span class="weather-detail weather-timer-countdown">--:--:--</span>
+          <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
+            <span class="weather-label">${t.weatherLabelActive}</span>
+            <span class="weather-val" style="color: var(--text-secondary)">${t.weatherNone}</span>
+            <span class="weather-detail weather-timer-countdown">--:--:--</span>
+          </div>
         `;
         weatherContainer.appendChild(weatherBox);
       }
@@ -1930,13 +2025,53 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       </button>
     `;
     
+    let imgHtml = '';
+    if (isWeather) {
+      let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const fallbackUrl = weatherImages[optKey] || '';
+      
+      // Look up live Roblox asset ID if currently active
+      let liveAssetId = null;
+      if (stockData && stockData.weather) {
+        const w = stockData.weather;
+        if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
+          liveAssetId = w.phaseImage;
+        } else if (w.weathers) {
+          for (const [wName, wInfo] of Object.entries(w.weathers)) {
+            if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
+              liveAssetId = wInfo.image;
+              break;
+            }
+          }
+        }
+      }
+      
+      let srcUrl = fallbackUrl;
+      if (liveAssetId) {
+        srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
+      }
+      
+      imgHtml = `<img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.src='${fallbackUrl}'">`;
+    } else {
+      const cachedImg = itemImageCache.get(item.name.toLowerCase().trim());
+      if (cachedImg) {
+        imgHtml = `<img src="${cachedImg}" alt="${displayName}" class="pred-item-image">`;
+      } else {
+        imgHtml = `<div class="pred-item-image" style="display: flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`;
+      }
+    }
+    
     card.innerHTML = `
-      <div class="prediction-info">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          ${bellHtml}
-          <span class="prediction-name">${emoji}${displayName}</span>
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+        ${imgHtml}
+        <div class="prediction-info">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${bellHtml}
+            <span class="prediction-name">${emoji}${displayName}</span>
+          </div>
+          <span class="prediction-sub">${subText}</span>
         </div>
-        <span class="prediction-sub">${subText}</span>
       </div>
       <div class="prediction-time-container">
         <span class="prediction-timer">${timerText}</span>
@@ -2012,6 +2147,7 @@ function connectWebSocket() {
           checkForWeatherNotifications(data.stock);
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
+          updateItemImageCache(stockData);
           
           updateUsersOnlineUI(data.stock.visitorCount);
           renderDashboard();
@@ -2034,6 +2170,7 @@ function connectWebSocket() {
           checkForWeatherNotifications(data.stock);
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
+          updateItemImageCache(stockData);
           
           updateUsersOnlineUI(data.stock.visitorCount);
           renderDashboard();

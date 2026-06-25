@@ -354,8 +354,11 @@ function getMergedWeather() {
         if (info.playing) {
           const endTime = normalizeEndTime(info.endTime);
           if (!mergedWeathers[name]) {
-            mergedWeathers[name] = { playing: true, endTime };
+            mergedWeathers[name] = { playing: true, endTime, image: info.image || null };
           } else {
+            if (info.image) {
+              mergedWeathers[name].image = info.image;
+            }
             mergedWeathers[name].endTime = Math.max(normalizeEndTime(mergedWeathers[name].endTime), endTime);
           }
         }
@@ -374,6 +377,7 @@ function getMergedWeather() {
     return {
       night: isNight,
       phase: selectedPhase,
+      phaseImage: null,
       weathers: mergedWeathers,
       endTime: 0
     };
@@ -382,6 +386,7 @@ function getMergedWeather() {
   return {
     night: isNight,
     phase: selectedPhase,
+    phaseImage: primarySession.weather.phaseImage || null,
     weathers: mergedWeathers,
     endTime: getMaxWeatherEndTime(activeSessionsList, mergedWeathers),
     nightStartedAt: primarySession.weather.nightStartedAt,
