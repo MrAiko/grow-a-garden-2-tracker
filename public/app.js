@@ -412,7 +412,8 @@ function getWeatherImageHtml(name, imageId) {
   const emoji = opt ? opt.emoji : '🌦️';
   
   const fallbackUrl = weatherImages[optKey] || '';
-  let srcUrl = fallbackUrl;
+  const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
+  let srcUrl = proxiedFallback;
   if (imageId) {
     srcUrl = `/api/fruit-image?asset=${imageId}`;
   }
@@ -2044,6 +2045,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (optKey === 'lightning') optKey = 'thunderstorm';
       const fallbackUrl = weatherImages[optKey] || '';
+      const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
       
       // Look up live Roblox asset ID if currently active
       let liveAssetId = null;
@@ -2061,7 +2063,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
       
-      let srcUrl = fallbackUrl;
+      let srcUrl = proxiedFallback;
       if (liveAssetId) {
         srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
       }
@@ -2085,9 +2087,17 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     } else {
       const cachedImg = itemImageCache.get(item.name.toLowerCase().trim());
       if (cachedImg) {
-        imgHtml = `<img src="${cachedImg}" alt="${displayName}" class="pred-item-image">`;
+        imgHtml = `
+          <span class="pred-item-image-wrapper">
+            <img src="${cachedImg}" alt="${displayName}" class="pred-item-image">
+          </span>
+        `;
       } else {
-        imgHtml = `<div class="pred-item-image" style="display: flex; align-items: center; justify-content: center; font-size: 20px;">📦</div>`;
+        imgHtml = `
+          <span class="pred-item-image-wrapper">
+            <span class="pred-emoji-fallback" style="display: inline-flex; align-items: center; justify-content: center;">📦</span>
+          </span>
+        `;
       }
     }
     
