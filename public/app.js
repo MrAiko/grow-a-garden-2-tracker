@@ -406,13 +406,27 @@ function updateItemImageCache(stock) {
 
 function getWeatherImageHtml(name, imageId) {
   const optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
+  const allOptions = { ...weatherOptions, ...discovered };
+  const opt = allOptions[optKey];
+  const emoji = opt ? opt.emoji : '🌦️';
+  
   const fallbackUrl = weatherImages[optKey] || '';
   let srcUrl = fallbackUrl;
   if (imageId) {
     srcUrl = `/api/fruit-image?asset=${imageId}`;
   }
-  if (!srcUrl) return '';
-  return `<img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.src='${fallbackUrl}'">`;
+  
+  if (!srcUrl) {
+    return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${emoji}</span></span>`;
+  }
+  
+  return `
+    <span class="weather-icon-img-wrapper">
+      <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+      <span class="weather-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${emoji}</span>
+    </span>
+  `;
 }
 
 function getPhaseColor(phaseLower) {
@@ -2052,7 +2066,22 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
       }
       
-      imgHtml = `<img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.src='${fallbackUrl}'">`;
+      const cleanEmoji = emoji ? emoji.trim() : '🌦️';
+      
+      if (srcUrl) {
+        imgHtml = `
+          <span class="pred-item-image-wrapper">
+            <img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <span class="pred-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${cleanEmoji}</span>
+          </span>
+        `;
+      } else {
+        imgHtml = `
+          <span class="pred-item-image-wrapper">
+            <span class="pred-emoji-fallback" style="display: inline-flex; align-items: center; justify-content: center;">${cleanEmoji}</span>
+          </span>
+        `;
+      }
     } else {
       const cachedImg = itemImageCache.get(item.name.toLowerCase().trim());
       if (cachedImg) {
