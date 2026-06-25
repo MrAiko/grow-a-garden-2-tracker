@@ -354,9 +354,12 @@ function getMergedWeather() {
         if (info.playing) {
           const endTime = normalizeEndTime(info.endTime);
           if (!mergedWeathers[name]) {
-            mergedWeathers[name] = { playing: true, endTime };
+            mergedWeathers[name] = { playing: true, endTime, image: info.image };
           } else {
             mergedWeathers[name].endTime = Math.max(normalizeEndTime(mergedWeathers[name].endTime), endTime);
+            if (info.image && !mergedWeathers[name].image) {
+              mergedWeathers[name].image = info.image;
+            }
           }
         }
       }
@@ -370,10 +373,13 @@ function getMergedWeather() {
   // Get timestamps from the session that provided the selected phase or the most recent one
   const primarySession = activeSessionsList.find(s => s.weather && s.weather.phase === selectedPhase) || activeSessionsList[0];
   
+  const phaseImage = primarySession.weather ? primarySession.weather.phaseImage : null;
+
   if (!primarySession.weather) {
     return {
       night: isNight,
       phase: selectedPhase,
+      phaseImage: phaseImage,
       weathers: mergedWeathers,
       endTime: 0
     };
@@ -382,6 +388,7 @@ function getMergedWeather() {
   return {
     night: isNight,
     phase: selectedPhase,
+    phaseImage: phaseImage,
     weathers: mergedWeathers,
     endTime: getMaxWeatherEndTime(activeSessionsList, mergedWeathers),
     nightStartedAt: primarySession.weather.nightStartedAt,
@@ -887,8 +894,8 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
 
 async function fetchDiscordPredictions() {
-  if (!DISCORD_TOKEN) {
-    console.warn('DISCORD_TOKEN is not set in .env. Discord predictions scraper is disabled.');
+  if (!DISCORD_TOKEN || DISCORD_TOKEN === 'your_discord_token_here') {
+    console.warn('DISCORD_TOKEN is not set or is still a placeholder in .env. Discord predictions scraper is disabled.');
     return;
   }
   
@@ -907,11 +914,17 @@ async function fetchDiscordPredictions() {
     }
     
     if (!response.ok) {
+      let bodyText = '';
+      try {
+        bodyText = await response.text();
+      } catch (err) {
+        bodyText = `<failed to read body: ${err.message}>`;
+      }
       if (response.status === 429) {
         const retryAfter = response.headers.get('retry-after');
-        console.error(`Failed to fetch Discord messages: 429 Too Many Requests (retry-after: ${retryAfter || 'unknown'}s)`);
+        console.error(`Failed to fetch Discord messages: 429 Too Many Requests (retry-after: ${retryAfter || 'unknown'}s). Response: ${bodyText}`);
       } else {
-        console.error(`Failed to fetch Discord messages: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch Discord messages: ${response.status} ${response.statusText}. Response: ${bodyText}`);
       }
       return;
     }
