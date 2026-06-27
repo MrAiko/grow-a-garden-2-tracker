@@ -408,23 +408,14 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  let srcUrl = '';
+  const fallbackUrl = weatherImages[optKey] || '';
+  const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
+  let srcUrl = proxiedFallback;
   if (imageId) {
-    const strImg = String(imageId).trim();
-    if (strImg.startsWith('http://') || strImg.startsWith('https://')) {
-      srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
-    } else if (strImg.startsWith('/api/')) {
-      srcUrl = strImg;
+    if (String(imageId).startsWith('http')) {
+      srcUrl = `/api/proxy-image?url=${encodeURIComponent(imageId)}`;
     } else {
-      srcUrl = `/api/fruit-image?asset=${strImg}`;
-    }
-  }
-  
-  if (!srcUrl) {
-    const fallbackUrl = weatherImages[optKey] || (stockData && stockData.catalogImages && (stockData.catalogImages[optKey] || stockData.catalogImages[name.toLowerCase().trim()])) || '';
-    if (fallbackUrl) {
-      const strFb = String(fallbackUrl).trim();
-      srcUrl = strFb.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(strFb)}` : `/api/fruit-image?asset=${strFb}`;
+      srcUrl = `/api/fruit-image?asset=${imageId}`;
     }
   }
   
@@ -899,42 +890,12 @@ function updateWeatherUI() {
           const emoji = opt ? opt.emoji : '🌦️';
           
           const imgHtml = getWeatherImageHtml(name, image);
-
-          const fallbackBoosts = {
-            rain: '<font color="#55FF55">X2 Growth Speed!</font>',
-            thunderstorm: 'Chance for <font color="#FFD700">electric</font> fruit',
-            lightning: 'Chance for <font color="#FFD700">electric</font> fruit',
-            rainbow: 'Boosted <font color="#FF0000">r</font><font color="#FF8800">a</font><font color="#FFFF00">i</font><font color="#00FF00">n</font><font color="#0088FF">b</font><font color="#0000FF">o</font><font color="#AA00FF">w</font> luck!',
-            snowfall: 'Chance for <font color="#88DDFF">frozen</font> fruit!',
-            starfall: 'Chance for <font color="#e88bff">starstruck</font> fruit!',
-            aurora: 'Chance for <font color="#e88bff">Aurora</font> fruit!',
-            acidrain: 'Chance for <font color="#AAFF00">acidic</font> fruit!'
-          };
-          
-          let boostHtml = '';
-          const detailsMap = (w.weatherDetails || (stockData && stockData.weatherDetails) || {});
-          let foundDetail = detailsMap[name];
-          if (!foundDetail) {
-            for (const [k, v] of Object.entries(detailsMap)) {
-              if (k.toLowerCase().replace(/[\s_]/g, '') === optKey) {
-                foundDetail = v;
-                break;
-              }
-            }
-          }
-          if (foundDetail && foundDetail.description) {
-            boostHtml = foundDetail.description;
-          } else if (fallbackBoosts[optKey]) {
-            boostHtml = fallbackBoosts[optKey];
-          }
-          const boostElement = boostHtml ? `<div class="weather-boost">${boostHtml}</div>` : '';
           
           weatherBox.innerHTML = `
             ${imgHtml}
             <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
               <span class="weather-label">${t.weatherLabelActive}</span>
               <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
-              ${boostElement}
               <span class="weather-detail weather-timer-countdown">--:--:--</span>
             </div>
           `;
@@ -2091,68 +2052,43 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     if (isWeather) {
       let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (optKey === 'lightning') optKey = 'thunderstorm';
-      const opt = weatherOptions[optKey];
-      const cleanEmoji = emoji ? emoji.trim() : (opt ? opt.emoji : '🌦️');
+      const fallbackUrl = weatherImages[optKey] || '';
+      const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
       
-      // Build srcUrl with proper priority chain
+      // Priority 1: Pre-resolved image from the server (catalog_images.json)
       let srcUrl = '';
-      
-      // Priority 1: item.image from prediction API (already a URL or proxy path)
       if (item.image) {
-        const strImg = String(item.image).trim();
-        if (strImg.startsWith('http://') || strImg.startsWith('https://')) {
-          srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
-        } else if (strImg.startsWith('/api/')) {
-          srcUrl = strImg;
-        } else {
-          srcUrl = `/api/fruit-image?asset=${strImg}`;
-        }
-      }
-      
-      // Priority 2: catalogImages from the server (already proxied)
-      if (!srcUrl && stockData && stockData.catalogImages) {
-        const catUrl = stockData.catalogImages[optKey] || stockData.catalogImages[item.name.toLowerCase().trim()];
-        if (catUrl) {
-          srcUrl = catUrl;
-        }
-      }
-      
-      // Priority 3: Live phase/weather image from current stock
-      if (!srcUrl && stockData && stockData.weather) {
-        const w = stockData.weather;
-        if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && w.phaseImage) {
-          const strImg = String(w.phaseImage).trim();
-          if (strImg.startsWith('/api/')) {
-            srcUrl = strImg;
-          } else if (strImg.startsWith('http')) {
-            srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
-          } else {
-            srcUrl = `/api/fruit-image?asset=${strImg}`;
-          }
-        } else if (w.weathers) {
-          for (const [wName, wInfo] of Object.entries(w.weathers)) {
-            if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.image) {
-              const strImg = String(wInfo.image).trim();
-              if (strImg.startsWith('/api/')) {
-                srcUrl = strImg;
-              } else if (strImg.startsWith('http')) {
-                srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
-              } else {
-                srcUrl = `/api/fruit-image?asset=${strImg}`;
+        srcUrl = item.image;
+      } else {
+        // Priority 2: Look up live Roblox asset ID if currently active
+        let liveAssetId = null;
+        if (stockData && stockData.weather) {
+          const w = stockData.weather;
+          if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
+            liveAssetId = w.phaseImage;
+          } else if (w.weathers) {
+            for (const [wName, wInfo] of Object.entries(w.weathers)) {
+              if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
+                liveAssetId = wInfo.image;
+                break;
               }
-              break;
             }
           }
         }
-      }
-      
-      // Priority 4: Hardcoded fallback weather image URLs
-      if (!srcUrl) {
-        const fallbackUrl = weatherImages[optKey] || '';
-        if (fallbackUrl) {
-          srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
+        
+        if (liveAssetId) {
+          if (String(liveAssetId).startsWith('http')) {
+            srcUrl = `/api/proxy-image?url=${encodeURIComponent(liveAssetId)}`;
+          } else {
+            srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
+          }
+        } else {
+          // Priority 3: Google Noto emoji fallback
+          srcUrl = proxiedFallback;
         }
       }
+      
+      const cleanEmoji = emoji ? emoji.trim() : '🌦️';
       
       if (srcUrl) {
         imgHtml = `

@@ -155,31 +155,6 @@ function prepareStockResponse(stock) {
     });
   }
   
-  // Proxy weather phase image and active weather images
-  if (data.weather) {
-    if (data.weather.phaseImage && data.weather.phaseImage.startsWith('http')) {
-      data.weather.phaseImage = `/api/proxy-image?url=${encodeURIComponent(data.weather.phaseImage)}`;
-    }
-    if (data.weather.weathers) {
-      for (const info of Object.values(data.weather.weathers)) {
-        if (info.image && info.image.startsWith('http')) {
-          info.image = `/api/proxy-image?url=${encodeURIComponent(info.image)}`;
-        }
-      }
-    }
-  }
-  
-  // Include catalog images so the frontend can resolve env/moon/weather icons for predictions
-  const proxiedCatalog = {};
-  for (const [key, url] of Object.entries(catalogImages)) {
-    if (url && url.startsWith('http')) {
-      proxiedCatalog[key] = `/api/proxy-image?url=${encodeURIComponent(url)}`;
-    } else {
-      proxiedCatalog[key] = url;
-    }
-  }
-  data.catalogImages = proxiedCatalog;
-  
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;
 }
@@ -360,66 +335,6 @@ async function resolveAssetThumbnailsBatch(assetIds) {
     }
   }
   
-  return results;
-}
-
-// Resolve Image/Decal asset IDs via Roblox Asset Delivery API.
-// Unlike the Thumbnails API (which returns a distorted preview for decals),
-// this returns the actual image content URL — perfect for moon/weather icons.
-const decalImageCache = new Map();
-
-async function resolveDecalImagesBatch(assetIds) {
-  const uniqueIds = [...new Set(assetIds.filter(id => id && /^\d+$/.test(id)))];
-  if (uniqueIds.length === 0) return {};
-
-  const results = {};
-  const uncachedIds = [];
-
-  uniqueIds.forEach(id => {
-    if (decalImageCache.has(id)) {
-      results[id] = decalImageCache.get(id);
-    } else {
-      uncachedIds.push(id);
-    }
-  });
-
-  // Resolve each uncached ID via asset delivery (no batch endpoint available)
-  const resolvePromises = uncachedIds.map(async (id) => {
-    try {
-      // Try assetdelivery first — follows redirect to the actual image
-      const url = `https://assetdelivery.roblox.com/v1/asset/?id=${id}`;
-      const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(5000) });
-      if (response.ok) {
-        // The final URL after redirect is the actual CDN image URL
-        const finalUrl = response.url;
-        if (finalUrl && finalUrl.startsWith('http')) {
-          decalImageCache.set(id, finalUrl);
-          results[id] = finalUrl;
-          return;
-        }
-      }
-    } catch (err) {
-      // Fallback: try thumbnails API as last resort
-    }
-    
-    // Fallback to thumbnails API if asset delivery fails
-    try {
-      const url = `https://thumbnails.roblox.com/v1/assets?assetIds=${id}&size=150x150&format=Png&isCircular=false`;
-      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.data && data.data[0] && data.data[0].imageUrl) {
-          const imageUrl = data.data[0].imageUrl;
-          decalImageCache.set(id, imageUrl);
-          results[id] = imageUrl;
-        }
-      }
-    } catch (err2) {
-      console.error(`Error resolving decal image for ID ${id}:`, err2.message);
-    }
-  });
-
-  await Promise.allSettled(resolvePromises);
   return results;
 }
 
@@ -682,10 +597,7 @@ async function handleUpdateStock(newStock) {
   }
 
   // Resolve all asset images asynchronously in a single batch request to avoid rate limits
-  // NOTE: Shop/fruit assets use the Thumbnails API (they are Models/MeshParts).
-  //       Weather/moon/env assets are Image/Decal types — we resolve them via Asset Delivery API.
   const assetIdsToResolve = [];
-  const envAssetIds = new Set(); // Track which IDs are env/weather (Image/Decal assets)
 
   if (newStock.shops) {
     for (const shopKey of Object.keys(newStock.shops)) {
@@ -706,15 +618,14 @@ async function handleUpdateStock(newStock) {
     });
   }
 
-  // Weather/moon images — collect separately as env assets
   if (newStock.weather) {
     if (newStock.weather.phaseImage && !newStock.weather.phaseImage.startsWith('http')) {
-      envAssetIds.add(newStock.weather.phaseImage);
+      assetIdsToResolve.push(newStock.weather.phaseImage);
     }
     if (newStock.weather.weathers) {
       for (const info of Object.values(newStock.weather.weathers)) {
         if (info.image && !info.image.startsWith('http')) {
-          envAssetIds.add(info.image);
+          assetIdsToResolve.push(info.image);
         }
       }
     }
@@ -724,12 +635,11 @@ async function handleUpdateStock(newStock) {
   if (newStock.envImages && Array.isArray(newStock.envImages)) {
     newStock.envImages.forEach(entry => {
       if (entry.image && !String(entry.image).startsWith('http')) {
-        envAssetIds.add(String(entry.image));
+        assetIdsToResolve.push(String(entry.image));
       }
     });
   }
 
-  // Resolve shop/fruit assets via Thumbnails API
   if (assetIdsToResolve.length > 0) {
     const resolvedMap = await resolveAssetThumbnailsBatch(assetIdsToResolve);
     
@@ -752,20 +662,15 @@ async function handleUpdateStock(newStock) {
         }
       });
     }
-  }
 
-  // Resolve env/weather/moon assets via Asset Delivery API (returns actual image, not thumbnail)
-  if (envAssetIds.size > 0) {
-    const envResolvedMap = await resolveDecalImagesBatch([...envAssetIds]);
-    
     if (newStock.weather) {
       if (newStock.weather.phaseImage && !newStock.weather.phaseImage.startsWith('http')) {
-        newStock.weather.phaseImage = envResolvedMap[newStock.weather.phaseImage] || newStock.weather.phaseImage;
+        newStock.weather.phaseImage = resolvedMap[newStock.weather.phaseImage] || newStock.weather.phaseImage;
       }
       if (newStock.weather.weathers) {
         for (const info of Object.values(newStock.weather.weathers)) {
           if (info.image && !info.image.startsWith('http')) {
-            info.image = envResolvedMap[info.image] || info.image;
+            info.image = resolvedMap[info.image] || info.image;
           }
         }
       }
@@ -775,7 +680,7 @@ async function handleUpdateStock(newStock) {
     if (newStock.envImages && Array.isArray(newStock.envImages)) {
       newStock.envImages.forEach(entry => {
         if (entry.image && !String(entry.image).startsWith('http')) {
-          entry.image = envResolvedMap[String(entry.image)] || entry.image;
+          entry.image = resolvedMap[String(entry.image)] || entry.image;
         }
       });
     }
@@ -846,26 +751,15 @@ async function handleUpdateStock(newStock) {
     fruitRefreshAt = Math.floor(Date.now() / 1000) + newStock.fruitRefreshTimer;
   }
 
-  let weatherDetails = (currentStock && currentStock.weatherDetails) || {};
-  if (newStock.weatherDetails && typeof newStock.weatherDetails === 'object') {
-    weatherDetails = { ...weatherDetails, ...newStock.weatherDetails };
-  } else if (newStock.weather && newStock.weather.weatherDetails && typeof newStock.weather.weatherDetails === 'object') {
-    weatherDetails = { ...weatherDetails, ...newStock.weather.weatherDetails };
-  }
-
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
     weather: newStock.weather,
-    weatherDetails: weatherDetails,
     fruitMultipliers: fruitMultipliers,
     // Absolute unix timestamp (seconds) when the next fruit refresh happens.
     fruitRefreshAt: fruitRefreshAt,
     updatedAt: Date.now()
   };
-  if (currentStock.weather) {
-    currentStock.weather.weatherDetails = weatherDetails;
-  }
 
   saveStockData();
   broadcast({
