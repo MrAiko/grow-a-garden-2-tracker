@@ -455,8 +455,15 @@ async function handleUpdateStock(newStock) {
     // 1. Normalize any existing weather names in newStock.weather.weathers (e.g. Raining -> Rain)
     if (newStock.weather.weathers) {
       const normalizedWeathers = {};
+      const moonPhaseNames = ['bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 'rainbowmoon', 'megamoon', 'solareclipse'];
       for (const [name, info] of Object.entries(newStock.weather.weathers)) {
-        const lowerName = name.toLowerCase();
+        const lowerName = name.toLowerCase().replace(/[\s_]/g, '');
+        
+        // Skip moon phases/eclipses — they belong in the phase field, not weathers
+        if (moonPhaseNames.includes(lowerName) || lowerName.includes('eclipse')) {
+          continue;
+        }
+        
         let targetName = name;
         if (lowerName === "rain" || lowerName === "raining" || lowerName === "rainy") {
           targetName = "Rain";
@@ -624,6 +631,15 @@ async function handleUpdateStock(newStock) {
     }
   }
 
+  // Collect env images (moon/weather icon asset IDs from scraper)
+  if (newStock.envImages && Array.isArray(newStock.envImages)) {
+    newStock.envImages.forEach(entry => {
+      if (entry.image && !String(entry.image).startsWith('http')) {
+        assetIdsToResolve.push(String(entry.image));
+      }
+    });
+  }
+
   if (assetIdsToResolve.length > 0) {
     const resolvedMap = await resolveAssetThumbnailsBatch(assetIdsToResolve);
     
@@ -659,6 +675,15 @@ async function handleUpdateStock(newStock) {
         }
       }
     }
+    
+    // Resolve env images
+    if (newStock.envImages && Array.isArray(newStock.envImages)) {
+      newStock.envImages.forEach(entry => {
+        if (entry.image && !String(entry.image).startsWith('http')) {
+          entry.image = resolvedMap[String(entry.image)] || entry.image;
+        }
+      });
+    }
   }
 
   // Harvest resolved image URLs to the persistent catalog
@@ -690,6 +715,19 @@ async function handleUpdateStock(newStock) {
     });
   }
   
+  // Harvest environment images (moon phases / weather icons) into the catalog
+  if (newStock.envImages && Array.isArray(newStock.envImages)) {
+    newStock.envImages.forEach(entry => {
+      if (entry.name && entry.image && String(entry.image).startsWith('http')) {
+        const cleanName = entry.name.toLowerCase().trim().replace(/[\s_]/g, '');
+        if (catalogImages[cleanName] !== entry.image) {
+          catalogImages[cleanName] = entry.image;
+          catalogUpdated = true;
+        }
+      }
+    });
+  }
+  
   if (catalogUpdated) {
     saveCatalogImages();
   }
@@ -713,15 +751,26 @@ async function handleUpdateStock(newStock) {
     fruitRefreshAt = Math.floor(Date.now() / 1000) + newStock.fruitRefreshTimer;
   }
 
+  let weatherDetails = (currentStock && currentStock.weatherDetails) || {};
+  if (newStock.weatherDetails && typeof newStock.weatherDetails === 'object') {
+    weatherDetails = { ...weatherDetails, ...newStock.weatherDetails };
+  } else if (newStock.weather && newStock.weather.weatherDetails && typeof newStock.weather.weatherDetails === 'object') {
+    weatherDetails = { ...weatherDetails, ...newStock.weather.weatherDetails };
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
     weather: newStock.weather,
+    weatherDetails: weatherDetails,
     fruitMultipliers: fruitMultipliers,
     // Absolute unix timestamp (seconds) when the next fruit refresh happens.
     fruitRefreshAt: fruitRefreshAt,
     updatedAt: Date.now()
   };
+  if (currentStock.weather) {
+    currentStock.weather.weatherDetails = weatherDetails;
+  }
 
   saveStockData();
   broadcast({
@@ -750,12 +799,14 @@ app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
 function preparePredictionsResponse(predictions) {
   if (!predictions) return null;
   const data = JSON.parse(JSON.stringify(predictions));
-  const sections = ['seeds', 'gears', 'props'];
+  const sections = ['seeds', 'gears', 'props', 'weathers'];
   sections.forEach(sec => {
     if (data[sec]) {
       data[sec].forEach(item => {
         const cleanName = item.name.toLowerCase().trim();
-        const rawImg = catalogImages[cleanName];
+        // For weather items, also try space-stripped key (e.g. "blood moon" -> "bloodmoon")
+        const altName = cleanName.replace(/[\s_]/g, '');
+        const rawImg = catalogImages[cleanName] || catalogImages[altName];
         if (rawImg) {
           if (rawImg.startsWith('http')) {
             item.image = `/api/proxy-image?url=${encodeURIComponent(rawImg)}`;
