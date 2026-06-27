@@ -408,11 +408,24 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  const fallbackUrl = weatherImages[optKey] || '';
-  const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
-  let srcUrl = proxiedFallback;
+  let srcUrl = '';
   if (imageId) {
-    srcUrl = `/api/fruit-image?asset=${imageId}`;
+    const strImg = String(imageId).trim();
+    if (strImg.startsWith('http://') || strImg.startsWith('https://')) {
+      srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
+    } else if (strImg.startsWith('/api/')) {
+      srcUrl = strImg;
+    } else {
+      srcUrl = `/api/fruit-image?asset=${strImg}`;
+    }
+  }
+  
+  if (!srcUrl) {
+    const fallbackUrl = weatherImages[optKey] || (stockData && stockData.catalogImages && (stockData.catalogImages[optKey] || stockData.catalogImages[name.toLowerCase().trim()])) || '';
+    if (fallbackUrl) {
+      const strFb = String(fallbackUrl).trim();
+      srcUrl = strFb.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(strFb)}` : `/api/fruit-image?asset=${strFb}`;
+    }
   }
   
   if (!srcUrl) {
