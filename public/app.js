@@ -53,6 +53,7 @@ const translations = {
     phasebloodmoon: 'Кровавая луна 🔴',
     phasepizzamoon: 'Пицца-луна 🍕',
     phaserainbowmoon: 'Радужная луна 🌈',
+    phasemegamoon: 'Мега луна 🌕',
     phasesunset: 'Закат 🌇',
     phaseday: 'День ☀️',
     phasemoon: 'Ночь 🌙',
@@ -136,6 +137,7 @@ const translations = {
     phasebloodmoon: 'Blood Moon 🔴',
     phasepizzamoon: 'Pizza Moon 🍕',
     phaserainbowmoon: 'Rainbow Moon 🌈',
+    phasemegamoon: 'Mega Moon 🌕',
     phasesunset: 'Sunset 🌇',
     phaseday: 'Day ☀️',
     phasemoon: 'Night 🌙',
@@ -361,7 +363,8 @@ const weatherOptions = {
   thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
   acidrain: { emoji: '🧪', ru: 'Кислотный дождь', en: 'Acid Rain' },
   aurora: { emoji: '🌌', ru: 'Аврора', en: 'Aurora' },
-  windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' }
+  windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' },
+  megamoon: { emoji: '🌕', ru: 'Мега луна', en: 'Mega Moon' }
 };
 
 function applyWeatherImageFilters(imgEl, key) {
