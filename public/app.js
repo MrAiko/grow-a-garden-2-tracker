@@ -2095,7 +2095,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         `;
       }
     } else {
-      const cachedImg = itemImageCache.get(item.name.toLowerCase().trim());
+      const cachedImg = item.image || itemImageCache.get(item.name.toLowerCase().trim());
       if (cachedImg) {
         imgHtml = `
           <span class="pred-item-image-wrapper">

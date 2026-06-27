@@ -93,6 +93,17 @@ try {
   console.error('Error loading predictions data:', err);
 }
 
+// Load Persistent Catalog Images
+const CATALOG_IMAGES_FILE = path.join(__dirname, 'catalog_images.json');
+let catalogImages = {};
+try {
+  if (fs.existsSync(CATALOG_IMAGES_FILE)) {
+    catalogImages = JSON.parse(fs.readFileSync(CATALOG_IMAGES_FILE, 'utf8'));
+  }
+} catch (err) {
+  console.error('Error loading catalog images:', err);
+}
+
 // Save Stock Data
 function saveStockData() {
   try {
@@ -108,6 +119,15 @@ function savePredictionsData() {
     fs.writeFileSync(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8');
   } catch (err) {
     console.error('Error saving predictions data:', err);
+  }
+}
+
+// Save Catalog Images Data
+function saveCatalogImages() {
+  try {
+    fs.writeFileSync(CATALOG_IMAGES_FILE, JSON.stringify(catalogImages, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving catalog images:', err);
   }
 }
 
@@ -641,6 +661,39 @@ async function handleUpdateStock(newStock) {
     }
   }
 
+  // Harvest resolved image URLs to the persistent catalog
+  let catalogUpdated = false;
+  if (newStock.shops) {
+    for (const shopKey of Object.keys(newStock.shops)) {
+      const items = newStock.shops[shopKey] || [];
+      items.forEach(item => {
+        if (item.name && item.image) {
+          const cleanName = item.name.toLowerCase().trim();
+          if (catalogImages[cleanName] !== item.image) {
+            catalogImages[cleanName] = item.image;
+            catalogUpdated = true;
+          }
+        }
+      });
+    }
+  }
+  
+  if (newStock.fruitMultipliers && Array.isArray(newStock.fruitMultipliers)) {
+    newStock.fruitMultipliers.forEach(item => {
+      if (item.name && item.image) {
+        const cleanName = item.name.toLowerCase().trim();
+        if (catalogImages[cleanName] !== item.image) {
+          catalogImages[cleanName] = item.image;
+          catalogUpdated = true;
+        }
+      }
+    });
+  }
+  
+  if (catalogUpdated) {
+    saveCatalogImages();
+  }
+
   let fruitMultipliers = {};
   const hasIncomingMultipliers = newStock.fruitMultipliers &&
     (Array.isArray(newStock.fruitMultipliers) ? newStock.fruitMultipliers.length > 0 : Object.keys(newStock.fruitMultipliers).length > 0);
@@ -694,12 +747,36 @@ app.post('/api/update-stock', rateLimiter(120, 60000), async (req, res) => {
   }
 });
 
+function preparePredictionsResponse(predictions) {
+  if (!predictions) return null;
+  const data = JSON.parse(JSON.stringify(predictions));
+  const sections = ['seeds', 'gears', 'props'];
+  sections.forEach(sec => {
+    if (data[sec]) {
+      data[sec].forEach(item => {
+        const cleanName = item.name.toLowerCase().trim();
+        const rawImg = catalogImages[cleanName];
+        if (rawImg) {
+          if (rawImg.startsWith('http')) {
+            item.image = `/api/proxy-image?url=${encodeURIComponent(rawImg)}`;
+          } else if (/^\d+$/.test(rawImg)) {
+            item.image = `/api/fruit-image?asset=${encodeURIComponent(rawImg)}`;
+          } else {
+            item.image = rawImg;
+          }
+        }
+      });
+    }
+  });
+  return data;
+}
+
 // Serve predictions API
 app.get('/api/predictions', rateLimiter(300, 60000), (req, res) => {
   if (!currentPredictions) {
     return res.status(404).json({ error: 'No prediction data available yet' });
   }
-  res.json(currentPredictions);
+  res.json(preparePredictionsResponse(currentPredictions));
 });
 
 // Serve web app status endpoint
@@ -1004,7 +1081,7 @@ async function fetchDiscordPredictions() {
         savePredictionsData();
         broadcast({
           type: 'predictions',
-          predictions: currentPredictions
+          predictions: preparePredictionsResponse(currentPredictions)
         });
         console.log(`Successfully fetched and updated predictions from Discord (${totalItems} items).`);
       } else {
@@ -1042,7 +1119,7 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({
     type: 'init',
     stock: prepareStockResponse(currentStock),
-    predictions: currentPredictions
+    predictions: preparePredictionsResponse(currentPredictions)
   }));
   
   ws.on('message', async (message) => {
