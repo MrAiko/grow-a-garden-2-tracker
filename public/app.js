@@ -341,7 +341,9 @@ const weatherImages = {
   rain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp',
   thunderstorm: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
   lightning: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
-  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp'
+  acidrain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f7e2/512.webp',
+  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp',
+  windy: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f32c/512.webp'
 };
 
 const weatherOptions = {
@@ -359,7 +361,9 @@ const weatherOptions = {
   snowfall: { emoji: '❄️', ru: 'Снегопад', en: 'Snowfall' },
   rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
   thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
+  acidrain: { emoji: '🧪', ru: 'Кислотный дождь', en: 'Acid Rain' },
   aurora: { emoji: '🌌', ru: 'Аврора', en: 'Aurora' },
+  windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' },
   megamoon: { emoji: '🌕', ru: 'Мега луна', en: 'Mega Moon' }
 };
 
@@ -367,7 +371,6 @@ function applyWeatherImageFilters(imgEl, key) {
   if (!imgEl) return;
   const k = key.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   imgEl.style.filter = '';
-  
   if (k === 'bloodmoon') {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)) hue-rotate(320deg) saturate(4) brightness(0.8)';
   } else if (k === 'goldmoon') {
@@ -376,9 +379,8 @@ function applyWeatherImageFilters(imgEl, key) {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) hue-rotate(90deg) saturate(2)';
   } else if (k === 'chainedmoon') {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(148, 163, 184, 0.9)) grayscale(1) contrast(0.6)';
-  } else if (k === 'megamoon') {
-    // Tint the gray pixelated moon blue with a glowing blue drop shadow
-    imgEl.style.filter = 'drop-shadow(0 0 10px rgba(0, 0, 255, 0.8)) sepia(0.3) hue-rotate(200deg) saturate(5) brightness(1.1)';
+  } else if (k === 'acidrain') {
+    imgEl.style.filter = 'hue-rotate(60deg) saturate(2)';
   }
 }
 
@@ -416,11 +418,7 @@ function getWeatherImageHtml(name, imageId) {
   const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
   let srcUrl = proxiedFallback;
   if (imageId) {
-    if (String(imageId).startsWith('http')) {
-      srcUrl = `/api/proxy-image?url=${encodeURIComponent(imageId)}`;
-    } else {
-      srcUrl = `/api/fruit-image?asset=${imageId}`;
-    }
+    srcUrl = `/api/fruit-image?asset=${imageId}`;
   }
   
   if (!srcUrl) {
@@ -473,7 +471,7 @@ let multiplierAlerts = JSON.parse(localStorage.getItem('multiplierAlerts') || '{
   const validKeys = [
     'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
     'rainbowmoon', 'solareclipse', 'starfall', 'rainbow', 'snowfall', 'rain', 
-    'thunderstorm', 'aurora', 'megamoon'
+    'thunderstorm', 'acidrain', 'aurora', 'windy'
   ];
   for (const item of Array.from(trackedItems)) {
     if (item.startsWith('env:')) {
@@ -1645,32 +1643,9 @@ function renderWeatherSettings() {
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
     const title = isTracked ? t.bellUntrack : t.bellTrack;
     
-    const envImage = (stockData && stockData.envImages) ? stockData.envImages[key] : null;
-    const fallbackUrl = weatherImages[key] || '';
-    const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
-    
-    let imgHtml = '';
-    const cleanEmoji = opt.emoji ? opt.emoji.trim() : '🌦️';
-    
-    let srcUrl = envImage || proxiedFallback;
-    if (srcUrl) {
-      imgHtml = `
-        <span class="weather-settings-emoji-wrapper">
-          <img src="${srcUrl}" alt="${name}" class="weather-settings-img" onload="applyWeatherImageFilters(this, '${key}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-settings-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-          <span class="weather-settings-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${cleanEmoji}</span>
-        </span>
-      `;
-    } else {
-      imgHtml = `
-        <span class="weather-settings-emoji-wrapper">
-          <span class="weather-settings-emoji-fallback" style="display: inline-flex; align-items: center; justify-content: center;">${cleanEmoji}</span>
-        </span>
-      `;
-    }
-    
     row.innerHTML = `
       <div class="weather-settings-info">
-        ${imgHtml}
+        <span class="weather-settings-emoji">${opt.emoji}</span>
         <span class="weather-settings-name">${name}</span>
       </div>
       <button class="weather-bell-btn ${bellClass}" data-env="${key}" title="${title}">
@@ -2082,37 +2057,25 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       const fallbackUrl = weatherImages[optKey] || '';
       const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
       
-      // Priority 1: Pre-resolved image from the server (catalog_images.json)
-      let srcUrl = '';
-      if (item.image) {
-        srcUrl = item.image;
-      } else {
-        // Priority 2: Look up live Roblox asset ID if currently active
-        let liveAssetId = null;
-        if (stockData && stockData.weather) {
-          const w = stockData.weather;
-          if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
-            liveAssetId = w.phaseImage;
-          } else if (w.weathers) {
-            for (const [wName, wInfo] of Object.entries(w.weathers)) {
-              if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
-                liveAssetId = wInfo.image;
-                break;
-              }
+      // Look up live Roblox asset ID if currently active
+      let liveAssetId = null;
+      if (stockData && stockData.weather) {
+        const w = stockData.weather;
+        if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
+          liveAssetId = w.phaseImage;
+        } else if (w.weathers) {
+          for (const [wName, wInfo] of Object.entries(w.weathers)) {
+            if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
+              liveAssetId = wInfo.image;
+              break;
             }
           }
         }
-        
-        if (liveAssetId) {
-          if (String(liveAssetId).startsWith('http')) {
-            srcUrl = `/api/proxy-image?url=${encodeURIComponent(liveAssetId)}`;
-          } else {
-            srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
-          }
-        } else {
-          // Priority 3: Google Noto emoji fallback
-          srcUrl = proxiedFallback;
-        }
+      }
+      
+      let srcUrl = proxiedFallback;
+      if (liveAssetId) {
+        srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
       }
       
       const cleanEmoji = emoji ? emoji.trim() : '🌦️';
