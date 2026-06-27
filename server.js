@@ -155,6 +155,31 @@ function prepareStockResponse(stock) {
     });
   }
   
+  // Proxy weather phase image and active weather images
+  if (data.weather) {
+    if (data.weather.phaseImage && data.weather.phaseImage.startsWith('http')) {
+      data.weather.phaseImage = `/api/proxy-image?url=${encodeURIComponent(data.weather.phaseImage)}`;
+    }
+    if (data.weather.weathers) {
+      for (const info of Object.values(data.weather.weathers)) {
+        if (info.image && info.image.startsWith('http')) {
+          info.image = `/api/proxy-image?url=${encodeURIComponent(info.image)}`;
+        }
+      }
+    }
+  }
+  
+  // Include catalog images so the frontend can resolve env/moon/weather icons for predictions
+  const proxiedCatalog = {};
+  for (const [key, url] of Object.entries(catalogImages)) {
+    if (url && url.startsWith('http')) {
+      proxiedCatalog[key] = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    } else {
+      proxiedCatalog[key] = url;
+    }
+  }
+  data.catalogImages = proxiedCatalog;
+  
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;
 }

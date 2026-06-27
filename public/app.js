@@ -2091,39 +2091,68 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     if (isWeather) {
       let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (optKey === 'lightning') optKey = 'thunderstorm';
-      const fallbackUrl = weatherImages[optKey] || '';
-      const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
+      const opt = weatherOptions[optKey];
+      const cleanEmoji = emoji ? emoji.trim() : (opt ? opt.emoji : '🌦️');
       
-      // Priority 1: Pre-resolved image from the server (catalog_images.json)
+      // Build srcUrl with proper priority chain
       let srcUrl = '';
+      
+      // Priority 1: item.image from prediction API (already a URL or proxy path)
       if (item.image) {
-        srcUrl = item.image;
-      } else {
-        // Priority 2: Look up live Roblox asset ID if currently active
-        let liveAssetId = null;
-        if (stockData && stockData.weather) {
-          const w = stockData.weather;
-          if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
-            liveAssetId = w.phaseImage;
-          } else if (w.weathers) {
-            for (const [wName, wInfo] of Object.entries(w.weathers)) {
-              if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
-                liveAssetId = wInfo.image;
-                break;
-              }
-            }
-          }
-        }
-        
-        if (liveAssetId) {
-          srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
+        const strImg = String(item.image).trim();
+        if (strImg.startsWith('http://') || strImg.startsWith('https://')) {
+          srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
+        } else if (strImg.startsWith('/api/')) {
+          srcUrl = strImg;
         } else {
-          // Priority 3: Google Noto emoji fallback
-          srcUrl = proxiedFallback;
+          srcUrl = `/api/fruit-image?asset=${strImg}`;
         }
       }
       
-      const cleanEmoji = emoji ? emoji.trim() : '🌦️';
+      // Priority 2: catalogImages from the server (already proxied)
+      if (!srcUrl && stockData && stockData.catalogImages) {
+        const catUrl = stockData.catalogImages[optKey] || stockData.catalogImages[item.name.toLowerCase().trim()];
+        if (catUrl) {
+          srcUrl = catUrl;
+        }
+      }
+      
+      // Priority 3: Live phase/weather image from current stock
+      if (!srcUrl && stockData && stockData.weather) {
+        const w = stockData.weather;
+        if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && w.phaseImage) {
+          const strImg = String(w.phaseImage).trim();
+          if (strImg.startsWith('/api/')) {
+            srcUrl = strImg;
+          } else if (strImg.startsWith('http')) {
+            srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
+          } else {
+            srcUrl = `/api/fruit-image?asset=${strImg}`;
+          }
+        } else if (w.weathers) {
+          for (const [wName, wInfo] of Object.entries(w.weathers)) {
+            if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.image) {
+              const strImg = String(wInfo.image).trim();
+              if (strImg.startsWith('/api/')) {
+                srcUrl = strImg;
+              } else if (strImg.startsWith('http')) {
+                srcUrl = `/api/proxy-image?url=${encodeURIComponent(strImg)}`;
+              } else {
+                srcUrl = `/api/fruit-image?asset=${strImg}`;
+              }
+              break;
+            }
+          }
+        }
+      }
+      
+      // Priority 4: Hardcoded fallback weather image URLs
+      if (!srcUrl) {
+        const fallbackUrl = weatherImages[optKey] || '';
+        if (fallbackUrl) {
+          srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
+        }
+      }
       
       if (srcUrl) {
         imgHtml = `
