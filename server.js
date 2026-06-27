@@ -155,6 +155,26 @@ function prepareStockResponse(stock) {
     });
   }
   
+  // Attach resolved environment images for the UI settings panel
+  data.envImages = {};
+  const envKeys = [
+    'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
+    'rainbowmoon', 'solareclipse', 'starfall', 'rainbow', 'snowfall', 'rain', 
+    'thunderstorm', 'aurora', 'megamoon'
+  ];
+  envKeys.forEach(key => {
+    const rawImg = catalogImages[key];
+    if (rawImg) {
+      if (rawImg.startsWith('http')) {
+        data.envImages[key] = `/api/proxy-image?url=${encodeURIComponent(rawImg)}`;
+      } else if (/^\d+$/.test(rawImg)) {
+        data.envImages[key] = `/api/fruit-image?asset=${encodeURIComponent(rawImg)}`;
+      } else {
+        data.envImages[key] = rawImg;
+      }
+    }
+  });
+  
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;
 }

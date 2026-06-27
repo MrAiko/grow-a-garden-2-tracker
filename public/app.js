@@ -367,6 +367,7 @@ function applyWeatherImageFilters(imgEl, key) {
   if (!imgEl) return;
   const k = key.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
   imgEl.style.filter = '';
+  
   if (k === 'bloodmoon') {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)) hue-rotate(320deg) saturate(4) brightness(0.8)';
   } else if (k === 'goldmoon') {
@@ -375,6 +376,9 @@ function applyWeatherImageFilters(imgEl, key) {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) hue-rotate(90deg) saturate(2)';
   } else if (k === 'chainedmoon') {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(148, 163, 184, 0.9)) grayscale(1) contrast(0.6)';
+  } else if (k === 'megamoon') {
+    // Tint the gray pixelated moon blue with a glowing blue drop shadow
+    imgEl.style.filter = 'drop-shadow(0 0 10px rgba(0, 0, 255, 0.8)) sepia(0.3) hue-rotate(200deg) saturate(5) brightness(1.1)';
   }
 }
 
@@ -1641,9 +1645,32 @@ function renderWeatherSettings() {
     const bellIcon = isTracked ? 'fa-solid fa-bell' : 'fa-regular fa-bell';
     const title = isTracked ? t.bellUntrack : t.bellTrack;
     
+    const envImage = (stockData && stockData.envImages) ? stockData.envImages[key] : null;
+    const fallbackUrl = weatherImages[key] || '';
+    const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
+    
+    let imgHtml = '';
+    const cleanEmoji = opt.emoji ? opt.emoji.trim() : '🌦️';
+    
+    let srcUrl = envImage || proxiedFallback;
+    if (srcUrl) {
+      imgHtml = `
+        <span class="weather-settings-emoji-wrapper">
+          <img src="${srcUrl}" alt="${name}" class="weather-settings-img" onload="applyWeatherImageFilters(this, '${key}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-settings-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
+          <span class="weather-settings-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${cleanEmoji}</span>
+        </span>
+      `;
+    } else {
+      imgHtml = `
+        <span class="weather-settings-emoji-wrapper">
+          <span class="weather-settings-emoji-fallback" style="display: inline-flex; align-items: center; justify-content: center;">${cleanEmoji}</span>
+        </span>
+      `;
+    }
+    
     row.innerHTML = `
       <div class="weather-settings-info">
-        <span class="weather-settings-emoji">${opt.emoji}</span>
+        ${imgHtml}
         <span class="weather-settings-name">${name}</span>
       </div>
       <button class="weather-bell-btn ${bellClass}" data-env="${key}" title="${title}">
