@@ -971,6 +971,10 @@ function renderDashboard() {
   renderFruitRefresh();
 }
 
+function renderFruitRefresh() {
+  // Safe empty fallback
+}
+
 function getFruitEmoji(name) {
   const n = name.toLowerCase().trim();
   if (n.includes('carrot')) return '🥕';
