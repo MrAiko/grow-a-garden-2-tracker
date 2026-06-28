@@ -546,16 +546,20 @@ function getWeatherFallbackIconHtml(key, emoji) {
 
 const rawWeatherIconCache = JSON.parse(localStorage.getItem('weatherIconCache') || '[]');
 const filteredWeatherIconCache = Array.isArray(rawWeatherIconCache)
-  ? rawWeatherIconCache.filter(([key, imageRef]) => canonicalEnvKey(key) !== 'rain' && !isInvalidWeatherImageRef(imageRef))
+  ? rawWeatherIconCache.filter(([, imageRef]) => !isInvalidWeatherImageRef(imageRef))
   : [];
 const weatherIconCache = new Map(filteredWeatherIconCache);
 if (filteredWeatherIconCache.length !== rawWeatherIconCache.length) {
   localStorage.setItem('weatherIconCache', JSON.stringify(filteredWeatherIconCache));
 }
+if (localStorage.getItem('rainIconCacheResetV1') !== '1') {
+  weatherIconCache.delete('rain');
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+  localStorage.setItem('rainIconCacheResetV1', '1');
+}
 
 function rememberWeatherIcon(key, imageRef) {
   const normKey = canonicalEnvKey(key);
-  if (normKey === 'rain') return;
   if (!normKey || isInvalidWeatherImageRef(imageRef)) return;
   const ref = String(imageRef);
   if (weatherIconCache.get(normKey) === ref) return;
