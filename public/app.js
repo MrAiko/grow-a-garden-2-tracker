@@ -420,7 +420,10 @@ function getWeatherImageHtml(name, imageId) {
   const emoji = opt ? opt.emoji : '🌦️';
   
   let srcUrl = '';
-  const assetId = imageId || weatherAssetIds[optKey];
+  const moonPhaseKeys = new Set(['day', 'sunset', 'moon', 'night', 'bloodmoon', 'goldmoon', 'rainbowmoon', 'megamoon', 'chainedmoon', 'pizzamoon', 'solareclipse']);
+  const isMoonPhase = moonPhaseKeys.has(optKey);
+  const assetId = isMoonPhase ? (imageId || weatherAssetIds[optKey]) : weatherAssetIds[optKey];
+  
   if (assetId) {
     if (typeof assetId === 'string' && assetId.startsWith('http')) {
       srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
@@ -2091,7 +2094,10 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       }
       
       let srcUrl = '';
-      const assetId = liveAssetId || weatherAssetIds[optKey];
+      const moonPhaseKeys = new Set(['day', 'sunset', 'moon', 'night', 'bloodmoon', 'goldmoon', 'rainbowmoon', 'megamoon', 'chainedmoon', 'pizzamoon', 'solareclipse']);
+      const isMoonPhase = moonPhaseKeys.has(optKey);
+      const assetId = isMoonPhase ? (liveAssetId || weatherAssetIds[optKey]) : weatherAssetIds[optKey];
+      
       if (assetId) {
         if (typeof assetId === 'string' && assetId.startsWith('http')) {
           srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
