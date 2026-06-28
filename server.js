@@ -113,6 +113,7 @@ function canonicalWeatherKey(name) {
   if (key === 'night') return 'moon';
   if (key === 'raining' || key === 'rainy') return 'rain';
   if (key === 'lightning') return 'thunderstorm';
+  if (key === 'auroraborealis') return 'aurora';
   if (key === 'bloodmoon' || key === 'blood') return 'bloodmoon';
   if (key === 'goldmoon' || key === 'gold') return 'goldmoon';
   if (key === 'chainedmoon' || key === 'chained') return 'chainedmoon';
