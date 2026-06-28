@@ -457,6 +457,10 @@ async function handleUpdateStock(newStock) {
       const normalizedWeathers = {};
       for (const [name, info] of Object.entries(newStock.weather.weathers)) {
         const lowerName = name.toLowerCase();
+        if (lowerName.includes("moon") || lowerName.includes("eclipse") || 
+            ["gold", "blood", "chained", "pizza", "rainbow", "solar", "mega"].some(k => lowerName.includes(k))) {
+          continue;
+        }
         let targetName = name;
         if (lowerName === "rain" || lowerName === "raining" || lowerName === "rainy") {
           targetName = "Rain";

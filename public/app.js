@@ -341,9 +341,18 @@ const weatherImages = {
   rain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp',
   thunderstorm: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
   lightning: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
-  acidrain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f7e2/512.webp',
-  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp',
-  windy: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f32c/512.webp'
+  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp'
+};
+
+const weatherAssetIds = {
+  day: '100486757307207',
+  sunset: '86217612022586',
+  moon: '91446334780160',
+  night: '91446334780160',
+  bloodmoon: '140465339393451',
+  goldmoon: '84902063004871',
+  rainbowmoon: '93602895495056',
+  megamoon: '107925838920918'
 };
 
 const weatherOptions = {
@@ -361,9 +370,7 @@ const weatherOptions = {
   snowfall: { emoji: '❄️', ru: 'Снегопад', en: 'Snowfall' },
   rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
   thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
-  acidrain: { emoji: '🧪', ru: 'Кислотный дождь', en: 'Acid Rain' },
   aurora: { emoji: '🌌', ru: 'Аврора', en: 'Aurora' },
-  windy: { emoji: '🍃', ru: 'Ветрено', en: 'Windy' },
   megamoon: { emoji: '🌕', ru: 'Мега луна', en: 'Mega Moon' }
 };
 
@@ -379,8 +386,6 @@ function applyWeatherImageFilters(imgEl, key) {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) hue-rotate(90deg) saturate(2)';
   } else if (k === 'chainedmoon') {
     imgEl.style.filter = 'drop-shadow(0 0 8px rgba(148, 163, 184, 0.9)) grayscale(1) contrast(0.6)';
-  } else if (k === 'acidrain') {
-    imgEl.style.filter = 'hue-rotate(60deg) saturate(2)';
   }
 }
 
@@ -414,11 +419,19 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  const fallbackUrl = weatherImages[optKey] || '';
-  const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
-  let srcUrl = proxiedFallback;
-  if (imageId) {
-    srcUrl = `/api/fruit-image?asset=${imageId}`;
+  let srcUrl = '';
+  const assetId = imageId || weatherAssetIds[optKey];
+  if (assetId) {
+    if (typeof assetId === 'string' && assetId.startsWith('http')) {
+      srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
+    } else {
+      srcUrl = `/api/fruit-image?asset=${assetId}`;
+    }
+  } else {
+    const fallbackUrl = weatherImages[optKey] || '';
+    if (fallbackUrl) {
+      srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
+    }
   }
   
   if (!srcUrl) {
@@ -471,7 +484,7 @@ let multiplierAlerts = JSON.parse(localStorage.getItem('multiplierAlerts') || '{
   const validKeys = [
     'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
     'rainbowmoon', 'solareclipse', 'starfall', 'rainbow', 'snowfall', 'rain', 
-    'thunderstorm', 'acidrain', 'aurora', 'windy'
+    'thunderstorm', 'aurora'
   ];
   for (const item of Array.from(trackedItems)) {
     if (item.startsWith('env:')) {
@@ -2073,9 +2086,19 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
       
-      let srcUrl = proxiedFallback;
-      if (liveAssetId) {
-        srcUrl = `/api/fruit-image?asset=${liveAssetId}`;
+      let srcUrl = '';
+      const assetId = liveAssetId || weatherAssetIds[optKey];
+      if (assetId) {
+        if (typeof assetId === 'string' && assetId.startsWith('http')) {
+          srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
+        } else {
+          srcUrl = `/api/fruit-image?asset=${assetId}`;
+        }
+      } else {
+        const fallbackUrl = weatherImages[optKey] || '';
+        if (fallbackUrl) {
+          srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
+        }
       }
       
       const cleanEmoji = emoji ? emoji.trim() : '🌦️';
