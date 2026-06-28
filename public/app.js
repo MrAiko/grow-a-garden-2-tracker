@@ -316,6 +316,62 @@ function getItemTranslationKey(name) {
   return String(name || '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+const fallbackWordTranslations = {
+  bloom: 'цветение',
+  flower: 'цветок',
+  fruit: 'фрукт',
+  seed: 'семена',
+  seeds: 'семена',
+  mushroom: 'гриб',
+  moon: 'лунное',
+  sun: 'солнечное',
+  solar: 'солнечное',
+  dragon: 'дракон',
+  poison: 'ядовитый',
+  ghost: 'призрачный',
+  hypno: 'гипно',
+  hypnotic: 'гипнотический',
+  glow: 'светящееся',
+  golden: 'золотой',
+  rainbow: 'радужный',
+  blood: 'кровавый',
+  baby: 'маленький'
+};
+
+function transliterateEnglishWord(word) {
+  const src = String(word || '').toLowerCase();
+  const map = {
+    sch: 'ш', sh: 'ш', ch: 'ч', th: 'т', ph: 'ф', gh: 'г', ck: 'к',
+    yo: 'йо', yu: 'ю', ya: 'я', ye: 'е', oo: 'у', ee: 'и',
+    a: 'а', b: 'б', c: 'к', d: 'д', e: 'е', f: 'ф', g: 'г',
+    h: 'х', i: 'и', j: 'дж', k: 'к', l: 'л', m: 'м', n: 'н',
+    o: 'о', p: 'п', q: 'к', r: 'р', s: 'с', t: 'т', u: 'у',
+    v: 'в', w: 'в', x: 'кс', y: 'и', z: 'з'
+  };
+  let out = '';
+  for (let i = 0; i < src.length;) {
+    let matched = false;
+    for (const len of [3, 2, 1]) {
+      const part = src.slice(i, i + len);
+      if (map[part]) {
+        out += map[part];
+        i += len;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      out += src[i];
+      i += 1;
+    }
+  }
+  return out || word;
+}
+
+function capitalizeTranslation(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
 function translateItemName(name) {
   if (currentLang !== 'ru') return name;
   const key = getItemTranslationKey(name);
@@ -328,11 +384,15 @@ function translateItemName(name) {
   if (words.length > 1) {
     let translatedAny = false;
     const translatedWords = words.map(word => {
-      const translated = itemTranslations[word];
+      const translated = itemTranslations[word] || fallbackWordTranslations[word];
       if (translated) translatedAny = true;
       return translated || word;
     });
-    if (translatedAny) return translatedWords.join(' ');
+    if (translatedAny) return capitalizeTranslation(translatedWords.join(' '));
+  }
+
+  if (/^[a-z][a-z\s'_-]*$/i.test(String(name))) {
+    return capitalizeTranslation(words.map(word => fallbackWordTranslations[word] || transliterateEnglishWord(word)).join(' '));
   }
 
   return name;
@@ -500,9 +560,14 @@ function getWeatherCatalogImageRef(key) {
   return item && item.image ? item.image : '';
 }
 
+function getWeatherPreferredImageRef(key, liveImageRef) {
+  const normKey = canonicalEnvKey(key);
+  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey);
+}
+
 function getWeatherSettingsIconHtml(key, opt) {
   const normKey = canonicalEnvKey(key);
-  const imageRef = getWeatherCatalogImageRef(normKey) || weatherAssetIds[normKey] || weatherIconCache.get(normKey);
+  const imageRef = getWeatherPreferredImageRef(normKey);
   const srcUrl = weatherImageUrl(imageRef);
   const emoji = opt && opt.emoji ? opt.emoji : 'рџЊ¦пёЏ';
 
@@ -547,7 +612,7 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey] || allOptions[rawOptKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  const srcUrl = weatherImageUrl(imageId || getWeatherCatalogImageRef(optKey) || weatherAssetIds[optKey] || weatherIconCache.get(optKey));
+  const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, imageId));
   
   if (!srcUrl) {
     return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${emoji}</span></span>`;
@@ -2185,7 +2250,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
       
-      const srcUrl = weatherImageUrl(liveAssetId || item.image || getWeatherCatalogImageRef(optKey) || weatherAssetIds[optKey] || weatherIconCache.get(optKey));
+      const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, liveAssetId || item.image));
       
       const cleanEmoji = emoji ? emoji.trim() : '🌦️';
       

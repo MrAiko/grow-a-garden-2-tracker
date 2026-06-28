@@ -97,6 +97,12 @@ const DEFAULT_WEATHER_CATALOG = {
   megamoon: { name: "Mega Moon", image: "107925838920918" }
 };
 
+const LOCKED_DEFAULT_WEATHER_IMAGES = new Set(
+  Object.entries(DEFAULT_WEATHER_CATALOG)
+    .filter(([, item]) => item && isValidWeatherImage(item.image))
+    .map(([key]) => key)
+);
+
 function normalizeEnvKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -115,6 +121,14 @@ function canonicalWeatherKey(name) {
   if (key === 'solareclipse' || key === 'solar') return 'solareclipse';
   if (key === 'megamoon' || key === 'mega') return 'megamoon';
   return key;
+}
+
+function isTechnicalWeatherName(name) {
+  const key = normalizeEnvKey(name);
+  return !key || key.includes('websocket') || key.includes('remote') ||
+    key.includes('controller') || key.includes('module') ||
+    key.includes('request') || key.includes('response') ||
+    key.includes('snapshot') || key.includes('event');
 }
 
 function isEmojiFallbackImage(image) {
@@ -222,6 +236,7 @@ function saveWeatherCatalogImages() {
 function rememberWeatherCatalogImage(name, image, displayName) {
   const key = canonicalWeatherKey(name);
   if (!key || !isValidWeatherImage(image)) return false;
+  if (LOCKED_DEFAULT_WEATHER_IMAGES.has(key)) return false;
   const value = String(image);
   const prev = weatherCatalogImages[key];
   const prevImage = typeof prev === 'string' ? prev : prev && prev.image;
@@ -250,6 +265,7 @@ function buildWeatherCatalog(stock) {
     if (!catalog[normKey]) catalog[normKey] = { name: item.name || String(key), image: null };
     if (item.name) catalog[normKey].name = item.name;
     const image = typeof item === 'string' ? item : item.image;
+    if (LOCKED_DEFAULT_WEATHER_IMAGES.has(normKey)) return;
     if (isValidWeatherImage(image)) catalog[normKey].image = image;
   };
 
@@ -290,6 +306,11 @@ function buildWeatherCatalog(stock) {
 function prepareStockResponse(stock) {
   if (!stock) return null;
   const data = JSON.parse(JSON.stringify(stock));
+
+  if (data.weather && isTechnicalWeatherName(data.weather.phase)) {
+    data.weather.phase = data.weather.night ? 'Moon' : 'Day';
+    data.weather.phaseImage = null;
+  }
   
   if (data.shops) {
     for (const shopKey of Object.keys(data.shops)) {
@@ -519,11 +540,14 @@ function getMergedWeather() {
   activeSessionsList.sort((a, b) => b.lastUpdate - a.lastUpdate);
   
   // Find phase
-  let selectedPhase = activeSessionsList[0].weather.phase || 'Day';
+  let selectedPhase = isTechnicalWeatherName(activeSessionsList[0].weather.phase)
+    ? (activeSessionsList[0].weather.night ? 'Moon' : 'Day')
+    : (activeSessionsList[0].weather.phase || 'Day');
   const STANDARD_PHASES = ["day", "sunset", "moon", "night"];
   for (const session of activeSessionsList) {
     if (session.weather && session.weather.phase) {
       const phase = session.weather.phase;
+      if (isTechnicalWeatherName(phase)) continue;
       const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (phaseLower && !STANDARD_PHASES.includes(phaseLower)) {
         selectedPhase = phase; // Prioritize special phase
@@ -613,6 +637,11 @@ async function handleUpdateStock(newStock) {
   const now = Date.now();
   
   if (newStock.weather) {
+    if (isTechnicalWeatherName(newStock.weather.phase)) {
+      newStock.weather.phase = newStock.weather.night ? 'Moon' : 'Day';
+      newStock.weather.phaseImage = null;
+    }
+
     // 1. Normalize any existing weather names in newStock.weather.weathers (e.g. Raining -> Rain)
     if (newStock.weather.weathers) {
       const normalizedWeathers = {};
