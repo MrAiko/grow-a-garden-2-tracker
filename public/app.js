@@ -45,18 +45,18 @@ const translations = {
     weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Погода и Время Суток',
     weatherLabelTime: 'Время суток',
     weatherLabelActive: 'Активная погода',
-    timeDay: 'День ☀️',
-    timeNight: 'Ночь 🌙',
-    weatherNone: 'Нет ☀️',
-    phasechainedmoon: 'Цепная луна ⛓️',
-    phasegoldmoon: 'Золотая луна 🟡',
-    phasebloodmoon: 'Кровавая луна 🔴',
-    phasepizzamoon: 'Пицца-луна 🍕',
-    phaserainbowmoon: 'Радужная луна 🌈',
-    phasemegamoon: 'Мега луна 🌕',
-    phasesunset: 'Закат 🌇',
-    phaseday: 'День ☀️',
-    phasemoon: 'Ночь 🌙',
+    timeDay: 'День',
+    timeNight: 'Ночь',
+    weatherNone: 'Нет',
+    phasechainedmoon: 'Цепная луна',
+    phasegoldmoon: 'Золотая луна',
+    phasebloodmoon: 'Кровавая луна',
+    phasepizzamoon: 'Пицца-луна',
+    phaserainbowmoon: 'Радужная луна',
+    phasemegamoon: 'Мега луна',
+    phasesunset: 'Закат',
+    phaseday: 'День',
+    phasemoon: 'Ночь',
     timeStarted: 'Начало в {}',
     timeEnded: 'Конец в {}',
     weatherEndsIn: 'Закончится через: {}',
@@ -129,18 +129,18 @@ const translations = {
     weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Weather & Time',
     weatherLabelTime: 'Time of Day',
     weatherLabelActive: 'Active Weather',
-    timeDay: 'Day ☀️',
-    timeNight: 'Night 🌙',
-    weatherNone: 'None ☀️',
-    phasechainedmoon: 'Chained Moon ⛓️',
-    phasegoldmoon: 'Goldmoon 🟡',
-    phasebloodmoon: 'Blood Moon 🔴',
-    phasepizzamoon: 'Pizza Moon 🍕',
-    phaserainbowmoon: 'Rainbow Moon 🌈',
-    phasemegamoon: 'Mega Moon 🌕',
-    phasesunset: 'Sunset 🌇',
-    phaseday: 'Day ☀️',
-    phasemoon: 'Night 🌙',
+    timeDay: 'Day',
+    timeNight: 'Night',
+    weatherNone: 'None',
+    phasechainedmoon: 'Chained Moon',
+    phasegoldmoon: 'Goldmoon',
+    phasebloodmoon: 'Blood Moon',
+    phasepizzamoon: 'Pizza Moon',
+    phaserainbowmoon: 'Rainbow Moon',
+    phasemegamoon: 'Mega Moon',
+    phasesunset: 'Sunset',
+    phaseday: 'Day',
+    phasemoon: 'Night',
     timeStarted: 'Started at {}',
     timeEnded: 'Ended at {}',
     weatherEndsIn: 'Ends in: {}',
@@ -425,26 +425,6 @@ let lastPhaseKey = '';
 let predictionData = null;
 let activePredictionTab = 'seeds';
 
-const weatherImages = {
-  day: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f31e/512.webp',
-  sunset: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f307/512.webp',
-  moon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f319/512.webp',
-  night: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f319/512.webp',
-  bloodmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
-  goldmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
-  chainedmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
-  pizzamoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f355/512.webp',
-  rainbowmoon: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f315/512.webp',
-  solareclipse: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f311/512.webp',
-  starfall: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f320/512.webp',
-  rainbow: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f308/512.webp',
-  snowfall: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f328/512.webp',
-  rain: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp',
-  thunderstorm: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
-  lightning: 'https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp',
-  aurora: 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp'
-};
-
 const weatherAssetIds = {
   day: '100486757307207',
   sunset: '86217612022586',
@@ -472,6 +452,7 @@ const weatherOptions = {
   rain: { emoji: '🌧️', ru: 'Дождь', en: 'Rain' },
   thunderstorm: { emoji: '⛈️', ru: 'Гроза', en: 'Thunderstorm' },
   aurora: { emoji: '🌌', ru: 'Аврора', en: 'Aurora' },
+  sunburst: { emoji: '☀️', ru: 'Солнечная вспышка', en: 'Sunburst' },
   megamoon: { emoji: '🌕', ru: 'Мега луна', en: 'Mega Moon' }
 };
 
@@ -518,7 +499,7 @@ function isEmojiFallbackImage(imageRef) {
   return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
 }
 
-function isInvalidWeatherImageRef(imageRef) {
+function isInvalidWeatherImageRef(imageRef, key = '') {
   if (!imageRef) return true;
   const ref = String(imageRef).trim().toLowerCase();
   if (!ref || ref === 'null' || ref === 'undefined' || ref === 'none' || ref === '0') return true;
@@ -536,14 +517,6 @@ function firstValidWeatherImageRef(...refs) {
   return '';
 }
 
-function getWeatherFallbackIconHtml(key, emoji) {
-  const normKey = canonicalEnvKey(key);
-  if (normKey === 'rain') {
-    return '<i class="fa-solid fa-cloud-rain" aria-hidden="true"></i>';
-  }
-  return emoji || '';
-}
-
 const rawWeatherIconCache = JSON.parse(localStorage.getItem('weatherIconCache') || '[]');
 const filteredWeatherIconCache = Array.isArray(rawWeatherIconCache)
   ? rawWeatherIconCache.filter(([, imageRef]) => !isInvalidWeatherImageRef(imageRef))
@@ -557,10 +530,16 @@ if (localStorage.getItem('rainIconCacheResetV1') !== '1') {
   localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
   localStorage.setItem('rainIconCacheResetV1', '1');
 }
+if (localStorage.getItem('weatherIconCacheResetV2') !== '1') {
+  weatherIconCache.delete('rain');
+  weatherIconCache.delete('snowfall');
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+  localStorage.setItem('weatherIconCacheResetV2', '1');
+}
 
 function rememberWeatherIcon(key, imageRef) {
   const normKey = canonicalEnvKey(key);
-  if (!normKey || isInvalidWeatherImageRef(imageRef)) return;
+  if (!normKey || isInvalidWeatherImageRef(imageRef, normKey)) return;
   const ref = String(imageRef);
   if (weatherIconCache.get(normKey) === ref) return;
   weatherIconCache.set(normKey, ref);
@@ -595,16 +574,16 @@ function updateWeatherIconCache(stock) {
 function getWeatherCatalogImageRef(key) {
   const normKey = canonicalEnvKey(key);
   const item = stockData && stockData.weatherCatalog && stockData.weatherCatalog[normKey];
-  return item && !isInvalidWeatherImageRef(item.image) ? item.image : '';
+  return item && !isInvalidWeatherImageRef(item.image, normKey) ? item.image : '';
 }
 
 function getWeatherPreferredImageRef(key, liveImageRef) {
   const normKey = canonicalEnvKey(key);
   return firstValidWeatherImageRef(
-    weatherAssetIds[normKey],
     liveImageRef,
     getWeatherCatalogImageRef(normKey),
-    weatherIconCache.get(normKey)
+    weatherIconCache.get(normKey),
+    weatherAssetIds[normKey]
   );
 }
 
@@ -612,18 +591,14 @@ function getWeatherSettingsIconHtml(key, opt) {
   const normKey = canonicalEnvKey(key);
   const imageRef = getWeatherPreferredImageRef(normKey);
   const srcUrl = weatherImageUrl(imageRef);
-  const emoji = opt && opt.emoji ? opt.emoji : 'рџЊ¦пёЏ';
-
-  const fallbackIcon = getWeatherFallbackIconHtml(normKey, emoji);
 
   if (!srcUrl) {
-    return `<span class="weather-settings-icon-wrapper"><span class="weather-settings-emoji-fallback">${fallbackIcon}</span></span>`;
+    return `<span class="weather-settings-icon-wrapper"></span>`;
   }
 
   return `
     <span class="weather-settings-icon-wrapper">
-      <img src="${srcUrl}" alt="" class="weather-settings-icon" loading="lazy" onload="applyWeatherImageFilters(this, '${normKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-settings-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-      <span class="weather-settings-emoji-fallback" style="display: none;">${fallbackIcon}</span>
+      <img src="${srcUrl}" alt="" class="weather-settings-icon" loading="lazy" onload="applyWeatherImageFilters(this, '${normKey}')" onerror="this.onerror=null; this.style.display='none';">
     </span>
   `;
 }
@@ -655,19 +630,15 @@ function getWeatherImageHtml(name, imageId) {
   const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
   const allOptions = { ...weatherOptions, ...discovered };
   const opt = allOptions[optKey] || allOptions[rawOptKey];
-  const emoji = opt ? opt.emoji : '🌦️';
-  
-  const fallbackIcon = getWeatherFallbackIconHtml(optKey, emoji);
   const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, imageId));
   
   if (!srcUrl) {
-    return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${fallbackIcon}</span></span>`;
+    return `<span class="weather-icon-img-wrapper"></span>`;
   }
   
   return `
     <span class="weather-icon-img-wrapper">
-      <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-      <span class="weather-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${fallbackIcon}</span>
+      <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none';">
     </span>
   `;
 }
@@ -709,8 +680,8 @@ let multiplierAlerts = JSON.parse(localStorage.getItem('multiplierAlerts') || '{
   // to prevent hidden/ghost notifications that the user cannot see or toggle off
   const validKeys = [
     'day', 'sunset', 'moon', 'bloodmoon', 'goldmoon', 'chainedmoon', 'pizzamoon', 
-    'rainbowmoon', 'solareclipse', 'starfall', 'rainbow', 'snowfall', 'rain', 
-    'thunderstorm', 'aurora'
+    'rainbowmoon', 'solareclipse', 'megamoon', 'starfall', 'rainbow', 'snowfall', 'rain', 
+    'thunderstorm', 'aurora', 'sunburst'
   ];
   for (const item of Array.from(trackedItems)) {
     if (item.startsWith('env:')) {
@@ -1055,7 +1026,7 @@ function updateWeatherUI() {
       // Fallback if phase translation is missing (dynamically format the name)
       if (!phaseText) {
         const formattedPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
-        phaseText = w.night ? `🌙 ${formattedPhase}` : `☀️ ${formattedPhase}`;
+        phaseText = formattedPhase;
       }
       
       const imgHtml = getWeatherImageHtml(phase, w.phaseImage);
@@ -1127,15 +1098,13 @@ function updateWeatherUI() {
           const allOptions = { ...weatherOptions, ...discovered };
           const opt = allOptions[optKey];
           const displayName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : name;
-          const emoji = opt ? opt.emoji : '🌦️';
-          
           const imgHtml = getWeatherImageHtml(name, image);
           
           weatherBox.innerHTML = `
             ${imgHtml}
             <div class="weather-box-details" style="display: flex; flex-direction: column; gap: 4px; flex: 1; text-align: inherit;">
               <span class="weather-label">${t.weatherLabelActive}</span>
-              <span class="weather-val" style="color: ${colorStyle}">${emoji} ${displayName}</span>
+              <span class="weather-val" style="color: ${colorStyle}">${displayName}</span>
               <span class="weather-detail weather-timer-countdown">--:--:--</span>
             </div>
           `;
@@ -1954,6 +1923,21 @@ function discoverEnvironments(w) {
   
   let discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
   let changed = false;
+
+  const catalog = stockData && stockData.weatherCatalog && typeof stockData.weatherCatalog === 'object'
+    ? stockData.weatherCatalog
+    : {};
+  for (const [key, item] of Object.entries(catalog)) {
+    const lowerName = canonicalEnvKey(key);
+    if (!lowerName || weatherOptions[lowerName] || discovered[lowerName]) continue;
+    const displayName = item && item.name ? item.name : key;
+    discovered[lowerName] = {
+      emoji: '',
+      ru: displayName,
+      en: displayName
+    };
+    changed = true;
+  }
   
   // 1. Discover Phase
   let phase = w.phase || '';
@@ -1967,7 +1951,7 @@ function discoverEnvironments(w) {
     let phaseLower = canonicalEnvKey(phase);
     if (!weatherOptions[phaseLower] && !discovered[phaseLower]) {
       discovered[phaseLower] = {
-        emoji: w.night ? '🌙' : '☀️',
+        emoji: '',
         ru: phase,
         en: phase
       };
@@ -1981,7 +1965,7 @@ function discoverEnvironments(w) {
       let lowerName = canonicalEnvKey(name);
       if (!weatherOptions[lowerName] && !discovered[lowerName]) {
         discovered[lowerName] = {
-          emoji: '🌦️',
+          emoji: '',
           ru: name,
           en: name
         };
@@ -2198,7 +2182,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     card.setAttribute('data-timestamp', item.timestamp);
     card.setAttribute('data-instock', isCurrentlyOnStock ? 'true' : 'false');
     
-    // Determine translation and emoji
+    // Determine translation
     let displayName = item.name;
     let emoji = '';
     
@@ -2206,7 +2190,6 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       const optKey = canonicalEnvKey(item.name);
       const opt = weatherOptions[optKey];
       if (opt) {
-        emoji = opt.emoji + ' ';
         displayName = currentLang === 'ru' ? opt.ru : opt.en;
       }
     } else {
@@ -2299,20 +2282,15 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       
       const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, liveAssetId || item.image));
       
-      const cleanEmoji = getWeatherFallbackIconHtml(optKey, emoji ? emoji.trim() : '🌦️');
-      
       if (srcUrl) {
         imgHtml = `
           <span class="pred-item-image-wrapper">
-            <img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.pred-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-            <span class="pred-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${cleanEmoji}</span>
+            <img src="${srcUrl}" alt="${displayName}" class="pred-item-image" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none';">
           </span>
         `;
       } else {
         imgHtml = `
-          <span class="pred-item-image-wrapper">
-            <span class="pred-emoji-fallback" style="display: inline-flex; align-items: center; justify-content: center;">${cleanEmoji}</span>
-          </span>
+          <span class="pred-item-image-wrapper"></span>
         `;
       }
     } else {

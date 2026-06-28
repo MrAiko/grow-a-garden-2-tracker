@@ -94,6 +94,7 @@ const DEFAULT_WEATHER_CATALOG = {
   thunderstorm: { name: "Thunderstorm", image: null },
   lightning: { name: "Thunderstorm", image: null },
   aurora: { name: "Aurora", image: null },
+  sunburst: { name: "Sunburst", image: null },
   megamoon: { name: "Mega Moon", image: "107925838920918" }
 };
 
@@ -135,7 +136,7 @@ function isTechnicalWeatherName(name) {
 const DECORATIVE_WEATHER_KEYS = new Set([
   'background', 'bg', 'frame', 'shadow', 'glow', 'border', 'gradient',
   'uigradient', 'uistroke', 'uicorner', 'overlay', 'shine', 'bevel',
-  'beveleffect', 'sunburst', 'image', 'icon', 'vector', 'thumbnail',
+  'beveleffect', 'image', 'icon', 'vector', 'thumbnail',
   'timer', 'time', 'clock', 'label', 'text', 'textlabel', 'title',
   'container', 'content', 'main', 'mainframe'
 ]);
@@ -144,7 +145,7 @@ function isDecorativeWeatherName(name) {
   const key = normalizeEnvKey(name);
   if (!key) return false;
   return DECORATIVE_WEATHER_KEYS.has(key) ||
-    key.includes('sunburst') || key.includes('background') ||
+    key.includes('background') ||
     key.includes('gradient') || key.includes('shadow') ||
     key.includes('bevel') || key.includes('overlay');
 }
@@ -162,6 +163,10 @@ function isValidWeatherImage(image) {
     !ref.includes('rbxassetid://0') &&
     !ref.includes('112886786873408') &&
     !ref.includes('asset=112886786873408');
+}
+
+function isValidWeatherImageForKey(name, image) {
+  return isValidWeatherImage(image);
 }
 
 // Load Stock Data
@@ -263,7 +268,7 @@ function rememberWeatherCatalogImage(name, image, displayName) {
     !key ||
     isTechnicalWeatherName(name) || isTechnicalWeatherName(key) ||
     isDecorativeWeatherName(name) || isDecorativeWeatherName(key) ||
-    !isValidWeatherImage(image)
+    !isValidWeatherImageForKey(key, image)
   ) return false;
   if (LOCKED_DEFAULT_WEATHER_IMAGES.has(key)) return false;
   const value = String(image);
@@ -300,7 +305,7 @@ function buildWeatherCatalog(stock) {
     if (item.name) catalog[normKey].name = item.name;
     const image = typeof item === 'string' ? item : item.image;
     if (LOCKED_DEFAULT_WEATHER_IMAGES.has(normKey)) return;
-    if (isValidWeatherImage(image)) catalog[normKey].image = image;
+    if (isValidWeatherImageForKey(normKey, image)) catalog[normKey].image = image;
   };
 
   for (const [key, item] of Object.entries(weatherCatalogImages)) {
@@ -687,6 +692,10 @@ async function handleUpdateStock(newStock) {
         isDecorativeWeatherName(key) || isDecorativeWeatherName(itemName)
       ) {
         delete newStock.weatherCatalog[key];
+        continue;
+      }
+      if (item && typeof item === 'object' && item.image && !isValidWeatherImageForKey(key, item.image)) {
+        item.image = null;
       }
     }
   }
@@ -733,6 +742,11 @@ async function handleUpdateStock(newStock) {
         }
       }
       newStock.weather.weathers = normalizedWeathers;
+      for (const [name, info] of Object.entries(newStock.weather.weathers)) {
+        if (info && info.image && !isValidWeatherImageForKey(name, info.image)) {
+          delete info.image;
+        }
+      }
     }
 
     // 2. Normalize weatherControllerAttributes into newStock.weather.weathers immediately
