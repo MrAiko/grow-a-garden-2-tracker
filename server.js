@@ -131,6 +131,23 @@ function isTechnicalWeatherName(name) {
     key.includes('snapshot') || key.includes('event');
 }
 
+const DECORATIVE_WEATHER_KEYS = new Set([
+  'background', 'bg', 'frame', 'shadow', 'glow', 'border', 'gradient',
+  'uigradient', 'uistroke', 'uicorner', 'overlay', 'shine', 'bevel',
+  'beveleffect', 'sunburst', 'image', 'icon', 'vector', 'thumbnail',
+  'timer', 'time', 'clock', 'label', 'text', 'textlabel', 'title',
+  'container', 'content', 'main', 'mainframe'
+]);
+
+function isDecorativeWeatherName(name) {
+  const key = normalizeEnvKey(name);
+  if (!key) return false;
+  return DECORATIVE_WEATHER_KEYS.has(key) ||
+    key.includes('sunburst') || key.includes('background') ||
+    key.includes('gradient') || key.includes('shadow') ||
+    key.includes('bevel') || key.includes('overlay');
+}
+
 function isEmojiFallbackImage(image) {
   const ref = String(image || '').toLowerCase();
   return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
@@ -235,7 +252,12 @@ function saveWeatherCatalogImages() {
 
 function rememberWeatherCatalogImage(name, image, displayName) {
   const key = canonicalWeatherKey(name);
-  if (!key || !isValidWeatherImage(image)) return false;
+  if (
+    !key ||
+    isTechnicalWeatherName(name) || isTechnicalWeatherName(key) ||
+    isDecorativeWeatherName(name) || isDecorativeWeatherName(key) ||
+    !isValidWeatherImage(image)
+  ) return false;
   if (LOCKED_DEFAULT_WEATHER_IMAGES.has(key)) return false;
   const value = String(image);
   const prev = weatherCatalogImages[key];
@@ -262,6 +284,11 @@ function buildWeatherCatalog(stock) {
   const merge = (key, item) => {
     const normKey = canonicalWeatherKey(key);
     if (!normKey || !item) return;
+    const itemName = typeof item === 'object' ? item.name : '';
+    if (
+      isTechnicalWeatherName(key) || isTechnicalWeatherName(normKey) || (itemName && isTechnicalWeatherName(itemName)) ||
+      isDecorativeWeatherName(key) || isDecorativeWeatherName(normKey) || isDecorativeWeatherName(itemName)
+    ) return;
     if (!catalog[normKey]) catalog[normKey] = { name: item.name || String(key), image: null };
     if (item.name) catalog[normKey].name = item.name;
     const image = typeof item === 'string' ? item : item.image;
@@ -307,7 +334,7 @@ function prepareStockResponse(stock) {
   if (!stock) return null;
   const data = JSON.parse(JSON.stringify(stock));
 
-  if (data.weather && isTechnicalWeatherName(data.weather.phase)) {
+  if (data.weather && (isTechnicalWeatherName(data.weather.phase) || isDecorativeWeatherName(data.weather.phase))) {
     data.weather.phase = data.weather.night ? 'Moon' : 'Day';
     data.weather.phaseImage = null;
   }
@@ -540,14 +567,16 @@ function getMergedWeather() {
   activeSessionsList.sort((a, b) => b.lastUpdate - a.lastUpdate);
   
   // Find phase
-  let selectedPhase = isTechnicalWeatherName(activeSessionsList[0].weather.phase)
-    ? (activeSessionsList[0].weather.night ? 'Moon' : 'Day')
-    : (activeSessionsList[0].weather.phase || 'Day');
+  const newestWeather = activeSessionsList[0].weather || {};
+  const newestPhase = newestWeather.phase;
+  let selectedPhase = (isTechnicalWeatherName(newestPhase) || isDecorativeWeatherName(newestPhase))
+    ? (newestWeather.night ? 'Moon' : 'Day')
+    : (newestPhase || 'Day');
   const STANDARD_PHASES = ["day", "sunset", "moon", "night"];
   for (const session of activeSessionsList) {
     if (session.weather && session.weather.phase) {
       const phase = session.weather.phase;
-      if (isTechnicalWeatherName(phase)) continue;
+      if (isTechnicalWeatherName(phase) || isDecorativeWeatherName(phase)) continue;
       const phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (phaseLower && !STANDARD_PHASES.includes(phaseLower)) {
         selectedPhase = phase; // Prioritize special phase
@@ -562,6 +591,7 @@ function getMergedWeather() {
     if (session.weather && session.weather.weathers) {
       const weathers = session.weather.weathers;
       for (const [name, info] of Object.entries(weathers)) {
+        if (isTechnicalWeatherName(name) || isDecorativeWeatherName(name)) continue;
         if (info.playing) {
           const endTime = normalizeEndTime(info.endTime);
           if (!mergedWeathers[name]) {
@@ -594,10 +624,16 @@ function getMergedWeather() {
     };
   }
   
+  const selectedPhaseImage = primarySession.weather.phase === selectedPhase &&
+    !isTechnicalWeatherName(primarySession.weather.phase) &&
+    !isDecorativeWeatherName(primarySession.weather.phase)
+    ? (primarySession.weather.phaseImage || null)
+    : null;
+
   return {
     night: isNight,
     phase: selectedPhase,
-    phaseImage: primarySession.weather.phaseImage || null,
+    phaseImage: selectedPhaseImage,
     weathers: mergedWeathers,
     endTime: getMaxWeatherEndTime(activeSessionsList, mergedWeathers),
     nightStartedAt: primarySession.weather.nightStartedAt,
@@ -635,9 +671,21 @@ async function handleUpdateStock(newStock) {
 
   const jobId = newStock.jobId || 'default';
   const now = Date.now();
+
+  if (newStock.weatherCatalog && typeof newStock.weatherCatalog === 'object') {
+    for (const [key, item] of Object.entries(newStock.weatherCatalog)) {
+      const itemName = item && typeof item === 'object' ? item.name : key;
+      if (
+        isTechnicalWeatherName(key) || isTechnicalWeatherName(itemName) ||
+        isDecorativeWeatherName(key) || isDecorativeWeatherName(itemName)
+      ) {
+        delete newStock.weatherCatalog[key];
+      }
+    }
+  }
   
   if (newStock.weather) {
-    if (isTechnicalWeatherName(newStock.weather.phase)) {
+    if (isTechnicalWeatherName(newStock.weather.phase) || isDecorativeWeatherName(newStock.weather.phase)) {
       newStock.weather.phase = newStock.weather.night ? 'Moon' : 'Day';
       newStock.weather.phaseImage = null;
     }
@@ -648,6 +696,9 @@ async function handleUpdateStock(newStock) {
       for (const [name, info] of Object.entries(newStock.weather.weathers)) {
         const lowerName = name.toLowerCase();
         const weatherKey = normalizeEnvKey(name);
+        if (isTechnicalWeatherName(name) || isDecorativeWeatherName(name)) {
+          continue;
+        }
         if (weatherKey.includes("moon") || weatherKey.includes("eclipse") || 
             ["gold", "blood", "chained", "pizza", "solar", "mega"].includes(weatherKey)) {
           continue;
@@ -684,9 +735,13 @@ async function handleUpdateStock(newStock) {
       }
       for (const [key, value] of Object.entries(newStock.weather.weatherControllerAttributes)) {
         const lowerKey = key.toLowerCase();
+        const envKey = normalizeEnvKey(key);
+        if (isTechnicalWeatherName(key) || isDecorativeWeatherName(key)) {
+          continue;
+        }
         
         // Skip moon phases/eclipses (they are phases, not weather)
-        if (lowerKey.includes("moon") || lowerKey.includes("eclipse") || ["gold", "blood", "chained", "pizza"].includes(lowerKey)) {
+        if (envKey.includes("moon") || envKey.includes("eclipse") || ["gold", "blood", "chained", "pizza"].includes(envKey)) {
           continue;
         }
         
