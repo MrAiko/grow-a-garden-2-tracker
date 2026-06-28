@@ -391,6 +391,84 @@ function applyWeatherImageFilters(imgEl, key) {
 
 const itemImageCache = new Map();
 
+function weatherImageUrl(imageRef) {
+  if (!imageRef) return '';
+  const ref = String(imageRef);
+  if (ref.startsWith('/')) return ref;
+  if (ref.startsWith('http')) return `/api/proxy-image?url=${encodeURIComponent(ref)}`;
+  return `/api/fruit-image?asset=${encodeURIComponent(ref)}`;
+}
+
+function normalizeEnvKey(name) {
+  return String(name || '').toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+}
+
+function isEmojiFallbackImage(imageRef) {
+  if (!imageRef) return false;
+  const ref = String(imageRef).toLowerCase();
+  return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
+}
+
+const weatherIconCache = new Map(JSON.parse(localStorage.getItem('weatherIconCache') || '[]'));
+
+function rememberWeatherIcon(key, imageRef) {
+  const normKey = normalizeEnvKey(key);
+  if (!normKey || !imageRef || isEmojiFallbackImage(imageRef)) return;
+  const ref = String(imageRef);
+  if (weatherIconCache.get(normKey) === ref) return;
+  weatherIconCache.set(normKey, ref);
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+}
+
+function updateWeatherIconCache(stock) {
+  if (!stock) return;
+
+  if (stock.weatherCatalog) {
+    Object.entries(stock.weatherCatalog).forEach(([key, item]) => {
+      if (item && item.image) rememberWeatherIcon(key, item.image);
+    });
+  }
+
+  const w = stock.weather;
+  if (!w) return;
+
+  if (w.phase && w.phaseImage) {
+    rememberWeatherIcon(w.phase, w.phaseImage);
+    const phaseKey = normalizeEnvKey(w.phase);
+    if (phaseKey === 'night') rememberWeatherIcon('moon', w.phaseImage);
+  }
+
+  if (w.weathers) {
+    Object.entries(w.weathers).forEach(([name, info]) => {
+      if (info && info.image) rememberWeatherIcon(name, info.image);
+    });
+  }
+}
+
+function getWeatherCatalogImageRef(key) {
+  const normKey = normalizeEnvKey(key);
+  const item = stockData && stockData.weatherCatalog && stockData.weatherCatalog[normKey];
+  return item && item.image ? item.image : '';
+}
+
+function getWeatherSettingsIconHtml(key, opt) {
+  const normKey = normalizeEnvKey(key);
+  const imageRef = weatherIconCache.get(normKey) || weatherAssetIds[normKey] || getWeatherCatalogImageRef(normKey) || weatherImages[normKey];
+  const srcUrl = weatherImageUrl(imageRef);
+  const emoji = opt && opt.emoji ? opt.emoji : 'рџЊ¦пёЏ';
+
+  if (!srcUrl) {
+    return `<span class="weather-settings-icon-wrapper"><span class="weather-settings-emoji-fallback">${emoji}</span></span>`;
+  }
+
+  return `
+    <span class="weather-settings-icon-wrapper">
+      <img src="${srcUrl}" alt="" class="weather-settings-icon" loading="lazy" onload="applyWeatherImageFilters(this, '${normKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-settings-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
+      <span class="weather-settings-emoji-fallback" style="display: none;">${emoji}</span>
+    </span>
+  `;
+}
+
 function updateItemImageCache(stock) {
   if (!stock) return;
   if (stock.shops) {
@@ -419,23 +497,7 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  let srcUrl = '';
-  const moonPhaseKeys = new Set(['day', 'sunset', 'moon', 'night', 'bloodmoon', 'goldmoon', 'rainbowmoon', 'megamoon', 'chainedmoon', 'pizzamoon', 'solareclipse']);
-  const isMoonPhase = moonPhaseKeys.has(optKey);
-  const assetId = isMoonPhase ? (imageId || weatherAssetIds[optKey]) : weatherAssetIds[optKey];
-  
-  if (assetId) {
-    if (typeof assetId === 'string' && assetId.startsWith('http')) {
-      srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
-    } else {
-      srcUrl = `/api/fruit-image?asset=${assetId}`;
-    }
-  } else {
-    const fallbackUrl = weatherImages[optKey] || '';
-    if (fallbackUrl) {
-      srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
-    }
-  }
+  const srcUrl = weatherImageUrl(imageId || weatherAssetIds[optKey]);
   
   if (!srcUrl) {
     return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${emoji}</span></span>`;
@@ -679,6 +741,7 @@ async function fetchData() {
       discoverEnvironments(newStockData.weather);
       stockData = newStockData;
       updateItemImageCache(stockData);
+      updateWeatherIconCache(stockData);
       
       // Update online users count
       updateUsersOnlineUI(newStockData.visitorCount);
@@ -873,7 +936,7 @@ function updateWeatherUI() {
   }
   
   // Create a unique key for the current active weathers to check if structure changed
-  const currentKey = activeWeathers.map(aw => aw.name).sort().join(',') || 'none';
+  const currentKey = activeWeathers.map(aw => `${aw.name}:${aw.image || ''}`).sort().join(',') || 'none';
   
   if (weatherContainer && timeBox) {
     if (currentKey !== lastWeatherKey) {
@@ -972,6 +1035,7 @@ function renderDashboard() {
   renderShopGrid(seedGrid, stockData.shops.SeedShop_Normal || []);
   renderMultipliers();
   renderFruitRefresh();
+  renderWeatherSettings();
 }
 
 function renderFruitRefresh() {
@@ -1655,6 +1719,7 @@ function renderWeatherSettings() {
     const opt = allOptions[key];
     const name = currentLang === 'ru' ? opt.ru : opt.en;
     const isTracked = trackedItems.has('env:' + key);
+    const iconHtml = getWeatherSettingsIconHtml(key, opt);
     
     const row = document.createElement('div');
     row.className = 'weather-settings-item';
@@ -1665,7 +1730,7 @@ function renderWeatherSettings() {
     
     row.innerHTML = `
       <div class="weather-settings-info">
-        <span class="weather-settings-emoji">${opt.emoji}</span>
+        ${iconHtml}
         <span class="weather-settings-name">${name}</span>
       </div>
       <button class="weather-bell-btn ${bellClass}" data-env="${key}" title="${title}">
@@ -2074,8 +2139,6 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     if (isWeather) {
       let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
       if (optKey === 'lightning') optKey = 'thunderstorm';
-      const fallbackUrl = weatherImages[optKey] || '';
-      const proxiedFallback = fallbackUrl ? `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}` : '';
       
       // Look up live Roblox asset ID if currently active
       let liveAssetId = null;
@@ -2093,23 +2156,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
       
-      let srcUrl = '';
-      const moonPhaseKeys = new Set(['day', 'sunset', 'moon', 'night', 'bloodmoon', 'goldmoon', 'rainbowmoon', 'megamoon', 'chainedmoon', 'pizzamoon', 'solareclipse']);
-      const isMoonPhase = moonPhaseKeys.has(optKey);
-      const assetId = isMoonPhase ? (liveAssetId || weatherAssetIds[optKey]) : weatherAssetIds[optKey];
-      
-      if (assetId) {
-        if (typeof assetId === 'string' && assetId.startsWith('http')) {
-          srcUrl = `/api/proxy-image?url=${encodeURIComponent(assetId)}`;
-        } else {
-          srcUrl = `/api/fruit-image?asset=${assetId}`;
-        }
-      } else {
-        const fallbackUrl = weatherImages[optKey] || '';
-        if (fallbackUrl) {
-          srcUrl = `/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`;
-        }
-      }
+      const srcUrl = weatherImageUrl(liveAssetId || weatherAssetIds[optKey]);
       
       const cleanEmoji = emoji ? emoji.trim() : '🌦️';
       
@@ -2230,6 +2277,7 @@ function connectWebSocket() {
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
           updateItemImageCache(stockData);
+          updateWeatherIconCache(stockData);
           
           updateUsersOnlineUI(data.stock.visitorCount);
           renderDashboard();
@@ -2253,6 +2301,7 @@ function connectWebSocket() {
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
           updateItemImageCache(stockData);
+          updateWeatherIconCache(stockData);
           
           updateUsersOnlineUI(data.stock.visitorCount);
           renderDashboard();

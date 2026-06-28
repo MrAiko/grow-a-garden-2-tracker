@@ -506,6 +506,9 @@ async function handleUpdateStock(newStock) {
           normalizedWeathers[targetName].endTime = normalizeEndTime(info.endTime);
         } else {
           normalizedWeathers[targetName].playing = normalizedWeathers[targetName].playing || info.playing;
+          if (info.image) {
+            normalizedWeathers[targetName].image = info.image;
+          }
           if (info.endTime) {
             normalizedWeathers[targetName].endTime = Math.max(normalizeEndTime(normalizedWeathers[targetName].endTime), normalizeEndTime(info.endTime));
           }
