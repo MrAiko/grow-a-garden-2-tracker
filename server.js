@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 3000;
 const API_PASSWORD = process.env.API_PASSWORD || 'test_password';
 const STOCK_DATA_FILE = path.join(__dirname, process.env.STOCK_DATA_FILE || 'stock_data.json');
 const PREDICTIONS_DATA_FILE = path.join(__dirname, process.env.PREDICTIONS_DATA_FILE || 'predictions_data.json');
+const ITEM_TRANSLATIONS_FILE = path.join(__dirname, process.env.ITEM_TRANSLATIONS_FILE || 'item_translations.json');
+const WEATHER_CATALOG_IMAGES_FILE = path.join(__dirname, process.env.WEATHER_CATALOG_IMAGES_FILE || 'weather_catalog_images.json');
 
 // WebSocket clients pool
 const wsClients = new Set();
@@ -74,6 +76,56 @@ let currentStock = null;
 const activeSessions = {};
 const SPECIAL_PHASES = ["bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon", "solareclipse"];
 
+const DEFAULT_WEATHER_CATALOG = {
+  day: { name: "Day", image: "100486757307207" },
+  sunset: { name: "Sunset", image: "86217612022586" },
+  moon: { name: "Night", image: "91446334780160" },
+  night: { name: "Night", image: "91446334780160" },
+  bloodmoon: { name: "Blood Moon", image: "140465339393451" },
+  goldmoon: { name: "Gold Moon", image: "84902063004871" },
+  chainedmoon: { name: "Chained Moon", image: null },
+  pizzamoon: { name: "Pizza Moon", image: null },
+  rainbowmoon: { name: "Rainbow Moon", image: "93602895495056" },
+  solareclipse: { name: "Solar Eclipse", image: null },
+  starfall: { name: "Starfall", image: null },
+  rainbow: { name: "Rainbow", image: null },
+  snowfall: { name: "Snowfall", image: null },
+  rain: { name: "Rain", image: null },
+  thunderstorm: { name: "Thunderstorm", image: null },
+  lightning: { name: "Thunderstorm", image: null },
+  aurora: { name: "Aurora", image: null },
+  megamoon: { name: "Mega Moon", image: "107925838920918" }
+};
+
+function normalizeEnvKey(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function canonicalWeatherKey(name) {
+  const key = normalizeEnvKey(name);
+  if (!key) return '';
+  if (key === 'night') return 'moon';
+  if (key === 'raining' || key === 'rainy') return 'rain';
+  if (key === 'lightning') return 'thunderstorm';
+  if (key === 'bloodmoon' || key === 'blood') return 'bloodmoon';
+  if (key === 'goldmoon' || key === 'gold') return 'goldmoon';
+  if (key === 'chainedmoon' || key === 'chained') return 'chainedmoon';
+  if (key === 'pizzamoon' || key === 'pizza') return 'pizzamoon';
+  if (key === 'rainbowmoon') return 'rainbowmoon';
+  if (key === 'solareclipse' || key === 'solar') return 'solareclipse';
+  if (key === 'megamoon' || key === 'mega') return 'megamoon';
+  return key;
+}
+
+function isEmojiFallbackImage(image) {
+  const ref = String(image || '').toLowerCase();
+  return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
+}
+
+function isValidWeatherImage(image) {
+  return !!image && !isEmojiFallbackImage(image);
+}
+
 // Load Stock Data
 try {
   if (fs.existsSync(STOCK_DATA_FILE)) {
@@ -104,6 +156,34 @@ try {
   console.error('Error loading catalog images:', err);
 }
 
+// Load Persistent Weather Catalog Images
+let weatherCatalogImages = {};
+try {
+  if (fs.existsSync(WEATHER_CATALOG_IMAGES_FILE)) {
+    weatherCatalogImages = JSON.parse(fs.readFileSync(WEATHER_CATALOG_IMAGES_FILE, 'utf8'));
+  }
+} catch (err) {
+  console.error('Error loading weather catalog images:', err);
+}
+
+let itemTranslationsCache = {};
+let itemTranslationsMtime = 0;
+
+function loadItemTranslations() {
+  try {
+    const stat = fs.statSync(ITEM_TRANSLATIONS_FILE);
+    if (stat.mtimeMs !== itemTranslationsMtime) {
+      itemTranslationsCache = JSON.parse(fs.readFileSync(ITEM_TRANSLATIONS_FILE, 'utf8'));
+      itemTranslationsMtime = stat.mtimeMs;
+    }
+  } catch (err) {
+    console.error('Error loading item translations:', err);
+    itemTranslationsCache = {};
+    itemTranslationsMtime = 0;
+  }
+  return itemTranslationsCache;
+}
+
 // Save Stock Data
 function saveStockData() {
   try {
@@ -131,6 +211,81 @@ function saveCatalogImages() {
   }
 }
 
+function saveWeatherCatalogImages() {
+  try {
+    fs.writeFileSync(WEATHER_CATALOG_IMAGES_FILE, JSON.stringify(weatherCatalogImages, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving weather catalog images:', err);
+  }
+}
+
+function rememberWeatherCatalogImage(name, image, displayName) {
+  const key = canonicalWeatherKey(name);
+  if (!key || !isValidWeatherImage(image)) return false;
+  const value = String(image);
+  const prev = weatherCatalogImages[key];
+  const prevImage = typeof prev === 'string' ? prev : prev && prev.image;
+  if (prevImage === value) return false;
+  weatherCatalogImages[key] = {
+    name: displayName || (prev && prev.name) || (DEFAULT_WEATHER_CATALOG[key] && DEFAULT_WEATHER_CATALOG[key].name) || String(name),
+    image: value
+  };
+  return true;
+}
+
+function formatImageForClient(image) {
+  if (!image) return null;
+  const ref = String(image);
+  if (ref.startsWith('/')) return ref;
+  if (ref.startsWith('http')) return `/api/proxy-image?url=${encodeURIComponent(ref)}`;
+  return `/api/fruit-image?asset=${encodeURIComponent(ref)}`;
+}
+
+function buildWeatherCatalog(stock) {
+  const catalog = JSON.parse(JSON.stringify(DEFAULT_WEATHER_CATALOG));
+
+  const merge = (key, item) => {
+    const normKey = canonicalWeatherKey(key);
+    if (!normKey || !item) return;
+    if (!catalog[normKey]) catalog[normKey] = { name: item.name || String(key), image: null };
+    if (item.name) catalog[normKey].name = item.name;
+    const image = typeof item === 'string' ? item : item.image;
+    if (isValidWeatherImage(image)) catalog[normKey].image = image;
+  };
+
+  for (const [key, item] of Object.entries(weatherCatalogImages)) {
+    merge(key, item);
+  }
+
+  if (stock && stock.weatherCatalog) {
+    for (const [key, item] of Object.entries(stock.weatherCatalog)) {
+      merge(key, item);
+    }
+  }
+
+  const weather = stock && stock.weather;
+  if (weather) {
+    if (weather.phase && weather.phaseImage) {
+      merge(weather.phase, { name: weather.phase, image: weather.phaseImage });
+      if (canonicalWeatherKey(weather.phase) === 'moon') {
+        merge('night', { name: 'Night', image: weather.phaseImage });
+      }
+    }
+    if (weather.weathers) {
+      for (const [name, info] of Object.entries(weather.weathers)) {
+        if (info && info.image) {
+          merge(name, { name, image: info.image });
+        }
+      }
+    }
+  }
+
+  for (const item of Object.values(catalog)) {
+    item.image = formatImageForClient(item.image);
+  }
+  return catalog;
+}
+
 
 function prepareStockResponse(stock) {
   if (!stock) return null;
@@ -155,36 +310,7 @@ function prepareStockResponse(stock) {
     });
   }
 
-  // Add weatherCatalog of all phases and weathers
-  data.weatherCatalog = {
-    day: { name: "Day", image: "100486757307207" },
-    sunset: { name: "Sunset", image: "86217612022586" },
-    moon: { name: "Night", image: "91446334780160" },
-    night: { name: "Night", image: "91446334780160" },
-    bloodmoon: { name: "Blood Moon", image: "140465339393451" },
-    goldmoon: { name: "Gold Moon", image: "84902063004871" },
-    rainbowmoon: { name: "Rainbow Moon", image: "93602895495056" },
-    megamoon: { name: "Mega Moon", image: "107925838920918" },
-    solareclipse: { name: "Solar Eclipse", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f311/512.webp" },
-    starfall: { name: "Starfall", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f320/512.webp" },
-    rainbow: { name: "Rainbow", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f308/512.webp" },
-    snowfall: { name: "Snowfall", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f328/512.webp" },
-    rain: { name: "Rain", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp" },
-    thunderstorm: { name: "Thunderstorm", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp" },
-    aurora: { name: "Aurora", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp" }
-  };
-  
-  // Format weatherCatalog images using proxy
-  for (const key of Object.keys(data.weatherCatalog)) {
-    const item = data.weatherCatalog[key];
-    if (item.image) {
-      if (item.image.startsWith('http')) {
-        item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
-      } else {
-        item.image = `/api/fruit-image?asset=${item.image}`;
-      }
-    }
-  }
+  data.weatherCatalog = buildWeatherCatalog(data);
   
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;
@@ -197,6 +323,10 @@ app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
   }
   
   res.json(prepareStockResponse(currentStock));
+});
+
+app.get('/api/item-translations', rateLimiter(300, 60000), (req, res) => {
+  res.json(loadItemTranslations());
 });
 
 // Cache for proxied image buffers to bypass Russian IP throttling on Roblox CDNs
@@ -488,8 +618,9 @@ async function handleUpdateStock(newStock) {
       const normalizedWeathers = {};
       for (const [name, info] of Object.entries(newStock.weather.weathers)) {
         const lowerName = name.toLowerCase();
-        if (lowerName.includes("moon") || lowerName.includes("eclipse") || 
-            ["gold", "blood", "chained", "pizza", "rainbow", "solar", "mega"].some(k => lowerName.includes(k))) {
+        const weatherKey = normalizeEnvKey(name);
+        if (weatherKey.includes("moon") || weatherKey.includes("eclipse") || 
+            ["gold", "blood", "chained", "pizza", "solar", "mega"].includes(weatherKey)) {
           continue;
         }
         let targetName = name;
@@ -662,6 +793,15 @@ async function handleUpdateStock(newStock) {
     }
   }
 
+  if (newStock.weatherCatalog) {
+    for (const item of Object.values(newStock.weatherCatalog)) {
+      const image = item && (typeof item === 'string' ? item : item.image);
+      if (image && !String(image).startsWith('http') && !String(image).startsWith('/')) {
+        assetIdsToResolve.push(String(image));
+      }
+    }
+  }
+
   if (assetIdsToResolve.length > 0) {
     const resolvedMap = await resolveAssetThumbnailsBatch(assetIdsToResolve);
     
@@ -694,6 +834,14 @@ async function handleUpdateStock(newStock) {
           if (info.image && !info.image.startsWith('http')) {
             info.image = resolvedMap[info.image] || info.image;
           }
+        }
+      }
+    }
+
+    if (newStock.weatherCatalog) {
+      for (const item of Object.values(newStock.weatherCatalog)) {
+        if (item && item.image && !String(item.image).startsWith('http') && !String(item.image).startsWith('/')) {
+          item.image = resolvedMap[item.image] || item.image;
         }
       }
     }
@@ -732,6 +880,34 @@ async function handleUpdateStock(newStock) {
     saveCatalogImages();
   }
 
+  let weatherCatalogUpdated = false;
+  if (newStock.weatherCatalog) {
+    for (const [key, item] of Object.entries(newStock.weatherCatalog)) {
+      const image = item && (typeof item === 'string' ? item : item.image);
+      const name = item && typeof item === 'object' ? item.name : key;
+      if (rememberWeatherCatalogImage(key, image, name)) {
+        weatherCatalogUpdated = true;
+      }
+    }
+  }
+  if (newStock.weather) {
+    if (newStock.weather.phase && newStock.weather.phaseImage) {
+      if (rememberWeatherCatalogImage(newStock.weather.phase, newStock.weather.phaseImage, newStock.weather.phase)) {
+        weatherCatalogUpdated = true;
+      }
+    }
+    if (newStock.weather.weathers) {
+      for (const [name, info] of Object.entries(newStock.weather.weathers)) {
+        if (info && rememberWeatherCatalogImage(name, info.image, name)) {
+          weatherCatalogUpdated = true;
+        }
+      }
+    }
+  }
+  if (weatherCatalogUpdated) {
+    saveWeatherCatalogImages();
+  }
+
   let fruitMultipliers = {};
   const hasIncomingMultipliers = newStock.fruitMultipliers &&
     (Array.isArray(newStock.fruitMultipliers) ? newStock.fruitMultipliers.length > 0 : Object.keys(newStock.fruitMultipliers).length > 0);
@@ -755,6 +931,7 @@ async function handleUpdateStock(newStock) {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
     weather: newStock.weather,
+    weatherCatalog: newStock.weatherCatalog || (currentStock && currentStock.weatherCatalog) || {},
     fruitMultipliers: fruitMultipliers,
     // Absolute unix timestamp (seconds) when the next fruit refresh happens.
     fruitRefreshAt: fruitRefreshAt,
@@ -806,6 +983,16 @@ function preparePredictionsResponse(predictions) {
       });
     }
   });
+  if (data.weathers) {
+    const weatherCatalog = buildWeatherCatalog(currentStock);
+    data.weathers.forEach(item => {
+      const key = canonicalWeatherKey(item.name);
+      const catalogItem = weatherCatalog[key] || weatherCatalog[normalizeEnvKey(item.name)];
+      if (catalogItem && catalogItem.image) {
+        item.image = catalogItem.image;
+      }
+    });
+  }
   return data;
 }
 

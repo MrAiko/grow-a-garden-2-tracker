@@ -312,6 +312,47 @@ const itemTranslations = {
   "invisibility mushroom": "Гриб невидимости"
 };
 
+function getItemTranslationKey(name) {
+  return String(name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function translateItemName(name) {
+  if (currentLang !== 'ru') return name;
+  const key = getItemTranslationKey(name);
+  if (!key) return name;
+
+  const direct = itemTranslations[key] || itemTranslations[key.replace(/[^a-z0-9]/g, '')];
+  if (direct) return direct;
+
+  const words = key.split(/[\s_-]+/).filter(Boolean);
+  if (words.length > 1) {
+    let translatedAny = false;
+    const translatedWords = words.map(word => {
+      const translated = itemTranslations[word];
+      if (translated) translatedAny = true;
+      return translated || word;
+    });
+    if (translatedAny) return translatedWords.join(' ');
+  }
+
+  return name;
+}
+
+async function loadItemTranslations() {
+  try {
+    const res = await fetch('/api/item-translations');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      Object.assign(itemTranslations, data);
+      renderDashboard();
+      renderPredictions();
+    }
+  } catch (err) {
+    console.warn('Failed to load item translations:', err);
+  }
+}
+
 // State Management
 let currentLang = localStorage.getItem('siteLang') || 'ru';
 let stockData = null;
@@ -403,6 +444,14 @@ function normalizeEnvKey(name) {
   return String(name || '').toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
 }
 
+function canonicalEnvKey(name) {
+  const key = normalizeEnvKey(name);
+  if (key === 'night') return 'moon';
+  if (key === 'raining' || key === 'rainy') return 'rain';
+  if (key === 'lightning') return 'thunderstorm';
+  return key;
+}
+
 function isEmojiFallbackImage(imageRef) {
   if (!imageRef) return false;
   const ref = String(imageRef).toLowerCase();
@@ -412,7 +461,7 @@ function isEmojiFallbackImage(imageRef) {
 const weatherIconCache = new Map(JSON.parse(localStorage.getItem('weatherIconCache') || '[]'));
 
 function rememberWeatherIcon(key, imageRef) {
-  const normKey = normalizeEnvKey(key);
+  const normKey = canonicalEnvKey(key);
   if (!normKey || !imageRef || isEmojiFallbackImage(imageRef)) return;
   const ref = String(imageRef);
   if (weatherIconCache.get(normKey) === ref) return;
@@ -446,14 +495,14 @@ function updateWeatherIconCache(stock) {
 }
 
 function getWeatherCatalogImageRef(key) {
-  const normKey = normalizeEnvKey(key);
+  const normKey = canonicalEnvKey(key);
   const item = stockData && stockData.weatherCatalog && stockData.weatherCatalog[normKey];
   return item && item.image ? item.image : '';
 }
 
 function getWeatherSettingsIconHtml(key, opt) {
-  const normKey = normalizeEnvKey(key);
-  const imageRef = weatherIconCache.get(normKey) || weatherAssetIds[normKey] || getWeatherCatalogImageRef(normKey) || weatherImages[normKey];
+  const normKey = canonicalEnvKey(key);
+  const imageRef = getWeatherCatalogImageRef(normKey) || weatherAssetIds[normKey] || weatherIconCache.get(normKey);
   const srcUrl = weatherImageUrl(imageRef);
   const emoji = opt && opt.emoji ? opt.emoji : 'рџЊ¦пёЏ';
 
@@ -491,13 +540,14 @@ function updateItemImageCache(stock) {
 }
 
 function getWeatherImageHtml(name, imageId) {
-  const optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+  const rawOptKey = normalizeEnvKey(name);
+  const optKey = canonicalEnvKey(rawOptKey);
   const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
   const allOptions = { ...weatherOptions, ...discovered };
-  const opt = allOptions[optKey];
+  const opt = allOptions[optKey] || allOptions[rawOptKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
-  const srcUrl = weatherImageUrl(imageId || weatherAssetIds[optKey]);
+  const srcUrl = weatherImageUrl(imageId || getWeatherCatalogImageRef(optKey) || weatherAssetIds[optKey] || weatherIconCache.get(optKey));
   
   if (!srcUrl) {
     return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${emoji}</span></span>`;
@@ -880,12 +930,10 @@ function updateWeatherUI() {
   if (!phase) {
     phase = w.night ? 'moon' : 'day';
   }
-  let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-  if (phaseLower === 'night') {
-    phaseLower = 'moon';
-  }
+  let phaseLower = canonicalEnvKey(phase);
   
-  const phaseKey = `${phase}:${w.phaseImage || ''}:${currentLang}`;
+  const phaseCatalogImage = getWeatherCatalogImageRef(phaseLower);
+  const phaseKey = `${phase}:${w.phaseImage || phaseCatalogImage || ''}:${currentLang}`;
   if (timeBox) {
     if (phaseKey !== lastPhaseKey) {
       lastPhaseKey = phaseKey;
@@ -936,7 +984,7 @@ function updateWeatherUI() {
   }
   
   // Create a unique key for the current active weathers to check if structure changed
-  const currentKey = activeWeathers.map(aw => `${aw.name}:${aw.image || ''}`).sort().join(',') || 'none';
+  const currentKey = activeWeathers.map(aw => `${aw.name}:${aw.image || getWeatherCatalogImageRef(aw.name) || ''}`).sort().join(',') || 'none';
   
   if (weatherContainer && timeBox) {
     if (currentKey !== lastWeatherKey) {
@@ -962,8 +1010,7 @@ function updateWeatherUI() {
             colorStyle = 'var(--rarity-rare)';
           }
           
-          let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-          if (optKey === 'lightning') optKey = 'thunderstorm';
+          let optKey = canonicalEnvKey(name);
           const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
           const allOptions = { ...weatherOptions, ...discovered };
           const opt = allOptions[optKey];
@@ -1168,8 +1215,7 @@ function renderMultipliers() {
 
     let displayName = name;
     if (currentLang === 'ru') {
-      const translated = itemTranslations[name.toLowerCase().trim()];
-      if (translated) displayName = translated;
+      displayName = translateItemName(name);
     }
 
     const emoji = getFruitEmoji(name);
@@ -1279,8 +1325,7 @@ document.addEventListener('click', async (e) => {
     const t = translations[currentLang];
     let displayName = fruitName;
     if (currentLang === 'ru') {
-      const translated = itemTranslations[fruitName.toLowerCase().trim()];
-      if (translated) displayName = translated;
+      displayName = translateItemName(fruitName);
     }
 
     const testTitle = t.notifTrackedTitle;
@@ -1469,8 +1514,7 @@ function triggerMultiplierNotification(itemName, currentRate, threshold) {
   
   let displayName = itemName;
   if (currentLang === 'ru') {
-    const translated = itemTranslations[itemName.toLowerCase().trim()];
-    if (translated) displayName = translated;
+    displayName = translateItemName(itemName);
   }
 
   const title = t.multiplierPushTitle(displayName);
@@ -1668,18 +1712,14 @@ async function togglePredictionTracking(name, timestamp, isWeather, btn) {
     // Test notification for subscription feedback
     let displayName = name;
     if (isWeather) {
-      let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const optKey = canonicalEnvKey(name);
       const opt = weatherOptions[optKey];
       if (opt) {
         displayName = currentLang === 'ru' ? opt.ru : opt.en;
       }
     } else {
       if (currentLang === 'ru') {
-        const translatedName = itemTranslations[name.toLowerCase().trim()];
-        if (translatedName) {
-          displayName = translatedName;
-        }
+        displayName = translateItemName(name);
       }
     }
 
@@ -1806,13 +1846,13 @@ function discoverEnvironments(w) {
   // 1. Discover Phase
   let phase = w.phase || '';
   if (phase) {
-    let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    let phaseLower = canonicalEnvKey(phase);
     if (phaseLower === 'night') {
       phase = 'Moon';
     }
   }
   if (phase && phase !== 'Day' && phase !== 'Moon' && phase !== 'Sunset' && phase !== 'day' && phase !== 'moon' && phase !== 'sunset') {
-    let phaseLower = phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
+    let phaseLower = canonicalEnvKey(phase);
     if (!weatherOptions[phaseLower] && !discovered[phaseLower]) {
       discovered[phaseLower] = {
         emoji: w.night ? '🌙' : '☀️',
@@ -1826,8 +1866,7 @@ function discoverEnvironments(w) {
   // 2. Discover Weathers
   if (w.weathers) {
     for (let name of Object.keys(w.weathers)) {
-      let lowerName = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-      if (lowerName === 'lightning') lowerName = 'thunderstorm';
+      let lowerName = canonicalEnvKey(name);
       if (!weatherOptions[lowerName] && !discovered[lowerName]) {
         discovered[lowerName] = {
           emoji: '🌦️',
@@ -1861,11 +1900,8 @@ function checkForWeatherNotifications(newData) {
   let newPhase = newW.phase || '';
   if (!newPhase) newPhase = newW.night ? 'moon' : 'day';
   
-  oldPhase = oldPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-  newPhase = newPhase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-  
-  if (oldPhase === 'night') oldPhase = 'moon';
-  if (newPhase === 'night') newPhase = 'moon';
+  oldPhase = canonicalEnvKey(oldPhase);
+  newPhase = canonicalEnvKey(newPhase);
   
   if (oldPhase !== newPhase) {
     const trackedKey = 'env:' + newPhase;
@@ -1879,8 +1915,7 @@ function checkForWeatherNotifications(newData) {
   if (oldW.weathers) {
     for (const [name, info] of Object.entries(oldW.weathers)) {
       if (info.playing) {
-        let lowerName = name.toLowerCase();
-        if (lowerName === 'lightning') lowerName = 'thunderstorm';
+        let lowerName = canonicalEnvKey(name);
         oldWeathers.add(lowerName);
       }
     }
@@ -1889,8 +1924,7 @@ function checkForWeatherNotifications(newData) {
   if (newW.weathers) {
     for (const [name, info] of Object.entries(newW.weathers)) {
       if (info.playing) {
-        let lowerName = name.toLowerCase();
-        if (lowerName === 'lightning') lowerName = 'thunderstorm';
+        let lowerName = canonicalEnvKey(name);
         if (!oldWeathers.has(lowerName)) {
           const trackedKey = 'env:' + lowerName;
           if (trackedItems.has(trackedKey)) {
@@ -1918,7 +1952,7 @@ function triggerWeatherNotification(phaseKey, weatherName) {
     title = currentLang === 'ru' ? '🌍 Изменение времени/луны' : '🌍 Time/Moon Phase Change';
     body = currentLang === 'ru' ? `Началась фаза: ${phaseText}` : `New phase started: ${phaseText}`;
   } else if (weatherName) {
-    const optKey = weatherName.toLowerCase();
+    const optKey = canonicalEnvKey(weatherName);
     const opt = weatherOptions[optKey];
     const localizedName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : weatherName;
     title = currentLang === 'ru' ? '🌧️ Изменение погоды' : '🌧️ Weather Change';
@@ -2057,8 +2091,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     let emoji = '';
     
     if (isWeather) {
-      let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const optKey = canonicalEnvKey(item.name);
       const opt = weatherOptions[optKey];
       if (opt) {
         emoji = opt.emoji + ' ';
@@ -2066,10 +2099,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       }
     } else {
       if (currentLang === 'ru') {
-        const translatedName = itemTranslations[item.name.toLowerCase().trim()];
-        if (translatedName) {
-          displayName = translatedName;
-        }
+        displayName = translateItemName(item.name);
       }
       if (item.multiplier) {
         displayName = `${item.multiplier} ${displayName}`;
@@ -2137,18 +2167,17 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
     
     let imgHtml = '';
     if (isWeather) {
-      let optKey = item.name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-      if (optKey === 'lightning') optKey = 'thunderstorm';
+      const optKey = canonicalEnvKey(item.name);
       
       // Look up live Roblox asset ID if currently active
       let liveAssetId = null;
       if (stockData && stockData.weather) {
         const w = stockData.weather;
-        if (w.phase && w.phase.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey) {
+        if (w.phase && canonicalEnvKey(w.phase) === optKey) {
           liveAssetId = w.phaseImage;
         } else if (w.weathers) {
           for (const [wName, wInfo] of Object.entries(w.weathers)) {
-            if (wName.toLowerCase().replace(/\s+/g, '').replace(/_/g, '') === optKey && wInfo.playing) {
+            if (canonicalEnvKey(wName) === optKey && wInfo.playing) {
               liveAssetId = wInfo.image;
               break;
             }
@@ -2156,7 +2185,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
         }
       }
       
-      const srcUrl = weatherImageUrl(liveAssetId || weatherAssetIds[optKey]);
+      const srcUrl = weatherImageUrl(liveAssetId || item.image || getWeatherCatalogImageRef(optKey) || weatherAssetIds[optKey] || weatherIconCache.get(optKey));
       
       const cleanEmoji = emoji ? emoji.trim() : '🌦️';
       
@@ -2236,6 +2265,8 @@ document.addEventListener('click', (e) => {
 setLanguage(currentLang); // Setup initial translation language
 fetchData();
 fetchPredictions();
+loadItemTranslations();
+setInterval(loadItemTranslations, 5 * 60 * 1000);
 
 // WebSocket Connection Setup
 let ws = null;
@@ -2368,8 +2399,7 @@ function triggerPredictionStartNotification(name, timestamp) {
   let body = '';
 
   if (isWeather) {
-    let optKey = name.toLowerCase().replace(/\s+/g, '').replace(/_/g, '');
-    if (optKey === 'lightning') optKey = 'thunderstorm';
+    const optKey = canonicalEnvKey(name);
     const opt = weatherOptions[optKey];
     if (opt) {
       displayName = currentLang === 'ru' ? opt.ru : opt.en;
@@ -2378,10 +2408,7 @@ function triggerPredictionStartNotification(name, timestamp) {
     body = currentLang === 'ru' ? `Событие "${displayName}" началось прямо сейчас!` : `Event "${displayName}" has started right now!`;
   } else {
     if (currentLang === 'ru') {
-      const translatedName = itemTranslations[name.toLowerCase().trim()];
-      if (translatedName) {
-        displayName = translatedName;
-      }
+      displayName = translateItemName(name);
     }
     title = currentLang === 'ru' ? '🔔 Предсказание началось!' : '🔔 Prediction Started!';
     body = currentLang === 'ru' ? `Предмет "${displayName}" должен появиться в продаже прямо сейчас!` : `Item "${displayName}" is expected to be in stock right now!`;
