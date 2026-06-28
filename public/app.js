@@ -562,7 +562,7 @@ function getWeatherCatalogImageRef(key) {
 
 function getWeatherPreferredImageRef(key, liveImageRef) {
   const normKey = canonicalEnvKey(key);
-  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey);
+  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey) || weatherImages[normKey];
 }
 
 function getWeatherSettingsIconHtml(key, opt) {
