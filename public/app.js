@@ -518,7 +518,14 @@ function isEmojiFallbackImage(imageRef) {
   return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
 }
 
-const weatherIconCache = new Map(JSON.parse(localStorage.getItem('weatherIconCache') || '[]'));
+const rawWeatherIconCache = JSON.parse(localStorage.getItem('weatherIconCache') || '[]');
+const filteredWeatherIconCache = Array.isArray(rawWeatherIconCache)
+  ? rawWeatherIconCache.filter(([, imageRef]) => !isEmojiFallbackImage(imageRef))
+  : [];
+const weatherIconCache = new Map(filteredWeatherIconCache);
+if (filteredWeatherIconCache.length !== rawWeatherIconCache.length) {
+  localStorage.setItem('weatherIconCache', JSON.stringify(filteredWeatherIconCache));
+}
 
 function rememberWeatherIcon(key, imageRef) {
   const normKey = canonicalEnvKey(key);
@@ -562,7 +569,7 @@ function getWeatherCatalogImageRef(key) {
 
 function getWeatherPreferredImageRef(key, liveImageRef) {
   const normKey = canonicalEnvKey(key);
-  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey) || weatherImages[normKey];
+  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey);
 }
 
 function getWeatherSettingsIconHtml(key, opt) {
