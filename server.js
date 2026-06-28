@@ -154,6 +154,37 @@ function prepareStockResponse(stock) {
       }
     });
   }
+
+  // Add weatherCatalog of all phases and weathers
+  data.weatherCatalog = {
+    day: { name: "Day", image: "100486757307207" },
+    sunset: { name: "Sunset", image: "86217612022586" },
+    moon: { name: "Night", image: "91446334780160" },
+    night: { name: "Night", image: "91446334780160" },
+    bloodmoon: { name: "Blood Moon", image: "140465339393451" },
+    goldmoon: { name: "Gold Moon", image: "84902063004871" },
+    rainbowmoon: { name: "Rainbow Moon", image: "93602895495056" },
+    megamoon: { name: "Mega Moon", image: "107925838920918" },
+    solareclipse: { name: "Solar Eclipse", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f311/512.webp" },
+    starfall: { name: "Starfall", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f320/512.webp" },
+    rainbow: { name: "Rainbow", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f308/512.webp" },
+    snowfall: { name: "Snowfall", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f328/512.webp" },
+    rain: { name: "Rain", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f327/512.webp" },
+    thunderstorm: { name: "Thunderstorm", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/26c8/512.webp" },
+    aurora: { name: "Aurora", image: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f309/512.webp" }
+  };
+  
+  // Format weatherCatalog images using proxy
+  for (const key of Object.keys(data.weatherCatalog)) {
+    const item = data.weatherCatalog[key];
+    if (item.image) {
+      if (item.image.startsWith('http')) {
+        item.image = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
+      } else {
+        item.image = `/api/fruit-image?asset=${item.image}`;
+      }
+    }
+  }
   
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;
