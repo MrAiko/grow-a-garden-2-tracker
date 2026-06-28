@@ -518,9 +518,35 @@ function isEmojiFallbackImage(imageRef) {
   return ref.includes('notoemoji') || ref.includes('fonts.gstatic.com');
 }
 
+function isInvalidWeatherImageRef(imageRef) {
+  if (!imageRef) return true;
+  const ref = String(imageRef).trim().toLowerCase();
+  if (!ref || ref === 'null' || ref === 'undefined' || ref === 'none' || ref === '0') return true;
+  if (isEmojiFallbackImage(ref)) return true;
+  return ref.includes('asset=0') ||
+    ref.includes('rbxassetid://0') ||
+    ref.includes('112886786873408') ||
+    ref.includes('asset=112886786873408');
+}
+
+function firstValidWeatherImageRef(...refs) {
+  for (const ref of refs) {
+    if (!isInvalidWeatherImageRef(ref)) return ref;
+  }
+  return '';
+}
+
+function getWeatherFallbackIconHtml(key, emoji) {
+  const normKey = canonicalEnvKey(key);
+  if (normKey === 'rain') {
+    return '<i class="fa-solid fa-cloud-rain" aria-hidden="true"></i>';
+  }
+  return emoji || '';
+}
+
 const rawWeatherIconCache = JSON.parse(localStorage.getItem('weatherIconCache') || '[]');
 const filteredWeatherIconCache = Array.isArray(rawWeatherIconCache)
-  ? rawWeatherIconCache.filter(([, imageRef]) => !isEmojiFallbackImage(imageRef))
+  ? rawWeatherIconCache.filter(([key, imageRef]) => canonicalEnvKey(key) !== 'rain' && !isInvalidWeatherImageRef(imageRef))
   : [];
 const weatherIconCache = new Map(filteredWeatherIconCache);
 if (filteredWeatherIconCache.length !== rawWeatherIconCache.length) {
@@ -529,7 +555,8 @@ if (filteredWeatherIconCache.length !== rawWeatherIconCache.length) {
 
 function rememberWeatherIcon(key, imageRef) {
   const normKey = canonicalEnvKey(key);
-  if (!normKey || !imageRef || isEmojiFallbackImage(imageRef)) return;
+  if (normKey === 'rain') return;
+  if (!normKey || isInvalidWeatherImageRef(imageRef)) return;
   const ref = String(imageRef);
   if (weatherIconCache.get(normKey) === ref) return;
   weatherIconCache.set(normKey, ref);
@@ -564,12 +591,17 @@ function updateWeatherIconCache(stock) {
 function getWeatherCatalogImageRef(key) {
   const normKey = canonicalEnvKey(key);
   const item = stockData && stockData.weatherCatalog && stockData.weatherCatalog[normKey];
-  return item && item.image ? item.image : '';
+  return item && !isInvalidWeatherImageRef(item.image) ? item.image : '';
 }
 
 function getWeatherPreferredImageRef(key, liveImageRef) {
   const normKey = canonicalEnvKey(key);
-  return weatherAssetIds[normKey] || liveImageRef || getWeatherCatalogImageRef(normKey) || weatherIconCache.get(normKey);
+  return firstValidWeatherImageRef(
+    weatherAssetIds[normKey],
+    liveImageRef,
+    getWeatherCatalogImageRef(normKey),
+    weatherIconCache.get(normKey)
+  );
 }
 
 function getWeatherSettingsIconHtml(key, opt) {
@@ -578,14 +610,16 @@ function getWeatherSettingsIconHtml(key, opt) {
   const srcUrl = weatherImageUrl(imageRef);
   const emoji = opt && opt.emoji ? opt.emoji : 'рџЊ¦пёЏ';
 
+  const fallbackIcon = getWeatherFallbackIconHtml(normKey, emoji);
+
   if (!srcUrl) {
-    return `<span class="weather-settings-icon-wrapper"><span class="weather-settings-emoji-fallback">${emoji}</span></span>`;
+    return `<span class="weather-settings-icon-wrapper"><span class="weather-settings-emoji-fallback">${fallbackIcon}</span></span>`;
   }
 
   return `
     <span class="weather-settings-icon-wrapper">
       <img src="${srcUrl}" alt="" class="weather-settings-icon" loading="lazy" onload="applyWeatherImageFilters(this, '${normKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-settings-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-      <span class="weather-settings-emoji-fallback" style="display: none;">${emoji}</span>
+      <span class="weather-settings-emoji-fallback" style="display: none;">${fallbackIcon}</span>
     </span>
   `;
 }
@@ -619,16 +653,17 @@ function getWeatherImageHtml(name, imageId) {
   const opt = allOptions[optKey] || allOptions[rawOptKey];
   const emoji = opt ? opt.emoji : '🌦️';
   
+  const fallbackIcon = getWeatherFallbackIconHtml(optKey, emoji);
   const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, imageId));
   
   if (!srcUrl) {
-    return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${emoji}</span></span>`;
+    return `<span class="weather-icon-img-wrapper"><span class="weather-emoji-fallback" style="display: inline-flex;">${fallbackIcon}</span></span>`;
   }
   
   return `
     <span class="weather-icon-img-wrapper">
       <img src="${srcUrl}" alt="${name}" class="weather-icon-img" onload="applyWeatherImageFilters(this, '${optKey}')" onerror="this.onerror=null; this.style.display='none'; const fb=this.parentNode.querySelector('.weather-emoji-fallback'); if(fb)fb.style.display='inline-flex';">
-      <span class="weather-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${emoji}</span>
+      <span class="weather-emoji-fallback" style="display: none; align-items: center; justify-content: center;">${fallbackIcon}</span>
     </span>
   `;
 }
@@ -1071,12 +1106,13 @@ function updateWeatherUI() {
           weatherBox.setAttribute('data-name', name);
           weatherBox.setAttribute('data-endtime', endTime);
           
+          const weatherKey = canonicalEnvKey(name);
           let colorStyle = 'var(--text-secondary)';
-          if (name.toLowerCase().includes('star')) {
+          if (weatherKey === 'starfall') {
             colorStyle = 'var(--rarity-legendary)';
-          } else if (name.toLowerCase().includes('rain')) {
+          } else if (weatherKey === 'rain' || weatherKey === 'rainbow') {
             colorStyle = 'var(--rarity-exotic)';
-          } else if (name.toLowerCase().includes('storm') || name.toLowerCase().includes('lightning')) {
+          } else if (weatherKey === 'thunderstorm') {
             colorStyle = 'var(--color-danger)';
           } else {
             colorStyle = 'var(--rarity-rare)';
@@ -2259,7 +2295,7 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       
       const srcUrl = weatherImageUrl(getWeatherPreferredImageRef(optKey, liveAssetId || item.image));
       
-      const cleanEmoji = emoji ? emoji.trim() : '🌦️';
+      const cleanEmoji = getWeatherFallbackIconHtml(optKey, emoji ? emoji.trim() : '🌦️');
       
       if (srcUrl) {
         imgHtml = `

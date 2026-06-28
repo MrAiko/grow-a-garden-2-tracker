@@ -155,7 +155,13 @@ function isEmojiFallbackImage(image) {
 }
 
 function isValidWeatherImage(image) {
-  return !!image && !isEmojiFallbackImage(image);
+  const ref = String(image || '').trim().toLowerCase();
+  if (!ref || ref === 'null' || ref === 'undefined' || ref === 'none' || ref === '0') return false;
+  if (isEmojiFallbackImage(ref)) return false;
+  return !ref.includes('asset=0') &&
+    !ref.includes('rbxassetid://0') &&
+    !ref.includes('112886786873408') &&
+    !ref.includes('asset=112886786873408');
 }
 
 // Load Stock Data
