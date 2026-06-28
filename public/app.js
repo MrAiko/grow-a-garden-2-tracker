@@ -536,6 +536,12 @@ if (localStorage.getItem('weatherIconCacheResetV2') !== '1') {
   localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
   localStorage.setItem('weatherIconCacheResetV2', '1');
 }
+if (localStorage.getItem('weatherIconCacheResetV3') !== '1') {
+  weatherIconCache.delete('rain');
+  weatherIconCache.delete('snowfall');
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+  localStorage.setItem('weatherIconCacheResetV3', '1');
+}
 
 function rememberWeatherIcon(key, imageRef) {
   const normKey = canonicalEnvKey(key);
