@@ -25,6 +25,8 @@
   --color-exotic: #ec4899;   /* Exotic blossom pink */
   --color-danger: #ef4444;   /* Red stock out */
   --color-warning: #ffb300;  /* Yellow warnings */
+  --color-primary: #7dd3fc;
+  --color-success: #22c55e;
   
   /* Rarity Colors */
   --rarity-common: #94a3b8;
@@ -40,6 +42,11 @@
 }
 
 /* Base Styles */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 92px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -157,7 +164,7 @@ body::before {
   font-family: var(--font-title);
   font-weight: 900;
   font-size: 26px;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
   background: linear-gradient(135deg, #f4f8f5 40%, #81c784 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -219,7 +226,7 @@ body::before {
 /* Stats / Timers */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 24px;
 }
 
@@ -245,7 +252,7 @@ body::before {
 
 .timers-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 16px;
 }
 
@@ -417,6 +424,7 @@ body::before {
 /* Filters and Search Bar */
 .filters-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
@@ -458,6 +466,7 @@ body::before {
 
 .filter-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -484,6 +493,83 @@ body::before {
   color: #fff;
   border-color: var(--color-grass);
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.35);
+}
+
+@media (max-width: 1080px) {
+  .container {
+    padding: 20px 10px;
+    gap: 18px;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 22px;
+  }
+
+  .header-logo {
+    min-width: 0;
+  }
+
+  .header-right {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .stats-grid,
+  .shops-container,
+  .main-content-area {
+    gap: 18px;
+  }
+
+  .stats-card,
+  .shop-section,
+  .predictions-section,
+  .api-docs-section {
+    padding: 20px;
+  }
+
+  .quick-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .quick-nav-link {
+    min-height: 38px;
+  }
+
+  .auction-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  }
+
+  .prediction-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-status {
+    align-items: center;
+  }
+
+  .weather-container {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  }
+
+  .weather-settings-panel {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  }
 }
 
 /* Shops grid containers */
@@ -513,7 +599,7 @@ body::before {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 16px;
 }
 
@@ -961,11 +1047,15 @@ body::before {
 /* Language Switcher */
 .lang-switch-container {
   display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border-dim);
-  border-radius: 20px;
-  padding: 2px;
-  gap: 2px;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 3px;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .lang-btn {
@@ -974,9 +1064,10 @@ body::before {
   color: var(--text-secondary);
   font-family: var(--font-title);
   font-weight: 700;
-  font-size: 11px;
-  padding: 6px 14px;
-  border-radius: 18px;
+  font-size: 10px;
+  min-width: 30px;
+  padding: 5px 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -997,6 +1088,288 @@ body::before {
   gap: 20px;
 }
 
+/* Fast in-page navigation */
+.quick-nav {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  background: rgba(13, 26, 16, 0.94);
+  border-color: rgba(125, 211, 252, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.quick-nav-link {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: var(--font-title);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.quick-nav-link:hover {
+  transform: translateY(-1px);
+  color: var(--text-primary);
+  border-color: rgba(125, 211, 252, 0.28);
+  background: rgba(125, 211, 252, 0.08);
+}
+
+.quick-nav-link.active {
+  color: var(--text-primary);
+  border-color: rgba(125, 211, 252, 0.45);
+  background: rgba(125, 211, 252, 0.13);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.08), 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.quick-nav-link i {
+  color: var(--color-primary);
+  font-size: 13px;
+}
+
+/* Live auction inside the restock card */
+.auction-panel {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(139, 90, 43, 0.18);
+}
+
+.auction-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.auction-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.auction-panel-header h4 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.auction-panel-header h4 i {
+  color: var(--color-warning);
+}
+
+.auction-refresh-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 179, 0, 0.22);
+  white-space: nowrap;
+}
+
+.auction-refresh-label {
+  color: var(--text-secondary);
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.auction-refresh-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-warning);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.auction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auction-card {
+  min-width: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 35%),
+    var(--bg-card);
+  border: 1px solid rgba(139, 90, 43, 0.26);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.auction-card.rarity-legendary,
+.auction-card.rarity-mythic,
+.auction-card.rarity-super,
+.auction-card.rarity-exotic {
+  border-color: rgba(255, 202, 40, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(255, 202, 40, 0.04), 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.auction-card-top {
+  position: relative;
+  height: 96px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, rgba(125, 211, 252, 0.12), rgba(0, 0, 0, 0.34) 62%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.auction-image-wrapper {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auction-image-wrapper.img-failed::before {
+  content: "🧺";
+  font-size: 32px;
+  opacity: 0.62;
+}
+
+.auction-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.5));
+}
+
+.auction-count {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.62);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.auction-status {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.auction-status.active { color: var(--color-success); }
+.auction-status.sold { color: var(--color-danger); }
+.auction-status.expired { color: var(--rarity-common); }
+
+.auction-card-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-card-body h5 {
+  min-height: 38px;
+  color: var(--text-primary);
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.auction-meta {
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  min-height: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.auction-info-row,
+.auction-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.auction-info-row span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auction-lot-timer {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.auction-price-row {
+  margin-top: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.26);
+  border: 1px solid rgba(255, 179, 0, 0.14);
+}
+
+.auction-price-row strong {
+  color: var(--color-warning);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.auction-sold,
+.auction-expired {
+  opacity: 0.68;
+  filter: grayscale(0.28);
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
@@ -1013,8 +1386,31 @@ body::before {
     align-items: center;
     gap: 12px;
   }
+  .lang-switch-container {
+    justify-content: center;
+    max-width: 100%;
+    width: 100%;
+    gap: 2px;
+  }
+  .lang-btn {
+    flex: 1 1 0;
+    min-width: 24px;
+    padding: 5px 4px;
+    font-size: 9.5px;
+  }
   .header-status {
     align-items: center;
+  }
+  .quick-nav {
+    top: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .auction-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .auction-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
@@ -1196,6 +1592,117 @@ body::before {
   padding-right: 4px;
 }
 
+.weather-card .weather-settings-panel {
+  display: grid !important;
+}
+
+/* Fruit value calculator */
+.calculator-section {
+  border-left: 3px solid var(--color-warning);
+}
+
+.calculator-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.calculator-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+
+.calculator-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.calculator-field span {
+  color: var(--text-secondary);
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.calculator-field input,
+.calculator-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(139, 90, 43, 0.22);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 9px 11px;
+  outline: none;
+}
+
+.calculator-field input:focus,
+.calculator-field select:focus {
+  border-color: rgba(255, 179, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 179, 0, 0.08);
+}
+
+.calculator-result-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(255, 179, 0, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.calculator-selected {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.calculator-price {
+  color: var(--color-warning);
+  font-family: var(--font-title);
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.calculator-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.calculator-formula-hint,
+#calculator-formula-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .calculator-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-price {
+    font-size: 30px;
+  }
+}
+
 /* Custom Scrollbar for weather panel */
 .weather-settings-panel::-webkit-scrollbar {
   width: 4px;
@@ -1212,9 +1719,140 @@ body::before {
 }
 
 @media (max-width: 600px) {
+  .lang-btn {
+    min-width: 20px;
+    padding: 5px 2px;
+    font-size: 9px;
+  }
   .weather-settings-panel {
     grid-template-columns: 1fr;
     max-height: 300px;
+  }
+  .quick-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .quick-nav-link {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+  .auction-grid {
+    grid-template-columns: 1fr;
+  }
+  .auction-card-top {
+    height: 86px;
+  }
+}
+
+@media (max-width: 430px) {
+  html {
+    scroll-padding-top: 118px;
+  }
+
+  .container {
+    padding: 10px 6px;
+    gap: 14px;
+  }
+
+  .dashboard-header {
+    padding: 16px 12px;
+  }
+
+  .header-logo h1 {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+  }
+
+  .lang-switch-container {
+    padding: 3px;
+    gap: 1px;
+  }
+
+  .lang-btn {
+    min-width: 18px;
+    padding: 4px 1px;
+    font-size: 8px;
+    border-radius: 6px;
+  }
+
+  .status-badge {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .last-updated {
+    font-size: 10px;
+  }
+
+  .stats-card,
+  .shop-section,
+  .predictions-section,
+  .api-docs-section {
+    padding: 16px 12px;
+  }
+
+  .quick-nav {
+    gap: 5px;
+    padding: 7px;
+  }
+
+  .quick-nav-link {
+    gap: 6px;
+    min-height: 34px;
+    padding: 8px 7px;
+    font-size: 11px;
+  }
+
+  .timer-val {
+    font-size: 15px;
+  }
+
+  .calculator-price {
+    font-size: 26px;
+  }
+
+  .filters-bar {
+    padding: 12px;
+  }
+
+  .filter-btn {
+    flex: 1 1 calc(50% - 5px);
+    padding: 9px 10px;
+  }
+
+  .item-card {
+    padding: 13px;
+  }
+
+  .item-main-content {
+    gap: 12px;
+  }
+
+  .item-image-wrapper {
+    width: 48px;
+    height: 48px;
+  }
+
+  .auction-panel-header {
+    gap: 10px;
+  }
+
+  .auction-refresh-pill {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .prediction-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .prediction-time-container {
+    width: 100%;
+    align-items: flex-start;
   }
 }
 
@@ -2017,5 +2655,86 @@ body::before {
   }
   .weather-emoji-fallback {
     font-size: 20px;
+  }
+}
+
+/* Smart fit for narrow or partially opened browser windows */
+.dashboard-header,
+.header-logo,
+.header-right,
+.stats-card,
+.shop-section,
+.predictions-section,
+.api-docs-section,
+.main-layout,
+.main-content-area,
+.filters-bar,
+.cards-grid,
+.prediction-grid,
+.auction-grid,
+.weather-container,
+.weather-settings-panel {
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .quick-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .auction-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  }
+
+  .prediction-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .weather-container {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  }
+
+  .weather-settings-panel {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .quick-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lang-switch-container {
+    width: 100%;
+    gap: 1px;
+    padding: 3px;
+  }
+
+  .lang-btn {
+    flex: 1 1 0;
+    min-width: 18px;
+    padding: 4px 1px;
+    font-size: 8px;
+    border-radius: 6px;
+  }
+
+  .auction-grid,
+  .prediction-grid,
+  .cards-grid {
+    grid-template-columns: 1fr;
   }
 }

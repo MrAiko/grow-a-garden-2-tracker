@@ -9,7 +9,9 @@ const PORT = process.env.PORT || 3000;
 const API_PASSWORD = process.env.API_PASSWORD || 'test_password';
 const STOCK_DATA_FILE = path.join(__dirname, process.env.STOCK_DATA_FILE || 'stock_data.json');
 const PREDICTIONS_DATA_FILE = path.join(__dirname, process.env.PREDICTIONS_DATA_FILE || 'predictions_data.json');
-const ITEM_TRANSLATIONS_FILE = path.join(__dirname, process.env.ITEM_TRANSLATIONS_FILE || 'item_translations.json');
+const AUCTION_DATA_FILE = path.join(__dirname, process.env.AUCTION_DATA_FILE || 'auction_data.json');
+const CALCULATOR_DATA_FILE = path.join(__dirname, process.env.CALCULATOR_DATA_FILE || 'calculator_data.json');
+const TRANSLATION_CACHE_FILE = path.join(__dirname, process.env.TRANSLATION_CACHE_FILE || 'translation_cache.json');
 const WEATHER_CATALOG_IMAGES_FILE = path.join(__dirname, process.env.WEATHER_CATALOG_IMAGES_FILE || 'weather_catalog_images.json');
 
 // WebSocket clients pool
@@ -73,6 +75,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Cache in-memory
 let currentStock = null;
+let currentAuction = null;
+let currentCalculatorData = null;
 const activeSessions = {};
 const SPECIAL_PHASES = ["bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon", "solareclipse"];
 
@@ -187,6 +191,25 @@ try {
   console.error('Error loading predictions data:', err);
 }
 
+// Load Auction Data
+try {
+  if (fs.existsSync(AUCTION_DATA_FILE)) {
+    currentAuction = JSON.parse(fs.readFileSync(AUCTION_DATA_FILE, 'utf8'));
+  }
+} catch (err) {
+  console.error('Error loading auction data:', err);
+}
+
+// Load Calculator Data
+try {
+  if (fs.existsSync(CALCULATOR_DATA_FILE)) {
+    const loadedCalculatorData = JSON.parse(fs.readFileSync(CALCULATOR_DATA_FILE, 'utf8'));
+    currentCalculatorData = normalizeCalculatorData(loadedCalculatorData) || loadedCalculatorData;
+  }
+} catch (err) {
+  console.error('Error loading calculator data:', err);
+}
+
 // Load Persistent Catalog Images
 const CATALOG_IMAGES_FILE = path.join(__dirname, 'catalog_images.json');
 let catalogImages = {};
@@ -208,22 +231,98 @@ try {
   console.error('Error loading weather catalog images:', err);
 }
 
-let itemTranslationsCache = {};
-let itemTranslationsMtime = 0;
+const TRANSLATION_LANGS = new Set(['ru', 'es', 'pt', 'fr', 'de', 'tr', 'id', 'uk', 'pl', 'zh', 'ja', 'ko', 'ar']);
+const TRANSLATION_TL = {
+  zh: 'zh-CN',
+  uk: 'uk',
+  pt: 'pt'
+};
+let translationCache = {};
 
-function loadItemTranslations() {
-  try {
-    const stat = fs.statSync(ITEM_TRANSLATIONS_FILE);
-    if (stat.mtimeMs !== itemTranslationsMtime) {
-      itemTranslationsCache = JSON.parse(fs.readFileSync(ITEM_TRANSLATIONS_FILE, 'utf8'));
-      itemTranslationsMtime = stat.mtimeMs;
-    }
-  } catch (err) {
-    console.error('Error loading item translations:', err);
-    itemTranslationsCache = {};
-    itemTranslationsMtime = 0;
+try {
+  if (fs.existsSync(TRANSLATION_CACHE_FILE)) {
+    translationCache = JSON.parse(fs.readFileSync(TRANSLATION_CACHE_FILE, 'utf8'));
   }
-  return itemTranslationsCache;
+} catch (err) {
+  console.error('Error loading translation cache:', err);
+  translationCache = {};
+}
+
+function saveTranslationCache() {
+  try {
+    fs.writeFileSync(TRANSLATION_CACHE_FILE, JSON.stringify(translationCache, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving translation cache:', err);
+  }
+}
+
+function normalizeTranslationLang(lang) {
+  const value = String(lang || '').toLowerCase().split('-')[0];
+  return TRANSLATION_LANGS.has(value) ? value : 'en';
+}
+
+function normalizeTranslationText(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function translationCacheKey(text) {
+  return normalizeTranslationText(text).toLowerCase();
+}
+
+function isUsefulTranslation(sourceText, translatedText, targetLang) {
+  const source = normalizeTranslationText(sourceText);
+  const translated = normalizeTranslationText(translatedText);
+  if (!translated) return false;
+  if (targetLang === 'en') return true;
+  const sourceLooksEnglish = /[a-z]/i.test(source);
+  const phraseLike = /[\s'’-]/.test(source);
+  return !(sourceLooksEnglish && phraseLike && translated.toLowerCase() === source.toLowerCase());
+}
+
+async function translateTextAutomatically(text, targetLang) {
+  const sourceText = normalizeTranslationText(text);
+  const lang = normalizeTranslationLang(targetLang);
+  if (!sourceText || lang === 'en') return sourceText;
+
+  translationCache[lang] = translationCache[lang] || {};
+  const key = translationCacheKey(sourceText);
+  const cached = translationCache[lang][key];
+  if (cached && isUsefulTranslation(sourceText, cached.text, lang)) return cached.text;
+  if (cached) delete translationCache[lang][key];
+
+  const googleLang = TRANSLATION_TL[lang] || lang;
+  const url = 'https://translate.googleapis.com/translate_a/single'
+    + `?client=gtx&sl=en&tl=${encodeURIComponent(googleLang)}&dt=t&q=${encodeURIComponent(sourceText)}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`translator responded ${response.status}`);
+    }
+    const payload = await response.json();
+    const translated = Array.isArray(payload && payload[0])
+      ? payload[0].map(part => Array.isArray(part) ? part[0] : '').join('').trim()
+      : '';
+    if (!isUsefulTranslation(sourceText, translated, lang)) {
+      throw new Error('empty translation');
+    }
+    translationCache[lang][key] = {
+      source: sourceText,
+      text: translated,
+      updatedAt: Date.now()
+    };
+    return translated;
+  } catch (err) {
+    console.warn(`Auto translation failed for "${sourceText}" -> ${lang}:`, err.message || err);
+    return sourceText;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Save Stock Data
@@ -241,6 +340,22 @@ function savePredictionsData() {
     fs.writeFileSync(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8');
   } catch (err) {
     console.error('Error saving predictions data:', err);
+  }
+}
+
+function saveAuctionData() {
+  try {
+    fs.writeFileSync(AUCTION_DATA_FILE, JSON.stringify(currentAuction, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving auction data:', err);
+  }
+}
+
+function saveCalculatorData() {
+  try {
+    fs.writeFileSync(CALCULATOR_DATA_FILE, JSON.stringify(currentCalculatorData, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving calculator data:', err);
   }
 }
 
@@ -287,6 +402,180 @@ function formatImageForClient(image) {
   if (ref.startsWith('/')) return ref;
   if (ref.startsWith('http')) return `/api/proxy-image?url=${encodeURIComponent(ref)}`;
   return `/api/fruit-image?asset=${encodeURIComponent(ref)}`;
+}
+
+function normalizeCalculatorData(input) {
+  if (!input || typeof input !== 'object') return null;
+
+  const rawFruits = Array.isArray(input.fruits) ? input.fruits : [];
+  const fruitsByName = new Map();
+  rawFruits.forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    const name = String(item.name || item.seedName || '').trim();
+    const baseValue = Number(item.baseValue ?? item.sellValue ?? item.value);
+    if (!name || !Number.isFinite(baseValue) || baseValue < 0) return;
+    const key = name.toLowerCase();
+    const prev = fruitsByName.get(key);
+    if (prev && prev.baseValue >= baseValue) return;
+    fruitsByName.set(key, {
+      name,
+      baseValue,
+      image: formatImageForClient(item.image),
+      isSingleHarvest: item.isSingleHarvest === true,
+      sizeExponent: Number.isFinite(Number(item.sizeExponent)) ? Number(item.sizeExponent) : undefined
+    });
+  });
+
+  const fruits = Array.from(fruitsByName.values())
+    .sort((a, b) => b.baseValue - a.baseValue || a.name.localeCompare(b.name));
+
+  const mutationsByName = new Map();
+  const addMutation = (name, multiplier) => {
+    const cleanName = String(name || '').trim();
+    const value = Number(multiplier);
+    if (!cleanName || !Number.isFinite(value) || value <= 0) return;
+    mutationsByName.set(cleanName.toLowerCase(), { name: cleanName, multiplier: value });
+  };
+  addMutation('None', 1);
+  (Array.isArray(input.mutations) ? input.mutations : []).forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    addMutation(item.name || item.key, item.multiplier ?? item.priceMultiplier ?? item.value);
+  });
+
+  const mutations = Array.from(mutationsByName.values())
+    .sort((a, b) => (a.name.toLowerCase() === 'none' ? -1 : b.name.toLowerCase() === 'none' ? 1 : a.name.localeCompare(b.name)));
+
+  const cfg = input.config && typeof input.config === 'object' ? input.config : {};
+  const dr = cfg.diminishingReturns && typeof cfg.diminishingReturns === 'object' ? cfg.diminishingReturns : {};
+  const config = {
+    sizeMultiplier: safeNumber(cfg.sizeMultiplier, 1),
+    mutationMultiplier: safeNumber(cfg.mutationMultiplier, 1),
+    sizeExponent: safeNumber(cfg.sizeExponent, 2.65),
+    sizeExponentOverrides: cfg.sizeExponentOverrides && typeof cfg.sizeExponentOverrides === 'object' ? cfg.sizeExponentOverrides : { Mushroom: 1.9, Bamboo: 1.75 },
+    singleHarvestMutationBonusScale: safeNumber(cfg.singleHarvestMutationBonusScale, 0.15),
+    minimumValues: cfg.minimumValues && typeof cfg.minimumValues === 'object' ? cfg.minimumValues : { Carrot: 4 },
+    diminishingReturns: {
+      enabled: dr.enabled !== false,
+      knee: safeNumber(dr.knee, 5),
+      tailExponent: safeNumber(dr.tailExponent, 1.5),
+      kneeMultipliers: dr.kneeMultipliers && typeof dr.kneeMultipliers === 'object' ? dr.kneeMultipliers : {},
+      tailExponentMultipliers: dr.tailExponentMultipliers && typeof dr.tailExponentMultipliers === 'object' ? dr.tailExponentMultipliers : {}
+    }
+  };
+
+  return {
+    version: 1,
+    source: input.source || 'roblox-scraper',
+    fruits,
+    mutations,
+    config,
+    scrapedAt: input.scrapedAt || null,
+    updatedAt: Date.now()
+  };
+}
+
+function prepareCalculatorDataResponse(data) {
+  if (!data) return null;
+  return JSON.parse(JSON.stringify(data));
+}
+
+function safeNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function extractAuctionLots(input) {
+  if (!input || typeof input !== 'object') return [];
+  if (Array.isArray(input.lots)) return input.lots;
+  if (input.manifest && Array.isArray(input.manifest.lots)) return input.manifest.lots;
+  if (input.manifest && input.manifest.lots && typeof input.manifest.lots === 'object') {
+    return Object.values(input.manifest.lots);
+  }
+  return [];
+}
+
+function normalizeAuctionData(input) {
+  if (!input || typeof input !== 'object') return null;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const rawLots = extractAuctionLots(input);
+  const stockMap = input.stock && typeof input.stock === 'object' ? input.stock : {};
+  const rollInterval = safeNumber(input.rollIntervalSeconds, 0);
+  const rollWindowUnix = safeNumber(input.rollWindowUnix, 0);
+  const timerShiftSeconds = safeNumber(input.timerShiftSeconds, 0);
+  let refreshAt = safeNumber(input.refreshAt, rollWindowUnix > 0 && rollInterval > 0 ? rollWindowUnix + rollInterval + timerShiftSeconds : 0);
+
+  const lots = rawLots
+    .filter(lot => lot && typeof lot === 'object')
+    .map((lot, index) => {
+      const lotId = String(lot.lotId || lot.id || index);
+      const stockValue = lot.stock !== undefined
+        ? lot.stock
+        : stockMap[lotId] !== undefined
+          ? stockMap[lotId]
+          : lot.stockQuantity;
+      const stock = stockValue === undefined || stockValue === null ? null : safeNumber(stockValue, 0);
+      const expiresAt = safeNumber(lot.expiresAt, 0);
+      const soldOut = stock !== null && stock <= 0;
+      const expired = expiresAt > 0 && expiresAt <= nowSec;
+      const rawImage = lot.image || lot.icon || lot.displayImage || lot.thumbnail || lot.assetId || null;
+      const currentPrice = lot.currentPrice !== undefined ? lot.currentPrice
+        : lot.price !== undefined ? lot.price
+          : lot.startPrice !== undefined ? lot.startPrice
+            : lot.cost;
+
+      return {
+        lotId,
+        item: lot.item || lot.name || lot.FruitName || '',
+        name: lot.displayName || lot.name || lot.item || lot.FruitName || '',
+        category: lot.category || lot.type || '',
+        type: lot.type || '',
+        mutation: lot.mutation || '',
+        size: lot.size || '',
+        count: safeNumber(lot.count, 1),
+        rarity: lot.rarity || '',
+        image: formatImageForClient(rawImage),
+        stock,
+        stockQuantity: lot.stockQuantity === undefined ? stock : lot.stockQuantity,
+        currentPrice: currentPrice === undefined || currentPrice === null ? null : safeNumber(currentPrice, 0),
+        robuxPrice: lot.robuxPrice === undefined ? null : safeNumber(lot.robuxPrice, 0),
+        rolledAt: safeNumber(lot.rolledAt, 0),
+        expiresAt,
+        soldOut,
+        expired,
+        active: !soldOut && !expired
+      };
+    });
+
+  if ((!refreshAt || refreshAt <= 0) && lots.length > 0) {
+    const futureExpiry = lots
+      .map(lot => safeNumber(lot.expiresAt, 0))
+      .filter(expiresAt => expiresAt > nowSec)
+      .sort((a, b) => a - b)[0];
+    refreshAt = futureExpiry || 0;
+  }
+
+  return {
+    lots,
+    rollIntervalSeconds: rollInterval,
+    rollWindowUnix,
+    timerShiftSeconds,
+    refreshAt,
+    serverNow: nowSec,
+    jobId: input.jobId || null,
+    updatedAt: Date.now()
+  };
+}
+
+function prepareAuctionResponse(auction) {
+  if (!auction) return null;
+  const data = normalizeAuctionData(auction) || JSON.parse(JSON.stringify(auction));
+  if (data.lots) {
+    data.lots.forEach(lot => {
+      if (lot.image) lot.image = formatImageForClient(lot.image);
+    });
+  }
+  return data;
 }
 
 function buildWeatherCatalog(stock) {
@@ -384,8 +673,57 @@ app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
   res.json(prepareStockResponse(currentStock));
 });
 
-app.get('/api/item-translations', rateLimiter(300, 60000), (req, res) => {
-  res.json(loadItemTranslations());
+app.get('/api/auction', rateLimiter(300, 60000), (req, res) => {
+  if (!currentAuction) {
+    return res.status(404).json({ error: 'No auction data available yet' });
+  }
+
+  res.json(prepareAuctionResponse(currentAuction));
+});
+
+app.get('/api/calculator-data', rateLimiter(300, 60000), (req, res) => {
+  if (!currentCalculatorData) {
+    return res.status(404).json({ error: 'No calculator data available yet' });
+  }
+
+  res.json(prepareCalculatorDataResponse(currentCalculatorData));
+});
+
+app.post('/api/translate-names', rateLimiter(120, 60000), async (req, res) => {
+  const lang = normalizeTranslationLang(req.body && req.body.lang);
+  const rawNames = Array.isArray(req.body && req.body.names) ? req.body.names : [];
+  const names = Array.from(new Set(rawNames
+    .map(normalizeTranslationText)
+    .filter(name => name && name.length <= 120)))
+    .slice(0, 120);
+
+  if (lang === 'en' || names.length === 0) {
+    return res.json({
+      lang,
+      translations: Object.fromEntries(names.map(name => [name, name]))
+    });
+  }
+
+  const translations = {};
+  let changed = false;
+  const concurrency = 8;
+  let index = 0;
+
+  async function worker() {
+    while (index < names.length) {
+      const name = names[index++];
+      const before = translationCache[lang] && translationCache[lang][translationCacheKey(name)];
+      const translated = await translateTextAutomatically(name, lang);
+      const after = translationCache[lang] && translationCache[lang][translationCacheKey(name)];
+      if ((!before && after) || (before && after && before.text !== after.text)) changed = true;
+      translations[name] = translated;
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, names.length) }, worker));
+  if (changed) saveTranslationCache();
+
+  res.json({ lang, translations });
 });
 
 // Cache for proxied image buffers to bypass Russian IP throttling on Roblox CDNs
@@ -1031,6 +1369,19 @@ async function handleUpdateStock(newStock) {
     fruitRefreshAt = Math.floor(Date.now() / 1000) + newStock.fruitRefreshTimer;
   }
 
+  let auctionUpdated = false;
+  if (newStock.auction && typeof newStock.auction === 'object') {
+    const normalizedAuction = normalizeAuctionData({
+      ...newStock.auction,
+      jobId: newStock.jobId || newStock.auction.jobId
+    });
+    if (normalizedAuction) {
+      currentAuction = normalizedAuction;
+      saveAuctionData();
+      auctionUpdated = true;
+    }
+  }
+
   currentStock = {
     restockTimes: newStock.restockTimes,
     shops: newStock.shops,
@@ -1039,6 +1390,7 @@ async function handleUpdateStock(newStock) {
     fruitMultipliers: fruitMultipliers,
     // Absolute unix timestamp (seconds) when the next fruit refresh happens.
     fruitRefreshAt: fruitRefreshAt,
+    auction: currentAuction,
     updatedAt: Date.now()
   };
 
@@ -1047,6 +1399,29 @@ async function handleUpdateStock(newStock) {
     type: 'stock',
     stock: prepareStockResponse(currentStock)
   });
+  if (auctionUpdated) {
+    broadcast({
+      type: 'auction',
+      auction: prepareAuctionResponse(currentAuction)
+    });
+  }
+
+  let calculatorUpdated = false;
+  if (newStock.calculatorData && typeof newStock.calculatorData === 'object') {
+    const normalizedCalculatorData = normalizeCalculatorData(newStock.calculatorData);
+    if (normalizedCalculatorData && normalizedCalculatorData.fruits.length > 0) {
+      currentCalculatorData = normalizedCalculatorData;
+      saveCalculatorData();
+      calculatorUpdated = true;
+    }
+  }
+
+  if (calculatorUpdated) {
+    broadcast({
+      type: 'calculator-data',
+      calculatorData: prepareCalculatorDataResponse(currentCalculatorData)
+    });
+  }
 
   return { success: true, isRestockTimeUpdated };
 }
@@ -1448,6 +1823,8 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({
     type: 'init',
     stock: prepareStockResponse(currentStock),
+    auction: prepareAuctionResponse(currentAuction),
+    calculatorData: prepareCalculatorDataResponse(currentCalculatorData),
     predictions: preparePredictionsResponse(currentPredictions)
   }));
   

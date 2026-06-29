@@ -26,7 +26,7 @@ const translations = {
     apiJsonSample: 'Пример JSON ответа:',
     apiPythonSample: 'Пример на Python:',
     apiJsSample: 'Пример на JavaScript (Node.js):',
-    loadingPlaceholder: 'Ожидание данных от Roblox бота...',
+    loadingPlaceholder: 'Ожидание актуальных данных...',
     noItemsPlaceholder: 'Нет предметов по заданным фильтрам',
     inStockText: ' шт.',
     outOfStockText: 'Нет стока',
@@ -82,7 +82,38 @@ const translations = {
     multiplierPushTitle: (name) => `📈 Высокий множитель: ${name}!`,
     multiplierPushBody: (rate, threshold) => `Текущий множитель x${rate} (порог уведомления: >= x${threshold})`,
     enterMultiplierPrompt: 'Введите минимальный множитель для оповещения (например, 2.0 или 1.5):',
-    invalidMultiplierAlert: 'Пожалуйста, введите корректное число больше 0.'
+    invalidMultiplierAlert: 'Пожалуйста, введите корректное число больше 0.',
+    auctionTitle: 'Аукцион',
+    auctionRefreshIn: 'Обновление через',
+    auctionAvailable: 'В продаже',
+    auctionSoldOut: 'Продано',
+    auctionExpired: 'Истекло',
+    auctionStockUnlimited: 'Без лимита',
+    auctionStockLeft: (count) => `Осталось: ${count}`,
+    auctionPrice: 'Цена',
+    auctionEmpty: 'Данные аукциона ещё не получены',
+    tgPromoTitle: '🔔 Получай уведомления в Telegram!',
+    tgPromoSub: 'Переходи в нашего бота - оповещения о завозах прямо в ЛС',
+    navCalculator: 'Калькулятор',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Калькулятор цены фрукта',
+    calculatorFruitLabel: 'Фрукт',
+    calculatorFruitPlaceholder: 'Начните писать название фрукта',
+    calculatorWeightLabel: 'Вес',
+    calculatorMutationLabel: 'Мутация',
+    calculatorFriendsLabel: 'Друзья рядом',
+    calculatorPenaltyLabel: 'Снижение цены',
+    calculatorBaseValue: (value) => `База: ${value}`,
+    calculatorResultLabel: 'Цена продажи',
+    calculatorFormulaHint: 'Расчёт обновляется автоматически по актуальным данным.',
+    calculatorNoData: 'Ожидание данных калькулятора...',
+    calculatorSelectFruit: 'Выберите фрукт для расчета',
+    calculatorUpdatedAt: (value) => `Обновлено: ${value}`,
+    navSeeds: 'Семена',
+    navGears: 'Снаряжение',
+    navCrates: 'Ящики',
+    navAuction: 'Аукцион',
+    navWeather: 'Погода',
+    navFuture: 'Будущее'
   },
   en: {
     title: 'Grow a Garden 2',
@@ -110,7 +141,7 @@ const translations = {
     apiJsonSample: 'JSON response example:',
     apiPythonSample: 'Python example:',
     apiJsSample: 'JavaScript (Node.js) example:',
-    loadingPlaceholder: 'Waiting for Roblox bot data...',
+    loadingPlaceholder: 'Waiting for live data...',
     noItemsPlaceholder: 'No items match your filters',
     inStockText: ' pcs.',
     outOfStockText: 'Out of stock',
@@ -166,9 +197,822 @@ const translations = {
     multiplierPushTitle: (name) => `📈 High Multiplier: ${name}!`,
     multiplierPushBody: (rate, threshold) => `Current rate is x${rate} (alert threshold: >= x${threshold})`,
     enterMultiplierPrompt: 'Enter minimum multiplier for alert (e.g., 2.0 or 1.5):',
-    invalidMultiplierAlert: 'Please enter a valid number greater than 0.'
+    invalidMultiplierAlert: 'Please enter a valid number greater than 0.',
+    auctionTitle: 'Auction',
+    auctionRefreshIn: 'Refresh in',
+    auctionAvailable: 'For sale',
+    auctionSoldOut: 'Sold out',
+    auctionExpired: 'Expired',
+    auctionStockUnlimited: 'Unlimited',
+    auctionStockLeft: (count) => `Left: ${count}`,
+    auctionPrice: 'Price',
+    auctionEmpty: 'Auction data has not arrived yet',
+    tgPromoTitle: '🔔 Get alerts in Telegram!',
+    tgPromoSub: 'Try our bot - restock alerts right to your PM',
+    navCalculator: 'Calculator',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Fruit Value Calculator',
+    calculatorFruitLabel: 'Fruit',
+    calculatorFruitPlaceholder: 'Start typing a fruit name',
+    calculatorWeightLabel: 'Weight',
+    calculatorMutationLabel: 'Mutation',
+    calculatorFriendsLabel: 'Friends nearby',
+    calculatorPenaltyLabel: 'Price reduction',
+    calculatorBaseValue: (value) => `Base: ${value}`,
+    calculatorResultLabel: 'Sell value',
+    calculatorFormulaHint: 'Calculation updates automatically from live data.',
+    calculatorNoData: 'Waiting for calculator data...',
+    calculatorSelectFruit: 'Select a fruit to calculate',
+    calculatorUpdatedAt: (value) => `Updated: ${value}`,
+    navSeeds: 'Seeds',
+    navGears: 'Gears',
+    navCrates: 'Crates',
+    navAuction: 'Auction',
+    navWeather: 'Weather',
+    navFuture: 'Future'
   }
 };
+
+function extendEnglish(overrides) {
+  return { ...translations.en, ...overrides };
+}
+
+Object.assign(translations, {
+  es: extendEnglish({
+    subtitle: 'Stock en vivo y alertas',
+    statusOnline: 'En línea',
+    statusOffline: 'Sin conexión',
+    lastUpdatedNever: 'Última actualización: Nunca',
+    lastUpdatedPrefix: 'Actualizado: ',
+    lastUpdatedWaiting: 'Esperando datos...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Temporizadores de restock',
+    notificationBanner: '<strong>Notificaciones:</strong> pulsa la campana 🔔 en cualquier objeto. El navegador avisará cuando vuelva al stock.',
+    searchPlaceholder: 'Buscar objetos...',
+    filterAll: 'Todo',
+    filterInStock: 'En stock',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Cajas',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Herramientas',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Semillas',
+    loadingPlaceholder: 'Esperando datos del bot de Roblox...',
+    noItemsPlaceholder: 'No hay objetos para estos filtros',
+    inStockText: ' uds.',
+    outOfStockText: 'Sin stock',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Clima y hora',
+    weatherLabelTime: 'Hora del día',
+    weatherLabelActive: 'Clima activo',
+    weatherNone: 'Ninguno',
+    weatherEndsIn: 'Termina en: {}',
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Próximos restocks',
+    predictionTabSeeds: '<i class="fa-solid fa-leaf"></i> Semillas',
+    predictionTabGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Herramientas',
+    predictionTabCrates: '<i class="fa-solid fa-box-open"></i> Cajas',
+    predictionTabWeather: '<i class="fa-solid fa-cloud-moon"></i> Clima y lunas',
+    predictionStatusUpcoming: 'Próximo',
+    predictionStatusPast: 'Pasado',
+    predictionTimeIn: 'en {}',
+    predictionTimeAgo: 'hace {}',
+    predictionTimeSoon: 'Pronto',
+    predictionTimeJustNow: 'Ahora',
+    sidebarMultipliers: 'Multiplicadores de venta',
+    predictionsWarning: '⚠️ Los restocks futuros pueden ser inexactos por cambios del juego.',
+    auctionTitle: 'Subasta',
+    auctionRefreshIn: 'Actualiza en',
+    auctionAvailable: 'En venta',
+    auctionSoldOut: 'Vendido',
+    auctionExpired: 'Expirado',
+    auctionStockUnlimited: 'Ilimitado',
+    auctionStockLeft: (count) => `Quedan: ${count}`,
+    auctionPrice: 'Precio',
+    auctionEmpty: 'Aún no hay datos de subasta',
+    navSeeds: 'Semillas',
+    navGears: 'Herramientas',
+    navCrates: 'Cajas',
+    navAuction: 'Subasta',
+    navWeather: 'Clima',
+    navFuture: 'Futuro'
+  }),
+  pt: extendEnglish({
+    subtitle: 'Stock ao vivo e alertas',
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    lastUpdatedNever: 'Última atualização: Nunca',
+    lastUpdatedPrefix: 'Atualizado: ',
+    lastUpdatedWaiting: 'Aguardando dados...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Temporizadores de restock',
+    notificationBanner: '<strong>Notificações:</strong> clique no sino 🔔 de qualquer item. O navegador avisará quando voltar ao stock.',
+    searchPlaceholder: 'Buscar itens...',
+    filterAll: 'Todos',
+    filterInStock: 'Em stock',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Caixas',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Sementes',
+    loadingPlaceholder: 'Aguardando dados do bot Roblox...',
+    noItemsPlaceholder: 'Nenhum item para estes filtros',
+    inStockText: ' un.',
+    outOfStockText: 'Sem stock',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Clima e hora',
+    weatherLabelTime: 'Hora do dia',
+    weatherLabelActive: 'Clima ativo',
+    weatherNone: 'Nenhum',
+    weatherEndsIn: 'Termina em: {}',
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Próximos restocks',
+    predictionTabSeeds: '<i class="fa-solid fa-leaf"></i> Sementes',
+    predictionTabGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos',
+    predictionTabCrates: '<i class="fa-solid fa-box-open"></i> Caixas',
+    predictionTabWeather: '<i class="fa-solid fa-cloud-moon"></i> Clima e luas',
+    predictionStatusUpcoming: 'Futuro',
+    predictionStatusPast: 'Passado',
+    predictionTimeIn: 'em {}',
+    predictionTimeAgo: 'há {}',
+    sidebarMultipliers: 'Multiplicadores de venda',
+    predictionsWarning: '⚠️ Restocks futuros podem ser imprecisos por mudanças no jogo.',
+    auctionTitle: 'Leilão',
+    auctionRefreshIn: 'Atualiza em',
+    auctionAvailable: 'À venda',
+    auctionSoldOut: 'Vendido',
+    auctionExpired: 'Expirado',
+    auctionStockUnlimited: 'Ilimitado',
+    auctionStockLeft: (count) => `Restam: ${count}`,
+    auctionPrice: 'Preço',
+    auctionEmpty: 'Dados do leilão ainda não chegaram',
+    navSeeds: 'Sementes',
+    navGears: 'Equip.',
+    navCrates: 'Caixas',
+    navAuction: 'Leilão',
+    navWeather: 'Clima',
+    navFuture: 'Futuro'
+  }),
+  fr: extendEnglish({
+    subtitle: 'Stock en direct et alertes',
+    statusOnline: 'En ligne',
+    statusOffline: 'Hors ligne',
+    lastUpdatedNever: 'Dernière mise à jour : jamais',
+    lastUpdatedPrefix: 'Mis à jour : ',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Minuteurs de restock',
+    searchPlaceholder: 'Rechercher...',
+    filterAll: 'Tout',
+    filterInStock: 'En stock',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Caisses',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Équipement',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Graines',
+    loadingPlaceholder: 'En attente des données Roblox...',
+    noItemsPlaceholder: 'Aucun objet pour ces filtres',
+    inStockText: ' pcs.',
+    outOfStockText: 'Rupture',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Météo et temps',
+    weatherLabelTime: 'Moment',
+    weatherLabelActive: 'Météo active',
+    weatherNone: 'Aucune',
+    weatherEndsIn: 'Finit dans : {}',
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Restocks futurs',
+    sidebarMultipliers: 'Multiplicateurs de vente',
+    auctionTitle: 'Enchères',
+    auctionRefreshIn: 'Actualise dans',
+    auctionAvailable: 'En vente',
+    auctionSoldOut: 'Vendu',
+    auctionExpired: 'Expiré',
+    auctionStockUnlimited: 'Illimité',
+    auctionStockLeft: (count) => `Restant : ${count}`,
+    auctionPrice: 'Prix',
+    auctionEmpty: 'Aucune donnée d’enchère pour le moment',
+    navSeeds: 'Graines',
+    navGears: 'Équip.',
+    navCrates: 'Caisses',
+    navAuction: 'Enchères',
+    navWeather: 'Météo',
+    navFuture: 'Futur'
+  }),
+  de: extendEnglish({
+    subtitle: 'Live-Stock und Benachrichtigungen',
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    lastUpdatedNever: 'Zuletzt aktualisiert: nie',
+    lastUpdatedPrefix: 'Aktualisiert: ',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Restock-Timer',
+    searchPlaceholder: 'Items suchen...',
+    filterAll: 'Alle',
+    filterInStock: 'Auf Lager',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Kisten',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Ausrüstung',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Samen',
+    loadingPlaceholder: 'Warte auf Roblox-Bot-Daten...',
+    noItemsPlaceholder: 'Keine Items für diese Filter',
+    inStockText: ' Stk.',
+    outOfStockText: 'Nicht auf Lager',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Wetter und Zeit',
+    weatherLabelTime: 'Tageszeit',
+    weatherLabelActive: 'Aktives Wetter',
+    weatherNone: 'Keins',
+    weatherEndsIn: 'Endet in: {}',
+    predictionsHeader: '<i class="fa-solid fa-hourglass-half"></i> Zukünftige Restocks',
+    sidebarMultipliers: 'Verkaufs-Multiplikatoren',
+    auctionTitle: 'Auktion',
+    auctionRefreshIn: 'Aktualisiert in',
+    auctionAvailable: 'Im Angebot',
+    auctionSoldOut: 'Ausverkauft',
+    auctionExpired: 'Abgelaufen',
+    auctionStockLeft: (count) => `Übrig: ${count}`,
+    auctionPrice: 'Preis',
+    auctionEmpty: 'Noch keine Auktionsdaten',
+    navSeeds: 'Samen',
+    navGears: 'Ausrüstung',
+    navCrates: 'Kisten',
+    navAuction: 'Auktion',
+    navWeather: 'Wetter',
+    navFuture: 'Zukunft'
+  }),
+  tr: extendEnglish({
+    subtitle: 'Canlı stok ve bildirimler',
+    statusOnline: 'Çevrimiçi',
+    statusOffline: 'Çevrimdışı',
+    lastUpdatedPrefix: 'Güncellendi: ',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Restock sayaçları',
+    searchPlaceholder: 'Eşya ara...',
+    filterAll: 'Tümü',
+    filterInStock: 'Stokta',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Kasalar',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Ekipman',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Tohumlar',
+    loadingPlaceholder: 'Canlı veriler bekleniyor...',
+    noItemsPlaceholder: 'Bu filtrelerde eşya yok',
+    inStockText: ' adet',
+    outOfStockText: 'Stok yok',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Hava ve zaman',
+    weatherLabelTime: 'Günün zamanı',
+    weatherLabelActive: 'Aktif hava',
+    weatherNone: 'Yok',
+    weatherEndsIn: 'Biter: {}',
+    sidebarMultipliers: 'Satış çarpanları',
+    auctionTitle: 'Açık artırma',
+    auctionRefreshIn: 'Yenilenme',
+    auctionAvailable: 'Satışta',
+    auctionSoldOut: 'Tükendi',
+    auctionExpired: 'Süresi doldu',
+    auctionStockLeft: (count) => `Kalan: ${count}`,
+    auctionPrice: 'Fiyat',
+    auctionEmpty: 'Açık artırma verisi henüz yok',
+    navSeeds: 'Tohum',
+    navGears: 'Ekipman',
+    navCrates: 'Kasa',
+    navAuction: 'Açık artırma',
+    navWeather: 'Hava',
+    navFuture: 'Gelecek'
+  }),
+  id: extendEnglish({
+    subtitle: 'Stok live dan notifikasi',
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    lastUpdatedPrefix: 'Diperbarui: ',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Timer restock',
+    searchPlaceholder: 'Cari item...',
+    filterAll: 'Semua',
+    filterInStock: 'Ada stok',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Peti',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Peralatan',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Benih',
+    loadingPlaceholder: 'Menunggu data bot Roblox...',
+    noItemsPlaceholder: 'Tidak ada item untuk filter ini',
+    inStockText: ' pcs',
+    outOfStockText: 'Stok habis',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Cuaca dan waktu',
+    weatherLabelTime: 'Waktu',
+    weatherLabelActive: 'Cuaca aktif',
+    weatherNone: 'Tidak ada',
+    weatherEndsIn: 'Berakhir dalam: {}',
+    sidebarMultipliers: 'Multiplier jual',
+    auctionTitle: 'Lelang',
+    auctionRefreshIn: 'Refresh dalam',
+    auctionAvailable: 'Dijual',
+    auctionSoldOut: 'Habis',
+    auctionExpired: 'Kedaluwarsa',
+    auctionStockLeft: (count) => `Sisa: ${count}`,
+    auctionPrice: 'Harga',
+    auctionEmpty: 'Data lelang belum masuk',
+    navSeeds: 'Benih',
+    navGears: 'Peralatan',
+    navCrates: 'Peti',
+    navAuction: 'Lelang',
+    navWeather: 'Cuaca',
+    navFuture: 'Masa depan'
+  }),
+  uk: extendEnglish({
+    subtitle: 'Живий сток і сповіщення',
+    statusOnline: 'Онлайн',
+    statusOffline: 'Офлайн',
+    lastUpdatedNever: 'Останнє оновлення: ніколи',
+    lastUpdatedPrefix: 'Оновлено: ',
+    lastUpdatedWaiting: 'Очікування даних...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Таймери завозу',
+    notificationBanner: '<strong>Сповіщення:</strong> натисніть дзвіночок 🔔 на картці предмета, щоб отримати повідомлення, коли він з’явиться.',
+    searchPlaceholder: 'Пошук предметів...',
+    filterAll: 'Усі',
+    filterInStock: 'В наявності',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Ящики',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Спорядження',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Насіння',
+    loadingPlaceholder: 'Очікування актуальних даних...',
+    noItemsPlaceholder: 'Немає предметів за фільтрами',
+    inStockText: ' шт.',
+    outOfStockText: 'Немає стоку',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Погода і час доби',
+    weatherLabelTime: 'Час доби',
+    weatherLabelActive: 'Активна погода',
+    weatherNone: 'Немає',
+    weatherEndsIn: 'Закінчиться через: {}',
+    sidebarMultipliers: 'Множники продажу',
+    auctionTitle: 'Аукціон',
+    auctionRefreshIn: 'Оновлення через',
+    auctionAvailable: 'У продажу',
+    auctionSoldOut: 'Продано',
+    auctionExpired: 'Минуло',
+    auctionStockUnlimited: 'Без ліміту',
+    auctionStockLeft: (count) => `Залишилось: ${count}`,
+    auctionPrice: 'Ціна',
+    auctionEmpty: 'Дані аукціону ще не отримані',
+    navSeeds: 'Насіння',
+    navGears: 'Спорядження',
+    navCrates: 'Ящики',
+    navAuction: 'Аукціон',
+    navWeather: 'Погода',
+    navFuture: 'Майбутнє'
+  }),
+  pl: extendEnglish({
+    subtitle: 'Live stock i powiadomienia',
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    lastUpdatedPrefix: 'Zaktualizowano: ',
+    restockHeader: '<i class="fa-solid fa-clock"></i> Timery restocku',
+    searchPlaceholder: 'Szukaj przedmiotów...',
+    filterAll: 'Wszystko',
+    filterInStock: 'W stocku',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> Skrzynki',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Ekwipunek',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> Nasiona',
+    loadingPlaceholder: 'Oczekiwanie na dane bota Roblox...',
+    noItemsPlaceholder: 'Brak przedmiotów dla filtrów',
+    inStockText: ' szt.',
+    outOfStockText: 'Brak stocku',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> Pogoda i czas',
+    weatherLabelTime: 'Pora dnia',
+    weatherLabelActive: 'Aktywna pogoda',
+    weatherNone: 'Brak',
+    weatherEndsIn: 'Koniec za: {}',
+    sidebarMultipliers: 'Mnożniki sprzedaży',
+    auctionTitle: 'Aukcja',
+    auctionRefreshIn: 'Odświeżenie za',
+    auctionAvailable: 'W sprzedaży',
+    auctionSoldOut: 'Wyprzedane',
+    auctionExpired: 'Wygasło',
+    auctionStockLeft: (count) => `Zostało: ${count}`,
+    auctionPrice: 'Cena',
+    auctionEmpty: 'Brak danych aukcji',
+    navSeeds: 'Nasiona',
+    navGears: 'Sprzęt',
+    navCrates: 'Skrzynki',
+    navAuction: 'Aukcja',
+    navWeather: 'Pogoda',
+    navFuture: 'Przyszłość'
+  }),
+  zh: extendEnglish({
+    subtitle: '实时库存与提醒',
+    statusOnline: '在线',
+    statusOffline: '离线',
+    lastUpdatedNever: '最后更新：从未',
+    lastUpdatedPrefix: '已更新：',
+    lastUpdatedWaiting: '等待数据...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> 补货计时器',
+    notificationBanner: '<strong>通知：</strong>点击物品卡片上的铃铛 🔔，物品回到库存时浏览器会提醒你。',
+    searchPlaceholder: '搜索物品...',
+    filterAll: '全部',
+    filterInStock: '有库存',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> 箱子',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> 装备',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> 种子',
+    loadingPlaceholder: '等待 Roblox 机器人数据...',
+    noItemsPlaceholder: '没有符合筛选的物品',
+    inStockText: ' 个',
+    outOfStockText: '缺货',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> 天气与时间',
+    weatherLabelTime: '时间',
+    weatherLabelActive: '当前天气',
+    weatherNone: '无',
+    weatherEndsIn: '结束于：{}',
+    sidebarMultipliers: '出售倍率',
+    auctionTitle: '拍卖',
+    auctionRefreshIn: '刷新倒计时',
+    auctionAvailable: '出售中',
+    auctionSoldOut: '已售罄',
+    auctionExpired: '已过期',
+    auctionStockUnlimited: '无限',
+    auctionStockLeft: (count) => `剩余：${count}`,
+    auctionPrice: '价格',
+    auctionEmpty: '暂无拍卖数据',
+    navSeeds: '种子',
+    navGears: '装备',
+    navCrates: '箱子',
+    navAuction: '拍卖',
+    navWeather: '天气',
+    navFuture: '未来'
+  }),
+  ja: extendEnglish({
+    subtitle: 'ライブ在庫と通知',
+    statusOnline: 'オンライン',
+    statusOffline: 'オフライン',
+    lastUpdatedNever: '最終更新：なし',
+    lastUpdatedPrefix: '更新：',
+    lastUpdatedWaiting: 'データ待機中...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> 入荷タイマー',
+    notificationBanner: '<strong>通知：</strong>アイテムカードのベル 🔔 を押すと、再入荷時にブラウザ通知を受け取れます。',
+    searchPlaceholder: 'アイテム検索...',
+    filterAll: 'すべて',
+    filterInStock: '在庫あり',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> クレート',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> ギア',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> 種',
+    loadingPlaceholder: 'Roblox ボットのデータ待機中...',
+    noItemsPlaceholder: '条件に合うアイテムがありません',
+    inStockText: ' 個',
+    outOfStockText: '在庫切れ',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> 天気と時間',
+    weatherLabelTime: '時間帯',
+    weatherLabelActive: '現在の天気',
+    weatherNone: 'なし',
+    weatherEndsIn: '終了まで：{}',
+    sidebarMultipliers: '売却倍率',
+    auctionTitle: 'オークション',
+    auctionRefreshIn: '更新まで',
+    auctionAvailable: '販売中',
+    auctionSoldOut: '売り切れ',
+    auctionExpired: '期限切れ',
+    auctionStockUnlimited: '無制限',
+    auctionStockLeft: (count) => `残り：${count}`,
+    auctionPrice: '価格',
+    auctionEmpty: 'オークションデータはまだありません',
+    navSeeds: '種',
+    navGears: 'ギア',
+    navCrates: 'クレート',
+    navAuction: 'オークション',
+    navWeather: '天気',
+    navFuture: '未来'
+  }),
+  ko: extendEnglish({
+    subtitle: '실시간 재고와 알림',
+    statusOnline: '온라인',
+    statusOffline: '오프라인',
+    lastUpdatedNever: '마지막 업데이트: 없음',
+    lastUpdatedPrefix: '업데이트: ',
+    lastUpdatedWaiting: '데이터 대기 중...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> 재입고 타이머',
+    notificationBanner: '<strong>알림:</strong> 아이템 카드의 종 🔔 을 누르면 재입고 시 브라우저 알림을 받을 수 있습니다.',
+    searchPlaceholder: '아이템 검색...',
+    filterAll: '전체',
+    filterInStock: '재고 있음',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> 상자',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> 장비',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> 씨앗',
+    loadingPlaceholder: 'Roblox 봇 데이터 대기 중...',
+    noItemsPlaceholder: '필터에 맞는 아이템이 없습니다',
+    inStockText: '개',
+    outOfStockText: '품절',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> 날씨와 시간',
+    weatherLabelTime: '시간대',
+    weatherLabelActive: '활성 날씨',
+    weatherNone: '없음',
+    weatherEndsIn: '종료까지: {}',
+    sidebarMultipliers: '판매 배율',
+    auctionTitle: '경매',
+    auctionRefreshIn: '새로고침까지',
+    auctionAvailable: '판매 중',
+    auctionSoldOut: '매진',
+    auctionExpired: '만료됨',
+    auctionStockUnlimited: '무제한',
+    auctionStockLeft: (count) => `남음: ${count}`,
+    auctionPrice: '가격',
+    auctionEmpty: '아직 경매 데이터가 없습니다',
+    navSeeds: '씨앗',
+    navGears: '장비',
+    navCrates: '상자',
+    navAuction: '경매',
+    navWeather: '날씨',
+    navFuture: '예정'
+  }),
+  ar: extendEnglish({
+    subtitle: 'المخزون المباشر والتنبيهات',
+    statusOnline: 'متصل',
+    statusOffline: 'غير متصل',
+    lastUpdatedNever: 'آخر تحديث: أبداً',
+    lastUpdatedPrefix: 'تم التحديث: ',
+    lastUpdatedWaiting: 'بانتظار البيانات...',
+    restockHeader: '<i class="fa-solid fa-clock"></i> مؤقتات إعادة التزويد',
+    notificationBanner: '<strong>الإشعارات:</strong> اضغط الجرس 🔔 على بطاقة العنصر ليصلك تنبيه عند عودته للمخزون.',
+    searchPlaceholder: 'ابحث عن عنصر...',
+    filterAll: 'الكل',
+    filterInStock: 'متوفر',
+    sectionCrates: '<i class="fa-solid fa-box-open"></i> الصناديق',
+    sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> المعدات',
+    sectionSeeds: '<i class="fa-solid fa-leaf"></i> البذور',
+    loadingPlaceholder: 'بانتظار بيانات بوت Roblox...',
+    noItemsPlaceholder: 'لا توجد عناصر لهذه الفلاتر',
+    inStockText: ' قطعة',
+    outOfStockText: 'غير متوفر',
+    weatherHeader: '<i class="fa-solid fa-cloud-sun"></i> الطقس والوقت',
+    weatherLabelTime: 'وقت اليوم',
+    weatherLabelActive: 'الطقس النشط',
+    weatherNone: 'لا يوجد',
+    weatherEndsIn: 'ينتهي خلال: {}',
+    sidebarMultipliers: 'مضاعفات البيع',
+    auctionTitle: 'المزاد',
+    auctionRefreshIn: 'التحديث خلال',
+    auctionAvailable: 'معروض',
+    auctionSoldOut: 'نفد',
+    auctionExpired: 'انتهى',
+    auctionStockUnlimited: 'غير محدود',
+    auctionStockLeft: (count) => `المتبقي: ${count}`,
+    auctionPrice: 'السعر',
+    auctionEmpty: 'لا توجد بيانات مزاد بعد',
+    navSeeds: 'البذور',
+    navGears: 'المعدات',
+    navCrates: 'الصناديق',
+    navAuction: 'المزاد',
+    navWeather: 'الطقس',
+    navFuture: 'القادم'
+  })
+});
+
+const calculatorTranslationOverrides = {
+  es: {
+    tgPromoTitle: '🔔 Recibe alertas en Telegram!',
+    tgPromoSub: 'Prueba nuestro bot - alertas de restock por mensaje privado',
+    navCalculator: 'Calculadora',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Calculadora de valor',
+    calculatorFruitLabel: 'Fruta',
+    calculatorFruitPlaceholder: 'Empieza a escribir una fruta',
+    calculatorWeightLabel: 'Peso',
+    calculatorMutationLabel: 'Mutación',
+    calculatorFriendsLabel: 'Amigos cerca',
+    calculatorPenaltyLabel: 'Reducción',
+    calculatorBaseValue: (value) => `Base: ${value}`,
+    calculatorNoData: 'Esperando datos del bot Roblox...',
+    calculatorSelectFruit: 'Selecciona una fruta',
+    calculatorUpdatedAt: (value) => `Actualizado: ${value}`
+  },
+  pt: {
+    tgPromoTitle: '🔔 Receba alertas no Telegram!',
+    tgPromoSub: 'Use nosso bot - alertas de restock direto no privado',
+    navCalculator: 'Calculadora',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Calculadora de valor',
+    calculatorFruitLabel: 'Fruta',
+    calculatorFruitPlaceholder: 'Comece a digitar uma fruta',
+    calculatorWeightLabel: 'Peso',
+    calculatorMutationLabel: 'Mutação',
+    calculatorFriendsLabel: 'Amigos perto',
+    calculatorPenaltyLabel: 'Redução',
+    calculatorBaseValue: (value) => `Base: ${value}`,
+    calculatorNoData: 'Aguardando dados do bot Roblox...',
+    calculatorSelectFruit: 'Selecione uma fruta',
+    calculatorUpdatedAt: (value) => `Atualizado: ${value}`
+  },
+  fr: {
+    tgPromoTitle: '🔔 Recevez les alertes sur Telegram!',
+    tgPromoSub: 'Essayez notre bot - alertes de restock en MP',
+    navCalculator: 'Calculateur',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Calculateur de valeur',
+    calculatorFruitLabel: 'Fruit',
+    calculatorFruitPlaceholder: 'Tapez le nom du fruit',
+    calculatorWeightLabel: 'Poids',
+    calculatorMutationLabel: 'Mutation',
+    calculatorFriendsLabel: 'Amis proches',
+    calculatorPenaltyLabel: 'Réduction',
+    calculatorBaseValue: (value) => `Base : ${value}`,
+    calculatorNoData: 'En attente des données Roblox...',
+    calculatorSelectFruit: 'Choisissez un fruit',
+    calculatorUpdatedAt: (value) => `Mis à jour : ${value}`
+  },
+  de: {
+    tgPromoTitle: '🔔 Erhalte Alerts in Telegram!',
+    tgPromoSub: 'Nutze unseren Bot - Restock-Alerts direkt per DM',
+    navCalculator: 'Rechner',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Fruchtwert-Rechner',
+    calculatorFruitLabel: 'Frucht',
+    calculatorFruitPlaceholder: 'Fruchtnamen eingeben',
+    calculatorWeightLabel: 'Gewicht',
+    calculatorMutationLabel: 'Mutation',
+    calculatorFriendsLabel: 'Freunde nah',
+    calculatorPenaltyLabel: 'Reduktion',
+    calculatorBaseValue: (value) => `Basis: ${value}`,
+    calculatorNoData: 'Warte auf Roblox-Bot-Daten...',
+    calculatorSelectFruit: 'Wähle eine Frucht',
+    calculatorUpdatedAt: (value) => `Aktualisiert: ${value}`
+  },
+  tr: {
+    tgPromoTitle: '🔔 Telegram uyarıları al!',
+    tgPromoSub: 'Botumuzu kullan - restock uyarıları DM’ye gelsin',
+    navCalculator: 'Hesaplayıcı',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Meyve değer hesaplayıcı',
+    calculatorFruitLabel: 'Meyve',
+    calculatorFruitPlaceholder: 'Meyve adı yaz',
+    calculatorWeightLabel: 'Ağırlık',
+    calculatorMutationLabel: 'Mutasyon',
+    calculatorFriendsLabel: 'Yakındaki arkadaş',
+    calculatorPenaltyLabel: 'Azaltma',
+    calculatorBaseValue: (value) => `Taban: ${value}`,
+    calculatorNoData: 'Hesaplayıcı verileri bekleniyor...',
+    calculatorSelectFruit: 'Bir meyve seç',
+    calculatorUpdatedAt: (value) => `Güncellendi: ${value}`
+  },
+  id: {
+    tgPromoTitle: '🔔 Dapatkan alert di Telegram!',
+    tgPromoSub: 'Coba bot kami - alert restock langsung ke DM',
+    navCalculator: 'Kalkulator',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Kalkulator nilai buah',
+    calculatorFruitLabel: 'Buah',
+    calculatorFruitPlaceholder: 'Ketik nama buah',
+    calculatorWeightLabel: 'Berat',
+    calculatorMutationLabel: 'Mutasi',
+    calculatorFriendsLabel: 'Teman dekat',
+    calculatorPenaltyLabel: 'Pengurangan',
+    calculatorBaseValue: (value) => `Dasar: ${value}`,
+    calculatorNoData: 'Menunggu data bot Roblox...',
+    calculatorSelectFruit: 'Pilih buah',
+    calculatorUpdatedAt: (value) => `Diperbarui: ${value}`
+  },
+  uk: {
+    tgPromoTitle: '🔔 Отримуй сповіщення в Telegram!',
+    tgPromoSub: 'Переходь у нашого бота - сповіщення про завози в ЛС',
+    navCalculator: 'Калькулятор',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Калькулятор ціни фрукта',
+    calculatorFruitLabel: 'Фрукт',
+    calculatorFruitPlaceholder: 'Почніть писати назву фрукта',
+    calculatorWeightLabel: 'Вага',
+    calculatorMutationLabel: 'Мутація',
+    calculatorFriendsLabel: 'Друзі поруч',
+    calculatorPenaltyLabel: 'Зниження ціни',
+    calculatorBaseValue: (value) => `База: ${value}`,
+    calculatorNoData: 'Очікування даних калькулятора...',
+    calculatorSelectFruit: 'Виберіть фрукт',
+    calculatorUpdatedAt: (value) => `Оновлено: ${value}`
+  },
+  pl: {
+    tgPromoTitle: '🔔 Odbieraj alerty w Telegramie!',
+    tgPromoSub: 'Użyj naszego bota - alerty restocku prosto na priv',
+    navCalculator: 'Kalkulator',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> Kalkulator wartości',
+    calculatorFruitLabel: 'Owoc',
+    calculatorFruitPlaceholder: 'Zacznij wpisywać owoc',
+    calculatorWeightLabel: 'Waga',
+    calculatorMutationLabel: 'Mutacja',
+    calculatorFriendsLabel: 'Znajomi blisko',
+    calculatorPenaltyLabel: 'Redukcja',
+    calculatorBaseValue: (value) => `Baza: ${value}`,
+    calculatorNoData: 'Oczekiwanie na dane bota Roblox...',
+    calculatorSelectFruit: 'Wybierz owoc',
+    calculatorUpdatedAt: (value) => `Zaktualizowano: ${value}`
+  },
+  zh: {
+    tgPromoTitle: '🔔 在 Telegram 接收提醒!',
+    tgPromoSub: '使用我们的机器人 - 补货提醒直接发到私聊',
+    navCalculator: '计算器',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> 水果价值计算器',
+    calculatorFruitLabel: '水果',
+    calculatorFruitPlaceholder: '输入水果名称',
+    calculatorWeightLabel: '重量',
+    calculatorMutationLabel: '突变',
+    calculatorFriendsLabel: '附近好友',
+    calculatorPenaltyLabel: '价格降低',
+    calculatorBaseValue: (value) => `基础: ${value}`,
+    calculatorNoData: '等待 Roblox 机器人数据...',
+    calculatorSelectFruit: '选择水果',
+    calculatorUpdatedAt: (value) => `已更新: ${value}`
+  },
+  ja: {
+    tgPromoTitle: '🔔 Telegramで通知を受け取る!',
+    tgPromoSub: 'ボットで再入荷通知をDMに送信',
+    navCalculator: '計算機',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> フルーツ価値計算機',
+    calculatorFruitLabel: 'フルーツ',
+    calculatorFruitPlaceholder: 'フルーツ名を入力',
+    calculatorWeightLabel: '重さ',
+    calculatorMutationLabel: '変異',
+    calculatorFriendsLabel: '近くの友達',
+    calculatorPenaltyLabel: '減額',
+    calculatorBaseValue: (value) => `基本: ${value}`,
+    calculatorNoData: 'Robloxボットのデータ待機中...',
+    calculatorSelectFruit: 'フルーツを選択',
+    calculatorUpdatedAt: (value) => `更新: ${value}`
+  },
+  ko: {
+    tgPromoTitle: '🔔 Telegram에서 알림 받기!',
+    tgPromoSub: '봇으로 재입고 알림을 DM으로 받으세요',
+    navCalculator: '계산기',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> 과일 가치 계산기',
+    calculatorFruitLabel: '과일',
+    calculatorFruitPlaceholder: '과일 이름 입력',
+    calculatorWeightLabel: '무게',
+    calculatorMutationLabel: '변이',
+    calculatorFriendsLabel: '근처 친구',
+    calculatorPenaltyLabel: '가격 감소',
+    calculatorBaseValue: (value) => `기본: ${value}`,
+    calculatorNoData: 'Roblox 봇 데이터 대기 중...',
+    calculatorSelectFruit: '과일 선택',
+    calculatorUpdatedAt: (value) => `업데이트: ${value}`
+  },
+  ar: {
+    tgPromoTitle: '🔔 احصل على التنبيهات في Telegram!',
+    tgPromoSub: 'استخدم بوتنا - تنبيهات المخزون تصلك في الخاص',
+    navCalculator: 'الحاسبة',
+    calculatorTitle: '<i class="fa-solid fa-calculator"></i> حاسبة قيمة الفاكهة',
+    calculatorFruitLabel: 'الفاكهة',
+    calculatorFruitPlaceholder: 'اكتب اسم الفاكهة',
+    calculatorWeightLabel: 'الوزن',
+    calculatorMutationLabel: 'الطفرة',
+    calculatorFriendsLabel: 'الأصدقاء قربك',
+    calculatorPenaltyLabel: 'تخفيض السعر',
+    calculatorBaseValue: (value) => `الأساس: ${value}`,
+    calculatorNoData: 'بانتظار بيانات بوت Roblox...',
+    calculatorSelectFruit: 'اختر فاكهة',
+    calculatorUpdatedAt: (value) => `تم التحديث: ${value}`
+  }
+};
+
+Object.entries(calculatorTranslationOverrides).forEach(([lang, values]) => {
+  if (translations[lang]) Object.assign(translations[lang], values);
+});
+
+const neutralLiveDataMessages = {
+  ru: {
+    loadingPlaceholder: 'Ожидание актуальных данных...',
+    calculatorFormulaHint: 'Расчёт обновляется автоматически по актуальным данным.',
+    calculatorNoData: 'Ожидание данных калькулятора...'
+  },
+  en: {
+    loadingPlaceholder: 'Waiting for live data...',
+    calculatorFormulaHint: 'Calculation updates automatically from live data.',
+    calculatorNoData: 'Waiting for calculator data...'
+  },
+  es: {
+    loadingPlaceholder: 'Esperando datos en vivo...',
+    calculatorFormulaHint: 'El cálculo se actualiza automáticamente con datos en vivo.',
+    calculatorNoData: 'Esperando datos de la calculadora...'
+  },
+  pt: {
+    loadingPlaceholder: 'Aguardando dados ao vivo...',
+    calculatorFormulaHint: 'O cálculo atualiza automaticamente com dados ao vivo.',
+    calculatorNoData: 'Aguardando dados da calculadora...'
+  },
+  fr: {
+    loadingPlaceholder: 'En attente des données en direct...',
+    calculatorFormulaHint: 'Le calcul se met à jour automatiquement avec les données en direct.',
+    calculatorNoData: 'En attente des données du calculateur...'
+  },
+  de: {
+    loadingPlaceholder: 'Warte auf Live-Daten...',
+    calculatorFormulaHint: 'Die Berechnung aktualisiert sich automatisch mit Live-Daten.',
+    calculatorNoData: 'Warte auf Rechnerdaten...'
+  },
+  tr: {
+    loadingPlaceholder: 'Canlı veriler bekleniyor...',
+    calculatorFormulaHint: 'Hesaplama canlı verilerle otomatik güncellenir.',
+    calculatorNoData: 'Hesaplayıcı verileri bekleniyor...'
+  },
+  id: {
+    loadingPlaceholder: 'Menunggu data live...',
+    calculatorFormulaHint: 'Perhitungan diperbarui otomatis dari data live.',
+    calculatorNoData: 'Menunggu data kalkulator...'
+  },
+  uk: {
+    loadingPlaceholder: 'Очікування актуальних даних...',
+    calculatorFormulaHint: 'Розрахунок автоматично оновлюється за актуальними даними.',
+    calculatorNoData: 'Очікування даних калькулятора...'
+  },
+  pl: {
+    loadingPlaceholder: 'Oczekiwanie na dane na żywo...',
+    calculatorFormulaHint: 'Obliczenia aktualizują się automatycznie z danych na żywo.',
+    calculatorNoData: 'Oczekiwanie na dane kalkulatora...'
+  },
+  zh: {
+    loadingPlaceholder: '等待实时数据...',
+    calculatorFormulaHint: '计算会根据实时数据自动更新。',
+    calculatorNoData: '等待计算器数据...'
+  },
+  ja: {
+    loadingPlaceholder: 'ライブデータを待機中...',
+    calculatorFormulaHint: '計算はライブデータで自動更新されます。',
+    calculatorNoData: '計算データを待機中...'
+  },
+  ko: {
+    loadingPlaceholder: '실시간 데이터 대기 중...',
+    calculatorFormulaHint: '계산은 실시간 데이터로 자동 업데이트됩니다.',
+    calculatorNoData: '계산기 데이터 대기 중...'
+  },
+  ar: {
+    loadingPlaceholder: 'بانتظار البيانات المباشرة...',
+    calculatorFormulaHint: 'يتم تحديث الحساب تلقائياً من البيانات المباشرة.',
+    calculatorNoData: 'بانتظار بيانات الحاسبة...'
+  }
+};
+
+Object.entries(neutralLiveDataMessages).forEach(([lang, values]) => {
+  if (translations[lang]) Object.assign(translations[lang], values);
+});
 
 // English to Russian item name translation mapping
 const itemTranslations = {
@@ -338,6 +1182,163 @@ const fallbackWordTranslations = {
   baby: 'маленький'
 };
 
+const itemWordTranslations = {
+  seed: { ru: 'семена', es: 'semilla', pt: 'semente', fr: 'graine', de: 'Samen', tr: 'tohum', id: 'benih', uk: 'насіння', pl: 'nasiono', zh: '种子', ja: '種', ko: '씨앗', ar: 'بذرة' },
+  seeds: { ru: 'семена', es: 'semillas', pt: 'sementes', fr: 'graines', de: 'Samen', tr: 'tohumlar', id: 'benih', uk: 'насіння', pl: 'nasiona', zh: '种子', ja: '種', ko: '씨앗', ar: 'بذور' },
+  fruit: { ru: 'фрукт', es: 'fruta', pt: 'fruta', fr: 'fruit', de: 'Frucht', tr: 'meyve', id: 'buah', uk: 'фрукт', pl: 'owoc', zh: '水果', ja: '果物', ko: '과일', ar: 'فاكهة' },
+  carrot: { ru: 'морковь', es: 'zanahoria', pt: 'cenoura', fr: 'carotte', de: 'Karotte', tr: 'havuç', id: 'wortel', uk: 'морква', pl: 'marchew', zh: '胡萝卜', ja: 'ニンジン', ko: '당근', ar: 'جزر' },
+  strawberry: { ru: 'клубника', es: 'fresa', pt: 'morango', fr: 'fraise', de: 'Erdbeere', tr: 'çilek', id: 'stroberi', uk: 'полуниця', pl: 'truskawka', zh: '草莓', ja: 'イチゴ', ko: '딸기', ar: 'فراولة' },
+  watermelon: { ru: 'арбуз', es: 'sandía', pt: 'melancia', fr: 'pastèque', de: 'Wassermelone', tr: 'karpuz', id: 'semangka', uk: 'кавун', pl: 'arbuz', zh: '西瓜', ja: 'スイカ', ko: '수박', ar: 'بطيخ' },
+  pumpkin: { ru: 'тыква', es: 'calabaza', pt: 'abóbora', fr: 'citrouille', de: 'Kürbis', tr: 'balkabağı', id: 'labu', uk: 'гарбуз', pl: 'dynia', zh: '南瓜', ja: 'カボチャ', ko: '호박', ar: 'قرع' },
+  sunflower: { ru: 'подсолнух', es: 'girasol', pt: 'girassol', fr: 'tournesol', de: 'Sonnenblume', tr: 'ayçiçeği', id: 'bunga matahari', uk: 'соняшник', pl: 'słonecznik', zh: '向日葵', ja: 'ヒマワリ', ko: '해바라기', ar: 'دوار الشمس' },
+  wheat: { ru: 'пшеница', es: 'trigo', pt: 'trigo', fr: 'blé', de: 'Weizen', tr: 'buğday', id: 'gandum', uk: 'пшениця', pl: 'pszenica', zh: '小麦', ja: '小麦', ko: '밀', ar: 'قمح' },
+  tomato: { ru: 'помидор', es: 'tomate', pt: 'tomate', fr: 'tomate', de: 'Tomate', tr: 'domates', id: 'tomat', uk: 'помідор', pl: 'pomidor', zh: '番茄', ja: 'トマト', ko: '토마토', ar: 'طماطم' },
+  potato: { ru: 'картофель', es: 'patata', pt: 'batata', fr: 'pomme de terre', de: 'Kartoffel', tr: 'patates', id: 'kentang', uk: 'картопля', pl: 'ziemniak', zh: '土豆', ja: 'ジャガイモ', ko: '감자', ar: 'بطاطس' },
+  onion: { ru: 'лук', es: 'cebolla', pt: 'cebola', fr: 'oignon', de: 'Zwiebel', tr: 'soğan', id: 'bawang', uk: 'цибуля', pl: 'cebula', zh: '洋葱', ja: 'タマネギ', ko: '양파', ar: 'بصل' },
+  corn: { ru: 'кукуруза', es: 'maíz', pt: 'milho', fr: 'maïs', de: 'Mais', tr: 'mısır', id: 'jagung', uk: 'кукурудза', pl: 'kukurydza', zh: '玉米', ja: 'トウモロコシ', ko: '옥수수', ar: 'ذرة' },
+  pineapple: { ru: 'ананас', es: 'piña', pt: 'abacaxi', fr: 'ananas', de: 'Ananas', tr: 'ananas', id: 'nanas', uk: 'ананас', pl: 'ananas', zh: '菠萝', ja: 'パイナップル', ko: '파인애플', ar: 'أناناس' },
+  cabbage: { ru: 'капуста', es: 'col', pt: 'repolho', fr: 'chou', de: 'Kohl', tr: 'lahana', id: 'kubis', uk: 'капуста', pl: 'kapusta', zh: '卷心菜', ja: 'キャベツ', ko: '양배추', ar: 'ملفوف' },
+  dragonfruit: { ru: 'драконий фрукт', es: 'pitaya', pt: 'pitaya', fr: 'fruit du dragon', de: 'Drachenfrucht', tr: 'ejder meyvesi', id: 'buah naga', uk: 'драконів фрукт', pl: 'smoczy owoc', zh: '火龙果', ja: 'ドラゴンフルーツ', ko: '용과', ar: 'فاكهة التنين' },
+  starfruit: { ru: 'старфрут', es: 'carambola', pt: 'carambola', fr: 'carambole', de: 'Sternfrucht', tr: 'yıldız meyvesi', id: 'belimbing', uk: 'карамбола', pl: 'karambola', zh: '杨桃', ja: 'スターフルーツ', ko: '스타프루트', ar: 'فاكهة النجمة' },
+  blueberry: { ru: 'черника', es: 'arándano', pt: 'mirtilo', fr: 'myrtille', de: 'Blaubeere', tr: 'yaban mersini', id: 'blueberry', uk: 'чорниця', pl: 'borówka', zh: '蓝莓', ja: 'ブルーベリー', ko: '블루베리', ar: 'توت أزرق' },
+  apple: { ru: 'яблоко', es: 'manzana', pt: 'maçã', fr: 'pomme', de: 'Apfel', tr: 'elma', id: 'apel', uk: 'яблуко', pl: 'jabłko', zh: '苹果', ja: 'リンゴ', ko: '사과', ar: 'تفاح' },
+  banana: { ru: 'банан', es: 'plátano', pt: 'banana', fr: 'banane', de: 'Banane', tr: 'muz', id: 'pisang', uk: 'банан', pl: 'banan', zh: '香蕉', ja: 'バナナ', ko: '바나나', ar: 'موز' },
+  mango: { ru: 'манго', es: 'mango', pt: 'manga', fr: 'mangue', de: 'Mango', tr: 'mango', id: 'mangga', uk: 'манго', pl: 'mango', zh: '芒果', ja: 'マンゴー', ko: '망고', ar: 'مانجو' },
+  mushroom: { ru: 'гриб', es: 'seta', pt: 'cogumelo', fr: 'champignon', de: 'Pilz', tr: 'mantar', id: 'jamur', uk: 'гриб', pl: 'grzyb', zh: '蘑菇', ja: 'キノコ', ko: '버섯', ar: 'فطر' },
+  bamboo: { ru: 'бамбук', es: 'bambú', pt: 'bambu', fr: 'bambou', de: 'Bambus', tr: 'bambu', id: 'bambu', uk: 'бамбук', pl: 'bambus', zh: '竹子', ja: '竹', ko: '대나무', ar: 'خيزران' },
+  cactus: { ru: 'кактус', es: 'cactus', pt: 'cacto', fr: 'cactus', de: 'Kaktus', tr: 'kaktüs', id: 'kaktus', uk: 'кактус', pl: 'kaktus', zh: '仙人掌', ja: 'サボテン', ko: '선인장', ar: 'صبار' },
+  golden: { ru: 'золотой', es: 'dorado', pt: 'dourado', fr: 'doré', de: 'golden', tr: 'altın', id: 'emas', uk: 'золотий', pl: 'złoty', zh: '金色', ja: '金色', ko: '황금', ar: 'ذهبي' },
+  diamond: { ru: 'алмазный', es: 'diamante', pt: 'diamante', fr: 'diamant', de: 'Diamant', tr: 'elmas', id: 'berlian', uk: 'діамантовий', pl: 'diamentowy', zh: '钻石', ja: 'ダイヤ', ko: '다이아', ar: 'ماسي' },
+  super: { ru: 'супер', es: 'súper', pt: 'super', fr: 'super', de: 'Super', tr: 'süper', id: 'super', uk: 'супер', pl: 'super', zh: '超级', ja: 'スーパー', ko: '슈퍼', ar: 'سوبر' },
+  rare: { ru: 'редкий', es: 'raro', pt: 'raro', fr: 'rare', de: 'selten', tr: 'nadir', id: 'langka', uk: 'рідкісний', pl: 'rzadki', zh: '稀有', ja: 'レア', ko: '희귀', ar: 'نادر' },
+  epic: { ru: 'эпический', es: 'épico', pt: 'épico', fr: 'épique', de: 'episch', tr: 'epik', id: 'epik', uk: 'епічний', pl: 'epicki', zh: '史诗', ja: 'エピック', ko: '에픽', ar: 'ملحمي' },
+  legendary: { ru: 'легендарный', es: 'legendario', pt: 'lendário', fr: 'légendaire', de: 'legendär', tr: 'efsanevi', id: 'legendaris', uk: 'легендарний', pl: 'legendarny', zh: '传奇', ja: '伝説', ko: '전설', ar: 'أسطوري' },
+  watering: { ru: 'лейка', es: 'riego', pt: 'rega', fr: 'arrosage', de: 'Gieß', tr: 'sulama', id: 'penyiram', uk: 'лійка', pl: 'podlewania', zh: '浇水', ja: '水やり', ko: '물뿌리개', ar: 'ري' },
+  can: { ru: 'лейка', es: 'regadera', pt: 'regador', fr: 'arrosoir', de: 'Kanne', tr: 'kabı', id: 'kaleng', uk: 'лійка', pl: 'konewka', zh: '壶', ja: '缶', ko: '통', ar: 'علبة' },
+  sprinkler: { ru: 'спринклер', es: 'aspersor', pt: 'aspersor', fr: 'arroseur', de: 'Sprinkler', tr: 'fıskiye', id: 'sprinkler', uk: 'спринклер', pl: 'zraszacz', zh: '洒水器', ja: 'スプリンクラー', ko: '스프링클러', ar: 'مرش' },
+  shovel: { ru: 'лопата', es: 'pala', pt: 'pá', fr: 'pelle', de: 'Schaufel', tr: 'kürek', id: 'sekop', uk: 'лопата', pl: 'łopata', zh: '铲子', ja: 'シャベル', ko: '삽', ar: 'مجرفة' },
+  crate: { ru: 'ящик', es: 'caja', pt: 'caixa', fr: 'caisse', de: 'Kiste', tr: 'kasa', id: 'peti', uk: 'ящик', pl: 'skrzynka', zh: '箱子', ja: 'クレート', ko: '상자', ar: 'صندوق' },
+  pot: { ru: 'горшок', es: 'maceta', pt: 'vaso', fr: 'pot', de: 'Topf', tr: 'saksı', id: 'pot', uk: 'горщик', pl: 'doniczka', zh: '花盆', ja: '鉢', ko: '화분', ar: 'وعاء' }
+};
+
+Object.assign(itemWordTranslations, {
+  acorn: { ru: 'Желудь', es: 'bellota', pt: 'bolota', fr: 'gland', de: 'Eichel', tr: 'meşe palamudu', id: 'biji ek', uk: 'жолудь', pl: 'żołądź', zh: '橡子', ja: 'どんぐり', ko: '도토리', ar: 'بلوط' },
+  chili: { ru: 'Перец чили', es: 'chile', pt: 'pimenta', fr: 'piment', de: 'Chili', tr: 'acı biber', id: 'cabai', uk: 'чилі', pl: 'chili', zh: '辣椒', ja: 'チリ', ko: '고추', ar: 'فلفل حار' },
+  blackberry: { ru: 'Ежевика', es: 'mora', pt: 'amora', fr: 'mûre', de: 'Brombeere', tr: 'böğürtlen', id: 'blackberry', uk: 'ожина', pl: 'jeżyna', zh: '黑莓', ja: 'ブラックベリー', ko: '블랙베리', ar: 'توت أسود' },
+  raspberry: { ru: 'Малина', es: 'frambuesa', pt: 'framboesa', fr: 'framboise', de: 'Himbeere', tr: 'ahududu', id: 'raspberi', uk: 'малина', pl: 'malina', zh: '树莓', ja: 'ラズベリー', ko: '라즈베리', ar: 'توت العليق' },
+  grape: { ru: 'Виноград', es: 'uva', pt: 'uva', fr: 'raisin', de: 'Traube', tr: 'üzüm', id: 'anggur', uk: 'виноград', pl: 'winogrono', zh: '葡萄', ja: 'ぶどう', ko: '포도', ar: 'عنب' },
+  orange: { ru: 'Апельсин', es: 'naranja', pt: 'laranja', fr: 'orange', de: 'Orange', tr: 'portakal', id: 'jeruk', uk: 'апельсин', pl: 'pomarańcza', zh: '橙子', ja: 'オレンジ', ko: '오렌지', ar: 'برتقال' },
+  lemon: { ru: 'Лимон', es: 'limón', pt: 'limão', fr: 'citron', de: 'Zitrone', tr: 'limon', id: 'lemon', uk: 'лимон', pl: 'cytryna', zh: '柠檬', ja: 'レモン', ko: '레몬', ar: 'ليمون' },
+  cherry: { ru: 'Вишня', es: 'cereza', pt: 'cereja', fr: 'cerise', de: 'Kirsche', tr: 'kiraz', id: 'ceri', uk: 'вишня', pl: 'wiśnia', zh: '樱桃', ja: 'さくらんぼ', ko: '체리', ar: 'كرز' },
+  berry: { ru: 'Ягода', es: 'baya', pt: 'fruta silvestre', fr: 'baie', de: 'Beere', tr: 'meyve', id: 'beri', uk: 'ягода', pl: 'jagoda', zh: '浆果', ja: 'ベリー', ko: '베리', ar: 'توت' },
+  coconut: { ru: 'Кокос', es: 'coco', pt: 'coco', fr: 'noix de coco', de: 'Kokosnuss', tr: 'hindistan cevizi', id: 'kelapa', uk: 'кокос', pl: 'kokos', zh: '椰子', ja: 'ココナッツ', ko: '코코넛', ar: 'جوز الهند' },
+  bonsai: { ru: 'Бонсай', es: 'bonsái', pt: 'bonsai', fr: 'bonsaï', de: 'Bonsai', tr: 'bonsai', id: 'bonsai', uk: 'бонсай', pl: 'bonsai', zh: '盆栽', ja: '盆栽', ko: '분재', ar: 'بونساي' },
+  rose: { ru: 'Роза', es: 'rosa', pt: 'rosa', fr: 'rose', de: 'Rose', tr: 'gül', id: 'mawar', uk: 'троянда', pl: 'róża', zh: '玫瑰', ja: 'バラ', ko: '장미', ar: 'وردة' },
+  tulip: { ru: 'Тюльпан', es: 'tulipán', pt: 'tulipa', fr: 'tulipe', de: 'Tulpe', tr: 'lale', id: 'tulip', uk: 'тюльпан', pl: 'tulipan', zh: '郁金香', ja: 'チューリップ', ko: '튤립', ar: 'توليب' },
+  lily: { ru: 'Лилия', es: 'lirio', pt: 'lírio', fr: 'lys', de: 'Lilie', tr: 'zambak', id: 'lili', uk: 'лілія', pl: 'lilia', zh: '百合', ja: 'ユリ', ko: '백합', ar: 'زنبق' },
+  orchid: { ru: 'Орхидея', es: 'orquídea', pt: 'orquídea', fr: 'orchidée', de: 'Orchidee', tr: 'orkide', id: 'anggrek', uk: 'орхідея', pl: 'orchidea', zh: '兰花', ja: 'ラン', ko: '난초', ar: 'أوركيد' },
+  lavender: { ru: 'Лаванда', es: 'lavanda', pt: 'lavanda', fr: 'lavande', de: 'Lavendel', tr: 'lavanta', id: 'lavender', uk: 'лаванда', pl: 'lawenda', zh: '薰衣草', ja: 'ラベンダー', ko: '라벤더', ar: 'لافندر' },
+  magic: { ru: 'Волшебный', es: 'mágico', pt: 'mágico', fr: 'magique', de: 'magisch', tr: 'sihirli', id: 'ajaib', uk: 'магічний', pl: 'magiczny', zh: '魔法', ja: '魔法', ko: '마법', ar: 'سحري' },
+  ancient: { ru: 'Древний', es: 'antiguo', pt: 'antigo', fr: 'ancien', de: 'antik', tr: 'antik', id: 'kuno', uk: 'давній', pl: 'starożytny', zh: '远古', ja: '古代', ko: '고대', ar: 'قديم' },
+  spore: { ru: 'Спора', es: 'espora', pt: 'esporo', fr: 'spore', de: 'Spore', tr: 'spor', id: 'spora', uk: 'спора', pl: 'zarodnik', zh: '孢子', ja: '胞子', ko: '포자', ar: 'بوغ' },
+  spores: { ru: 'Споры', es: 'esporas', pt: 'esporos', fr: 'spores', de: 'Sporen', tr: 'sporlar', id: 'spora', uk: 'спори', pl: 'zarodniki', zh: '孢子', ja: '胞子', ko: '포자', ar: 'أبواغ' },
+  breath: { ru: 'Дыхание', es: 'aliento', pt: 'sopro', fr: 'souffle', de: 'Atem', tr: 'nefes', id: 'napas', uk: 'подих', pl: 'oddech', zh: '吐息', ja: 'ブレス', ko: '숨결', ar: 'نَفَس' },
+  green: { ru: 'Зелёный', es: 'verde', pt: 'verde', fr: 'vert', de: 'grün', tr: 'yeşil', id: 'hijau', uk: 'зелений', pl: 'zielony', zh: '绿色', ja: '緑', ko: '초록', ar: 'أخضر' },
+  bean: { ru: 'Фасоль', es: 'frijol', pt: 'feijão', fr: 'haricot', de: 'Bohne', tr: 'fasulye', id: 'kacang', uk: 'квасоля', pl: 'fasola', zh: '豆', ja: '豆', ko: '콩', ar: 'فاصوليا' },
+  poison: { ru: 'Ядовитый', es: 'venenoso', pt: 'venenoso', fr: 'toxique', de: 'giftig', tr: 'zehirli', id: 'beracun', uk: 'отруйний', pl: 'trujący', zh: '剧毒', ja: '毒', ko: '독', ar: 'سام' },
+  ivy: { ru: 'Плющ', es: 'hiedra', pt: 'hera', fr: 'lierre', de: 'Efeu', tr: 'sarmaşık', id: 'ivy', uk: 'плющ', pl: 'bluszcz', zh: '常春藤', ja: 'ツタ', ko: '담쟁이', ar: 'لبلاب' },
+  venus: { ru: 'Венерина', es: 'venus', pt: 'vênus', fr: 'vénus', de: 'Venus', tr: 'venüs', id: 'venus', uk: 'венерина', pl: 'wenus', zh: '捕蝇草', ja: 'ハエトリグサ', ko: '파리지옥', ar: 'فينوس' },
+  fly: { ru: 'Муха', es: 'mosca', pt: 'mosca', fr: 'mouche', de: 'Fliege', tr: 'sinek', id: 'lalat', uk: 'муха', pl: 'mucha', zh: '捕蝇', ja: 'ハエ', ko: '파리', ar: 'ذبابة' },
+  trap: { ru: 'Ловушка', es: 'trampa', pt: 'armadilha', fr: 'piège', de: 'Falle', tr: 'tuzak', id: 'perangkap', uk: 'пастка', pl: 'pułapka', zh: '陷阱', ja: '罠', ko: '덫', ar: 'مصيدة' },
+  horned: { ru: 'Рогатый', es: 'cornudo', pt: 'chifrudo', fr: 'cornu', de: 'gehörnt', tr: 'boynuzlu', id: 'bertanduk', uk: 'рогатий', pl: 'rogaty', zh: '有角', ja: '角つき', ko: '뿔 달린', ar: 'مقرن' },
+  melon: { ru: 'Дыня', es: 'melón', pt: 'melão', fr: 'melon', de: 'Melone', tr: 'kavun', id: 'melon', uk: 'диня', pl: 'melon', zh: '甜瓜', ja: 'メロン', ko: '멜론', ar: 'شمام' },
+  glow: { ru: 'Светящийся', es: 'brillante', pt: 'brilhante', fr: 'lumineux', de: 'leuchtend', tr: 'parlayan', id: 'bercahaya', uk: 'сяючий', pl: 'świecący', zh: '发光', ja: '発光', ko: '빛나는', ar: 'متوهج' },
+  ghost: { ru: 'Призрачный', es: 'fantasma', pt: 'fantasma', fr: 'fantôme', de: 'Geister', tr: 'hayalet', id: 'hantu', uk: 'примарний', pl: 'duchowy', zh: '幽灵', ja: 'ゴースト', ko: '유령', ar: 'شبحي' },
+  pepper: { ru: 'Перец', es: 'pimiento', pt: 'pimenta', fr: 'poivre', de: 'Pfeffer', tr: 'biber', id: 'lada', uk: 'перець', pl: 'papryka', zh: '辣椒', ja: 'ペッパー', ko: '고추', ar: 'فلفل' },
+  venom: { ru: 'Яд', es: 'veneno', pt: 'veneno', fr: 'venin', de: 'Gift', tr: 'zehir', id: 'racun', uk: 'отрута', pl: 'jad', zh: '毒液', ja: '毒', ko: '독', ar: 'سم' },
+  spitter: { ru: 'Плюющийся', es: 'escupidor', pt: 'cuspidor', fr: 'cracheur', de: 'Spucker', tr: 'tüküren', id: 'penyembur', uk: 'плювач', pl: 'plujący', zh: '喷吐者', ja: '吐き出すもの', ko: '분사기', ar: 'قاذف' },
+  megaphone: { ru: 'Мегафон', es: 'megáfono', pt: 'megafone', fr: 'mégaphone', de: 'Megafon', tr: 'megafon', id: 'megafon', uk: 'мегафон', pl: 'megafon', zh: '扩音器', ja: 'メガホン', ko: '메가폰', ar: 'مكبر صوت' },
+  player: { ru: 'Игрок', es: 'jugador', pt: 'jogador', fr: 'joueur', de: 'Spieler', tr: 'oyuncu', id: 'pemain', uk: 'гравець', pl: 'gracz', zh: '玩家', ja: 'プレイヤー', ko: '플레이어', ar: 'لاعب' },
+  magnet: { ru: 'Магнит', es: 'imán', pt: 'ímã', fr: 'aimant', de: 'Magnet', tr: 'mıknatıs', id: 'magnet', uk: 'магніт', pl: 'magnes', zh: '磁铁', ja: '磁石', ko: '자석', ar: 'مغناطيس' },
+  pet: { ru: 'Питомец', es: 'mascota', pt: 'pet', fr: 'familier', de: 'Haustier', tr: 'evcil', id: 'peliharaan', uk: 'питомец', pl: 'zwierzak', zh: '宠物', ja: 'ペット', ko: '펫', ar: 'حيوان أليف' },
+  teleporter: { ru: 'Телепорт', es: 'teletransportador', pt: 'teletransportador', fr: 'téléporteur', de: 'Teleporter', tr: 'ışınlayıcı', id: 'teleporter', uk: 'телепорт', pl: 'teleporter', zh: '传送器', ja: 'テレポーター', ko: '텔레포터', ar: 'ناقل آني' },
+  teleporters: { ru: 'Телепорты', es: 'teletransportadores', pt: 'teletransportadores', fr: 'téléporteurs', de: 'Teleporter', tr: 'ışınlayıcılar', id: 'teleporter', uk: 'телепорти', pl: 'teleportery', zh: '传送器', ja: 'テレポーター', ko: '텔레포터', ar: 'نواقل آنية' },
+  bear: { ru: 'Медведь', es: 'oso', pt: 'urso', fr: 'ours', de: 'Bär', tr: 'ayı', id: 'beruang', uk: 'ведмідь', pl: 'niedźwiedź', zh: '熊', ja: 'クマ', ko: '곰', ar: 'دب' },
+  gnome: { ru: 'Гном', es: 'gnomo', pt: 'gnomo', fr: 'gnome', de: 'Gnom', tr: 'cüce', id: 'gnome', uk: 'гном', pl: 'gnom', zh: '地精', ja: 'ノーム', ko: '노움', ar: 'قزم' },
+  ladder: { ru: 'Лестница', es: 'escalera', pt: 'escada', fr: 'échelle', de: 'Leiter', tr: 'merdiven', id: 'tangga', uk: 'драбина', pl: 'drabina', zh: '梯子', ja: 'はしご', ko: '사다리', ar: 'سلم' },
+  bench: { ru: 'Скамейка', es: 'banco', pt: 'banco', fr: 'banc', de: 'Bank', tr: 'bank', id: 'bangku', uk: 'лавка', pl: 'ławka', zh: '长椅', ja: 'ベンチ', ko: '벤치', ar: 'مقعد' },
+  light: { ru: 'Световой', es: 'luz', pt: 'luz', fr: 'lumière', de: 'Licht', tr: 'ışık', id: 'cahaya', uk: 'світловий', pl: 'świetlny', zh: '灯光', ja: 'ライト', ko: '조명', ar: 'ضوء' },
+  sign: { ru: 'Вывеска', es: 'letrero', pt: 'placa', fr: 'panneau', de: 'Schild', tr: 'tabela', id: 'papan', uk: 'вивіска', pl: 'szyld', zh: '标牌', ja: '看板', ko: '표지판', ar: 'لافتة' },
+  arch: { ru: 'Арка', es: 'arco', pt: 'arco', fr: 'arche', de: 'Bogen', tr: 'kemer', id: 'lengkungan', uk: 'арка', pl: 'łuk', zh: '拱门', ja: 'アーチ', ko: '아치', ar: 'قوس' },
+  roleplay: { ru: 'Ролевой', es: 'rol', pt: 'roleplay', fr: 'jeu de rôle', de: 'Rollenspiel', tr: 'rol yapma', id: 'roleplay', uk: 'рольовий', pl: 'roleplay', zh: '角色扮演', ja: 'ロールプレイ', ko: '역할극', ar: 'تمثيل أدوار' },
+  owner: { ru: 'Владелец', es: 'dueño', pt: 'dono', fr: 'propriétaire', de: 'Besitzer', tr: 'sahip', id: 'pemilik', uk: 'власник', pl: 'właściciel', zh: '主人', ja: '所有者', ko: '소유자', ar: 'مالك' },
+  door: { ru: 'Дверь', es: 'puerta', pt: 'porta', fr: 'porte', de: 'Tür', tr: 'kapı', id: 'pintu', uk: 'двері', pl: 'drzwi', zh: '门', ja: 'ドア', ko: '문', ar: 'باب' },
+  wood: { ru: 'Деревянный', es: 'madera', pt: 'madeira', fr: 'bois', de: 'Holz', tr: 'ahşap', id: 'kayu', uk: 'дерев’яний', pl: 'drewniany', zh: '木制', ja: '木製', ko: '나무', ar: 'خشبي' },
+  stone: { ru: 'Каменный', es: 'piedra', pt: 'pedra', fr: 'pierre', de: 'Stein', tr: 'taş', id: 'batu', uk: 'кам’яний', pl: 'kamienny', zh: '石制', ja: '石', ko: '돌', ar: 'حجري' },
+  iron: { ru: 'Железный', es: 'hierro', pt: 'ferro', fr: 'fer', de: 'Eisen', tr: 'demir', id: 'besi', uk: 'залізний', pl: 'żelazny', zh: '铁制', ja: '鉄', ko: '철', ar: 'حديدي' },
+  gold: { ru: 'Золотой', es: 'oro', pt: 'ouro', fr: 'or', de: 'Gold', tr: 'altın', id: 'emas', uk: 'золотий', pl: 'złoty', zh: '黄金', ja: '金', ko: '금', ar: 'ذهبي' },
+  toy: { ru: 'Игрушка', es: 'juguete', pt: 'brinquedo', fr: 'jouet', de: 'Spielzeug', tr: 'oyuncak', id: 'mainan', uk: 'іграшка', pl: 'zabawka', zh: '玩具', ja: 'おもちゃ', ko: '장난감', ar: 'لعبة' },
+  decoration: { ru: 'Декор', es: 'decoración', pt: 'decoração', fr: 'décoration', de: 'Dekoration', tr: 'dekorasyon', id: 'dekorasi', uk: 'декор', pl: 'dekoracja', zh: '装饰', ja: '装飾', ko: '장식', ar: 'زخرفة' },
+  furniture: { ru: 'Мебель', es: 'mueble', pt: 'móvel', fr: 'meuble', de: 'Möbel', tr: 'mobilya', id: 'furnitur', uk: 'меблі', pl: 'meble', zh: '家具', ja: '家具', ko: '가구', ar: 'أثاث' },
+  garden: { ru: 'Садовый', es: 'jardín', pt: 'jardim', fr: 'jardin', de: 'Garten', tr: 'bahçe', id: 'kebun', uk: 'садовий', pl: 'ogród', zh: '花园', ja: '庭園', ko: '정원', ar: 'حديقة' },
+  tool: { ru: 'Инструмент', es: 'herramienta', pt: 'ferramenta', fr: 'outil', de: 'Werkzeug', tr: 'alet', id: 'alat', uk: 'інструмент', pl: 'narzędzie', zh: '工具', ja: '道具', ko: '도구', ar: 'أداة' },
+  basic: { ru: 'Обычный', es: 'básico', pt: 'básico', fr: 'basique', de: 'einfach', tr: 'basit', id: 'dasar', uk: 'базовий', pl: 'podstawowy', zh: '基础', ja: '基本', ko: '기본', ar: 'أساسي' },
+  common: { ru: 'Обычный', es: 'común', pt: 'comum', fr: 'commun', de: 'gewöhnlich', tr: 'yaygın', id: 'umum', uk: 'звичайний', pl: 'zwykły', zh: '普通', ja: '普通', ko: '일반', ar: 'عادي' },
+  tropical: { ru: 'Тропический', es: 'tropical', pt: 'tropical', fr: 'tropical', de: 'tropisch', tr: 'tropikal', id: 'tropis', uk: 'тропічний', pl: 'tropikalny', zh: '热带', ja: '熱帯', ko: '열대', ar: 'استوائي' },
+  medieval: { ru: 'Средневековый', es: 'medieval', pt: 'medieval', fr: 'médiéval', de: 'mittelalterlich', tr: 'orta çağ', id: 'abad pertengahan', uk: 'середньовічний', pl: 'średniowieczny', zh: '中世纪', ja: '中世', ko: '중세', ar: 'قرون وسطى' },
+  cyberpunk: { ru: 'Киберпанк', es: 'cyberpunk', pt: 'cyberpunk', fr: 'cyberpunk', de: 'Cyberpunk', tr: 'cyberpunk', id: 'cyberpunk', uk: 'кіберпанк', pl: 'cyberpunk', zh: '赛博朋克', ja: 'サイバーパンク', ko: '사이버펑크', ar: 'سايبربنك' },
+  halloween: { ru: 'Хэллоуинский', es: 'Halloween', pt: 'Halloween', fr: 'Halloween', de: 'Halloween', tr: 'Cadılar Bayramı', id: 'Halloween', uk: 'хелловінський', pl: 'Halloween', zh: '万圣节', ja: 'ハロウィン', ko: '할로윈', ar: 'هالوين' },
+  christmas: { ru: 'Новогодний', es: 'Navidad', pt: 'Natal', fr: 'Noël', de: 'Weihnachten', tr: 'Noel', id: 'Natal', uk: 'різдвяний', pl: 'świąteczny', zh: '圣诞', ja: 'クリスマス', ko: '크리스마스', ar: 'عيد الميلاد' },
+  bridge: { ru: 'Мост', es: 'puente', pt: 'ponte', fr: 'pont', de: 'Brücke', tr: 'köprü', id: 'jembatan', uk: 'міст', pl: 'most', zh: '桥', ja: '橋', ko: '다리', ar: 'جسر' },
+  spring: { ru: 'Пружина', es: 'resorte', pt: 'mola', fr: 'ressort', de: 'Feder', tr: 'yay', id: 'pegas', uk: 'пружина', pl: 'sprężyna', zh: '弹簧', ja: 'バネ', ko: '스프링', ar: 'نابض' },
+  seesaw: { ru: 'Качели', es: 'subibaja', pt: 'gangorra', fr: 'bascule', de: 'Wippe', tr: 'tahterevalli', id: 'jungkat-jungkit', uk: 'гойдалка', pl: 'huśtawka', zh: '跷跷板', ja: 'シーソー', ko: '시소', ar: 'أرجوحة' },
+  conveyor: { ru: 'Конвейер', es: 'transportador', pt: 'esteira', fr: 'convoyeur', de: 'Förderband', tr: 'konveyör', id: 'konveyor', uk: 'конвеєр', pl: 'przenośnik', zh: '传送带', ja: 'コンベア', ko: '컨베이어', ar: 'ناقل' },
+  trowel: { ru: 'Садовая лопатка', es: 'paleta', pt: 'pazinha', fr: 'truelle', de: 'Kelle', tr: 'mala', id: 'sekop kecil', uk: 'садова лопатка', pl: 'łopatka', zh: '小铲', ja: '移植ごて', ko: '모종삽', ar: 'مجرفة صغيرة' },
+  rusty: { ru: 'Ржавый', es: 'oxidado', pt: 'enferrujado', fr: 'rouillé', de: 'rostig', tr: 'paslı', id: 'berkarat', uk: 'іржавий', pl: 'zardzewiały', zh: '生锈', ja: '錆びた', ko: '녹슨', ar: 'صدئ' },
+  axe: { ru: 'Топор', es: 'hacha', pt: 'machado', fr: 'hache', de: 'Axt', tr: 'balta', id: 'kapak', uk: 'сокира', pl: 'siekiera', zh: '斧头', ja: '斧', ko: '도끼', ar: 'فأس' },
+  pickaxe: { ru: 'Кирка', es: 'pico', pt: 'picareta', fr: 'pioche', de: 'Spitzhacke', tr: 'kazma', id: 'beliung', uk: 'кирка', pl: 'kilof', zh: '镐', ja: 'ツルハシ', ko: '곡괭이', ar: 'معول' },
+  scissor: { ru: 'Ножницы', es: 'tijeras', pt: 'tesoura', fr: 'ciseaux', de: 'Schere', tr: 'makas', id: 'gunting', uk: 'ножиці', pl: 'nożyczki', zh: '剪刀', ja: 'はさみ', ko: '가위', ar: 'مقص' },
+  shears: { ru: 'Секатор', es: 'podadera', pt: 'tesouras', fr: 'sécateur', de: 'Gartenschere', tr: 'budama makası', id: 'gunting tanaman', uk: 'секатор', pl: 'sekator', zh: '修枝剪', ja: '剪定ばさみ', ko: '전지가위', ar: 'مقص تقليم' },
+  fertilizer: { ru: 'Удобрение', es: 'fertilizante', pt: 'fertilizante', fr: 'engrais', de: 'Dünger', tr: 'gübre', id: 'pupuk', uk: 'добриво', pl: 'nawóz', zh: '肥料', ja: '肥料', ko: '비료', ar: 'سماد' },
+  speed: { ru: 'Скорость', es: 'velocidad', pt: 'velocidade', fr: 'vitesse', de: 'Geschwindigkeit', tr: 'hız', id: 'kecepatan', uk: 'швидкість', pl: 'szybkość', zh: '速度', ja: '速度', ko: '속도', ar: 'سرعة' },
+  grow: { ru: 'Рост', es: 'crecimiento', pt: 'crescimento', fr: 'croissance', de: 'Wachstum', tr: 'büyüme', id: 'tumbuh', uk: 'ріст', pl: 'wzrost', zh: '生长', ja: '成長', ko: '성장', ar: 'نمو' },
+  pest: { ru: 'Вредитель', es: 'plaga', pt: 'praga', fr: 'nuisible', de: 'Schädling', tr: 'zararlı', id: 'hama', uk: 'шкідник', pl: 'szkodnik', zh: '害虫', ja: '害虫', ko: '해충', ar: 'آفة' },
+  spray: { ru: 'Спрей', es: 'spray', pt: 'spray', fr: 'spray', de: 'Spray', tr: 'sprey', id: 'semprotan', uk: 'спрей', pl: 'spray', zh: '喷雾', ja: 'スプレー', ko: '스프레이', ar: 'رذاذ' },
+  scythe: { ru: 'Коса', es: 'guadaña', pt: 'foice', fr: 'faux', de: 'Sense', tr: 'tırpan', id: 'sabit', uk: 'коса', pl: 'kosa', zh: '镰刀', ja: '大鎌', ko: '낫', ar: 'منجل' },
+  gloves: { ru: 'Перчатки', es: 'guantes', pt: 'luvas', fr: 'gants', de: 'Handschuhe', tr: 'eldiven', id: 'sarung tangan', uk: 'рукавички', pl: 'rękawice', zh: '手套', ja: '手袋', ko: '장갑', ar: 'قفازات' },
+  gardening: { ru: 'Садовый', es: 'jardinería', pt: 'jardinagem', fr: 'jardinage', de: 'Gartenarbeit', tr: 'bahçıvanlık', id: 'berkebun', uk: 'садовий', pl: 'ogrodniczy', zh: '园艺', ja: '園芸', ko: '원예', ar: 'بستنة' },
+  hose: { ru: 'Шланг', es: 'manguera', pt: 'mangueira', fr: 'tuyau', de: 'Schlauch', tr: 'hortum', id: 'selang', uk: 'шланг', pl: 'wąż', zh: '软管', ja: 'ホース', ko: '호스', ar: 'خرطوم' },
+  water: { ru: 'Водяной', es: 'agua', pt: 'água', fr: 'eau', de: 'Wasser', tr: 'su', id: 'air', uk: 'водяний', pl: 'wodny', zh: '水', ja: '水', ko: '물', ar: 'ماء' },
+  auto: { ru: 'Авто', es: 'auto', pt: 'auto', fr: 'auto', de: 'Auto', tr: 'otomatik', id: 'otomatis', uk: 'авто', pl: 'auto', zh: '自动', ja: '自動', ko: '자동', ar: 'تلقائي' },
+  planter: { ru: 'Сажалка', es: 'plantador', pt: 'plantador', fr: 'planteur', de: 'Pflanzer', tr: 'ekici', id: 'penanam', uk: 'саджалка', pl: 'sadzarka', zh: '种植器', ja: 'プランター', ko: '파종기', ar: 'زارع' },
+  harvester: { ru: 'Харвестер', es: 'cosechadora', pt: 'colheitadeira', fr: 'moissonneuse', de: 'Ernter', tr: 'hasatçı', id: 'pemanen', uk: 'збирач', pl: 'kombajn', zh: '收割机', ja: '収穫機', ko: '수확기', ar: 'حصادة' },
+  lantern: { ru: 'Фонарь', es: 'linterna', pt: 'lanterna', fr: 'lanterne', de: 'Laterne', tr: 'fener', id: 'lentera', uk: 'ліхтар', pl: 'latarnia', zh: '灯笼', ja: 'ランタン', ko: '랜턴', ar: 'فانوس' },
+  wheelbarrow: { ru: 'Тачка', es: 'carretilla', pt: 'carrinho de mão', fr: 'brouette', de: 'Schubkarre', tr: 'el arabası', id: 'gerobak dorong', uk: 'тачка', pl: 'taczka', zh: '手推车', ja: '手押し車', ko: '외바퀴수레', ar: 'عربة يد' },
+  vine: { ru: 'Виноградный', es: 'vid', pt: 'videira', fr: 'vigne', de: 'Rebe', tr: 'asma', id: 'anggur rambat', uk: 'виноградний', pl: 'winorośl', zh: '藤蔓', ja: 'つる', ko: '덩굴', ar: 'كرمة' },
+  wrapper: { ru: 'Обмотчик', es: 'envoltorio', pt: 'envolvedor', fr: 'enveloppeur', de: 'Wickler', tr: 'sarıcı', id: 'pembungkus', uk: 'обмотувач', pl: 'owijarka', zh: '包裹器', ja: 'ラッパー', ko: '감개', ar: 'غلاف' },
+  freeze: { ru: 'Заморозка', es: 'congelador', pt: 'congelante', fr: 'gel', de: 'Frost', tr: 'dondurucu', id: 'pembeku', uk: 'заморозка', pl: 'mrożący', zh: '冰冻', ja: '凍結', ko: '냉동', ar: 'تجميد' },
+  ray: { ru: 'Луч', es: 'rayo', pt: 'raio', fr: 'rayon', de: 'Strahl', tr: 'ışın', id: 'sinar', uk: 'промінь', pl: 'promień', zh: '射线', ja: '光線', ko: '광선', ar: 'شعاع' },
+  carpet: { ru: 'Ковёр', es: 'alfombra', pt: 'tapete', fr: 'tapis', de: 'Teppich', tr: 'halı', id: 'karpet', uk: 'килим', pl: 'dywan', zh: '地毯', ja: 'カーペット', ko: '카펫', ar: 'سجادة' },
+  jump: { ru: 'Прыжок', es: 'salto', pt: 'salto', fr: 'saut', de: 'Sprung', tr: 'zıplama', id: 'lompat', uk: 'стрибок', pl: 'skok', zh: '跳跃', ja: 'ジャンプ', ko: '점프', ar: 'قفز' },
+  invisibility: { ru: 'Невидимость', es: 'invisibilidad', pt: 'invisibilidade', fr: 'invisibilité', de: 'Unsichtbarkeit', tr: 'görünmezlik', id: 'tak terlihat', uk: 'невидимість', pl: 'niewidzialność', zh: '隐身', ja: '透明化', ko: '투명화', ar: 'اختفاء' },
+  hypno: { ru: 'Гипно', es: 'hipno', pt: 'hipno', fr: 'hypno', de: 'Hypno', tr: 'hipnoz', id: 'hipno', uk: 'гіпно', pl: 'hipno', zh: '催眠', ja: '催眠', ko: '최면', ar: 'تنويم' },
+  bloom: { ru: 'Цветение', es: 'floración', pt: 'floração', fr: 'floraison', de: 'Blüte', tr: 'çiçeklenme', id: 'mekar', uk: 'цвітіння', pl: 'kwitnienie', zh: '盛开', ja: '開花', ko: '개화', ar: 'إزهار' }
+});
+
+Object.assign(itemWordTranslations, {
+  wateringcan: { ru: 'Лейка', es: 'regadera', pt: 'regador', fr: 'arrosoir', de: 'Gießkanne', tr: 'sulama kabı', id: 'kaleng penyiram', uk: 'лійка', pl: 'konewka', zh: '浇水壶', ja: 'じょうろ', ko: '물뿌리개', ar: 'علبة ري' },
+  commonwateringcan: { ru: 'Обычная лейка', es: 'regadera común', pt: 'regador comum', fr: 'arrosoir commun', de: 'gewöhnliche Gießkanne', tr: 'yaygın sulama kabı', id: 'kaleng penyiram umum', uk: 'звичайна лійка', pl: 'zwykła konewka', zh: '普通浇水壶', ja: '普通のじょうろ', ko: '일반 물뿌리개', ar: 'علبة ري عادية' },
+  superwateringcan: { ru: 'Супер-лейка', es: 'súper regadera', pt: 'super regador', fr: 'super arrosoir', de: 'Super-Gießkanne', tr: 'süper sulama kabı', id: 'kaleng penyiram super', uk: 'супер-лійка', pl: 'super konewka', zh: '超级浇水壶', ja: 'スーパーじょうろ', ko: '슈퍼 물뿌리개', ar: 'علبة ري خارقة' },
+  goldenwateringcan: { ru: 'Золотая лейка', es: 'regadera dorada', pt: 'regador dourado', fr: 'arrosoir doré', de: 'goldene Gießkanne', tr: 'altın sulama kabı', id: 'kaleng penyiram emas', uk: 'золота лійка', pl: 'złota konewka', zh: '黄金浇水壶', ja: '金のじょうろ', ko: '황금 물뿌리개', ar: 'علبة ري ذهبية' },
+  diamondwateringcan: { ru: 'Алмазная лейка', es: 'regadera diamante', pt: 'regador diamante', fr: 'arrosoir diamant', de: 'Diamant-Gießkanne', tr: 'elmas sulama kabı', id: 'kaleng penyiram berlian', uk: 'діамантова лійка', pl: 'diamentowa konewka', zh: '钻石浇水壶', ja: 'ダイヤじょうろ', ko: '다이아 물뿌리개', ar: 'علبة ري ماسية' },
+  dragonfruit: { ru: 'Драконий фрукт', es: 'pitaya', pt: 'pitaya', fr: 'fruit du dragon', de: 'Drachenfrucht', tr: 'ejder meyvesi', id: 'buah naga', uk: 'драконів фрукт', pl: 'smoczy owoc', zh: '火龙果', ja: 'ドラゴンフルーツ', ko: '용과', ar: 'فاكهة التنين' },
+  dragonsbreath: { ru: 'Дыхание дракона', es: 'aliento de dragón', pt: 'sopro do dragão', fr: 'souffle du dragon', de: 'Drachenatem', tr: 'ejder nefesi', id: 'napas naga', uk: 'подих дракона', pl: 'oddech smoka', zh: '龙息', ja: 'ドラゴンブレス', ko: '용의 숨결', ar: 'نَفَس التنين' },
+  venusflytrap: { ru: 'Венерина мухоловка', es: 'venus atrapamoscas', pt: 'dioneia', fr: 'dionée attrape-mouche', de: 'Venusfliegenfalle', tr: 'venüs sinekkapanı', id: 'venus flytrap', uk: 'венерина мухоловка', pl: 'muchołówka', zh: '捕蝇草', ja: 'ハエトリグサ', ko: '파리지옥', ar: 'مصيدة فينوس' },
+  speedgrow: { ru: 'Ускоритель роста', es: 'acelerador de crecimiento', pt: 'acelerador de crescimento', fr: 'accélérateur de croissance', de: 'Wachstumsbeschleuniger', tr: 'büyüme hızlandırıcı', id: 'percepat tumbuh', uk: 'прискорювач росту', pl: 'przyspieszacz wzrostu', zh: '生长加速器', ja: '成長ブースター', ko: '성장 촉진제', ar: 'مسرع النمو' },
+  pestspray: { ru: 'Спрей от вредителей', es: 'spray contra plagas', pt: 'spray contra pragas', fr: 'spray anti-nuisibles', de: 'Schädlingsspray', tr: 'zararlı spreyi', id: 'semprotan hama', uk: 'спрей від шкідників', pl: 'spray na szkodniki', zh: '害虫喷雾', ja: '害虫スプレー', ko: '해충 스프레이', ar: 'رذاذ الآفات' },
+  scificrate: { ru: 'Научно-фантастический ящик', es: 'caja sci-fi', pt: 'caixa sci-fi', fr: 'caisse sci-fi', de: 'Sci-Fi-Kiste', tr: 'bilim kurgu kasası', id: 'peti sci-fi', uk: 'науково-фантастичний ящик', pl: 'skrzynka sci-fi', zh: '科幻箱子', ja: 'SFクレート', ko: 'SF 상자', ar: 'صندوق خيال علمي' }
+});
+
 function transliterateEnglishWord(word) {
   const src = String(word || '').toLowerCase();
   const map = {
@@ -372,45 +1373,128 @@ function capitalizeTranslation(text) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
-function translateItemName(name) {
-  if (currentLang !== 'ru') return name;
-  const key = getItemTranslationKey(name);
-  if (!key) return name;
+const autoTranslationStorageKey = 'autoItemTranslations:v1';
+const autoItemTranslations = new Map();
+const pendingAutoTranslations = new Map();
+let autoTranslationTimer = null;
+let autoTranslationInFlight = false;
 
-  const direct = itemTranslations[key] || itemTranslations[key.replace(/[^a-z0-9]/g, '')];
-  if (direct) return direct;
-
-  const words = key.split(/[\s_-]+/).filter(Boolean);
-  if (words.length > 1) {
-    let translatedAny = false;
-    const translatedWords = words.map(word => {
-      const translated = itemTranslations[word] || fallbackWordTranslations[word];
-      if (translated) translatedAny = true;
-      return translated || word;
+try {
+  const storedTranslations = JSON.parse(localStorage.getItem(autoTranslationStorageKey) || '[]');
+  if (Array.isArray(storedTranslations)) {
+    storedTranslations.forEach(entry => {
+      if (Array.isArray(entry) && entry.length === 2) {
+        autoItemTranslations.set(entry[0], entry[1]);
+      }
     });
-    if (translatedAny) return capitalizeTranslation(translatedWords.join(' '));
   }
-
-  if (/^[a-z][a-z\s'_-]*$/i.test(String(name))) {
-    return capitalizeTranslation(words.map(word => fallbackWordTranslations[word] || transliterateEnglishWord(word)).join(' '));
-  }
-
-  return name;
+} catch (err) {
+  localStorage.removeItem(autoTranslationStorageKey);
 }
 
-async function loadItemTranslations() {
+function normalizeAutoTranslationName(name) {
+  return String(name || '').replace(/\s+/g, ' ').trim();
+}
+
+function autoTranslationKey(name, lang = currentLang) {
+  return `${lang}:${normalizeAutoTranslationName(name).toLowerCase()}`;
+}
+
+function persistAutoTranslations() {
+  const entries = Array.from(autoItemTranslations.entries()).slice(-1800);
   try {
-    const res = await fetch('/api/item-translations');
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data && typeof data === 'object') {
-      Object.assign(itemTranslations, data);
-      renderDashboard();
-      renderPredictions();
+    localStorage.setItem(autoTranslationStorageKey, JSON.stringify(entries));
+  } catch (err) {
+    localStorage.removeItem(autoTranslationStorageKey);
+  }
+}
+
+function scheduleAutoTranslation(name, lang = currentLang) {
+  const cleanName = normalizeAutoTranslationName(name);
+  if (!cleanName || lang === 'en') return;
+  const key = autoTranslationKey(cleanName, lang);
+  if (autoItemTranslations.has(key)) return;
+
+  if (!pendingAutoTranslations.has(lang)) {
+    pendingAutoTranslations.set(lang, new Set());
+  }
+  pendingAutoTranslations.get(lang).add(cleanName);
+
+  if (!autoTranslationTimer) {
+    autoTranslationTimer = setTimeout(flushAutoTranslations, 180);
+  }
+}
+
+function renderTranslatedSurfaces() {
+  renderDashboard();
+  renderAuction();
+  renderMultipliers();
+  renderPredictions();
+  renderCalculator();
+}
+
+async function flushAutoTranslations() {
+  autoTranslationTimer = null;
+  if (autoTranslationInFlight || pendingAutoTranslations.size === 0) {
+    if (pendingAutoTranslations.size > 0 && !autoTranslationTimer) {
+      autoTranslationTimer = setTimeout(flushAutoTranslations, 250);
+    }
+    return;
+  }
+
+  autoTranslationInFlight = true;
+  const batches = Array.from(pendingAutoTranslations.entries()).map(([lang, set]) => [
+    lang,
+    Array.from(set).slice(0, 120)
+  ]);
+  pendingAutoTranslations.clear();
+
+  let changed = false;
+  try {
+    for (const [lang, names] of batches) {
+      if (!names.length || lang === 'en') continue;
+      const res = await fetch('/api/translate-names', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang, names })
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!data || !data.translations) continue;
+
+      Object.entries(data.translations).forEach(([sourceName, translatedName]) => {
+        const cleanSource = normalizeAutoTranslationName(sourceName);
+        const cleanTranslated = normalizeAutoTranslationName(translatedName);
+        if (!cleanSource || !cleanTranslated) return;
+        autoItemTranslations.set(autoTranslationKey(cleanSource, lang), cleanTranslated);
+        changed = true;
+      });
     }
   } catch (err) {
-    console.warn('Failed to load item translations:', err);
+    console.warn('Automatic item translation failed:', err);
+  } finally {
+    autoTranslationInFlight = false;
   }
+
+  if (changed) {
+    persistAutoTranslations();
+    renderTranslatedSurfaces();
+  }
+
+  if (pendingAutoTranslations.size > 0 && !autoTranslationTimer) {
+    autoTranslationTimer = setTimeout(flushAutoTranslations, 250);
+  }
+}
+
+function translateItemName(name, lang = currentLang) {
+  const cleanName = normalizeAutoTranslationName(name);
+  if (!cleanName || lang === 'en') return cleanName;
+
+  const translated = autoItemTranslations.get(autoTranslationKey(cleanName, lang));
+  if (translated) return translated;
+
+  scheduleAutoTranslation(cleanName, lang);
+  return cleanName;
 }
 
 // State Management
@@ -423,6 +1507,8 @@ let searchQuery = '';
 let lastWeatherKey = '';
 let lastPhaseKey = '';
 let predictionData = null;
+let auctionData = null;
+let calculatorData = null;
 let activePredictionTab = 'seeds';
 
 const weatherAssetIds = {
@@ -455,6 +1541,56 @@ const weatherOptions = {
   sunburst: { emoji: '☀️', ru: 'Солнечная вспышка', en: 'Sunburst' },
   megamoon: { emoji: '🌕', ru: 'Мега луна', en: 'Mega Moon' }
 };
+
+const weatherNameTranslations = {
+  day: { es: 'Día', pt: 'Dia', fr: 'Jour', de: 'Tag', tr: 'Gündüz', id: 'Siang', uk: 'День', pl: 'Dzień' },
+  sunset: { es: 'Atardecer', pt: 'Pôr do sol', fr: 'Coucher du soleil', de: 'Sonnenuntergang', tr: 'Gün batımı', id: 'Senja', uk: 'Захід сонця', pl: 'Zachód słońca' },
+  moon: { es: 'Noche', pt: 'Noite', fr: 'Nuit', de: 'Nacht', tr: 'Gece', id: 'Malam', uk: 'Ніч', pl: 'Noc' },
+  bloodmoon: { es: 'Luna de sangre', pt: 'Lua de sangue', fr: 'Lune de sang', de: 'Blutmond', tr: 'Kanlı Ay', id: 'Bulan Darah', uk: 'Кривавий місяць', pl: 'Krwawy księżyc' },
+  goldmoon: { es: 'Luna dorada', pt: 'Lua dourada', fr: 'Lune dorée', de: 'Goldmond', tr: 'Altın Ay', id: 'Bulan Emas', uk: 'Золотий місяць', pl: 'Złoty księżyc' },
+  chainedmoon: { es: 'Luna encadenada', pt: 'Lua acorrentada', fr: 'Lune enchaînée', de: 'Kettenmond', tr: 'Zincirli Ay', id: 'Bulan Berantai', uk: 'Ланцюговий місяць', pl: 'Łańcuchowy księżyc' },
+  pizzamoon: { es: 'Luna pizza', pt: 'Lua pizza', fr: 'Lune pizza', de: 'Pizza-Mond', tr: 'Pizza Ay', id: 'Bulan Pizza', uk: 'Піца-місяць', pl: 'Księżyc pizzy' },
+  rainbowmoon: { es: 'Luna arcoíris', pt: 'Lua arco-íris', fr: 'Lune arc-en-ciel', de: 'Regenbogenmond', tr: 'Gökkuşağı Ayı', id: 'Bulan Pelangi', uk: 'Веселковий місяць', pl: 'Tęczowy księżyc' },
+  solareclipse: { es: 'Eclipse solar', pt: 'Eclipse solar', fr: 'Éclipse solaire', de: 'Sonnenfinsternis', tr: 'Güneş tutulması', id: 'Gerhana matahari', uk: 'Сонячне затемнення', pl: 'Zaćmienie słońca' },
+  starfall: { es: 'Lluvia de estrellas', pt: 'Chuva de estrelas', fr: 'Pluie d’étoiles', de: 'Sternenfall', tr: 'Yıldız yağmuru', id: 'Hujan bintang', uk: 'Зорепад', pl: 'Spadające gwiazdy' },
+  rainbow: { es: 'Arcoíris', pt: 'Arco-íris', fr: 'Arc-en-ciel', de: 'Regenbogen', tr: 'Gökkuşağı', id: 'Pelangi', uk: 'Веселка', pl: 'Tęcza' },
+  snowfall: { es: 'Nevada', pt: 'Nevasca', fr: 'Chute de neige', de: 'Schneefall', tr: 'Kar yağışı', id: 'Salju turun', uk: 'Снігопад', pl: 'Opady śniegu' },
+  rain: { es: 'Lluvia', pt: 'Chuva', fr: 'Pluie', de: 'Regen', tr: 'Yağmur', id: 'Hujan', uk: 'Дощ', pl: 'Deszcz' },
+  thunderstorm: { es: 'Tormenta eléctrica', pt: 'Tempestade', fr: 'Orage', de: 'Gewitter', tr: 'Fırtına', id: 'Badai petir', uk: 'Гроза', pl: 'Burza' },
+  aurora: { es: 'Aurora', pt: 'Aurora', fr: 'Aurore', de: 'Aurora', tr: 'Aurora', id: 'Aurora', uk: 'Аврора', pl: 'Aurora' },
+  sunburst: { es: 'Estallido solar', pt: 'Explosão solar', fr: 'Éruption solaire', de: 'Sonnenausbruch', tr: 'Güneş patlaması', id: 'Ledakan matahari', uk: 'Сонячний спалах', pl: 'Rozbłysk słoneczny' },
+  megamoon: { es: 'Mega luna', pt: 'Mega lua', fr: 'Méga lune', de: 'Mega-Mond', tr: 'Mega Ay', id: 'Mega Bulan', uk: 'Мега місяць', pl: 'Mega księżyc' }
+};
+
+Object.assign(weatherNameTranslations.day, { zh: '白天', ja: '昼', ko: '낮', ar: 'نهار' });
+Object.assign(weatherNameTranslations.sunset, { zh: '日落', ja: '夕暮れ', ko: '일몰', ar: 'الغروب' });
+Object.assign(weatherNameTranslations.moon, { zh: '夜晚', ja: '夜', ko: '밤', ar: 'الليل' });
+Object.assign(weatherNameTranslations.bloodmoon, { zh: '血月', ja: 'ブラッドムーン', ko: '블러드 문', ar: 'قمر الدم' });
+Object.assign(weatherNameTranslations.goldmoon, { zh: '金月', ja: 'ゴールドムーン', ko: '골드 문', ar: 'القمر الذهبي' });
+Object.assign(weatherNameTranslations.chainedmoon, { zh: '锁链月', ja: 'チェーンムーン', ko: '체인 문', ar: 'القمر المقيد' });
+Object.assign(weatherNameTranslations.pizzamoon, { zh: '披萨月', ja: 'ピザムーン', ko: '피자 문', ar: 'قمر البيتزا' });
+Object.assign(weatherNameTranslations.rainbowmoon, { zh: '彩虹月', ja: 'レインボームーン', ko: '무지개 달', ar: 'قمر قوس قزح' });
+Object.assign(weatherNameTranslations.solareclipse, { zh: '日食', ja: '日食', ko: '일식', ar: 'كسوف الشمس' });
+Object.assign(weatherNameTranslations.starfall, { zh: '星落', ja: '流星群', ko: '별똥별', ar: 'تساقط النجوم' });
+Object.assign(weatherNameTranslations.rainbow, { zh: '彩虹', ja: '虹', ko: '무지개', ar: 'قوس قزح' });
+Object.assign(weatherNameTranslations.snowfall, { zh: '降雪', ja: '降雪', ko: '눈', ar: 'تساقط الثلج' });
+Object.assign(weatherNameTranslations.rain, { zh: '雨', ja: '雨', ko: '비', ar: 'مطر' });
+Object.assign(weatherNameTranslations.thunderstorm, { zh: '雷暴', ja: '雷雨', ko: '뇌우', ar: 'عاصفة رعدية' });
+Object.assign(weatherNameTranslations.aurora, { zh: '极光', ja: 'オーロラ', ko: '오로라', ar: 'الشفق' });
+Object.assign(weatherNameTranslations.sunburst, { zh: '太阳爆发', ja: 'サンバースト', ko: '태양 폭발', ar: 'انفجار شمسي' });
+Object.assign(weatherNameTranslations.megamoon, { zh: '超级月亮', ja: 'メガムーン', ko: '메가 문', ar: 'القمر العملاق' });
+
+function getLocalizedEnvName(key, fallback = '', option = null) {
+  const opt = option || (key && weatherOptions[key] ? weatherOptions[key] : null);
+  const extra = key && weatherNameTranslations[key] ? weatherNameTranslations[key] : null;
+  return (opt && opt[currentLang]) ||
+    (extra && extra[currentLang]) ||
+    (opt && opt.en) ||
+    (extra && extra.en) ||
+    fallback ||
+    key ||
+    '';
+}
 
 function applyWeatherImageFilters(imgEl, key) {
   if (!imgEl) return;
@@ -708,26 +1844,39 @@ const searchInput = document.getElementById('search-input');
 const filterBtns = document.querySelectorAll('.filter-btn');
 const lastUpdatedText = document.getElementById('last-updated-text');
 const apiStatusBadge = document.getElementById('api-status-badge');
-const langRuBtn = document.getElementById('lang-ru-btn');
-const langEnBtn = document.getElementById('lang-en-btn');
+const langButtons = document.querySelectorAll('.lang-btn');
+const quickNavLinks = document.querySelectorAll('.quick-nav-link');
 
 const crateGrid = document.getElementById('crate-shop-grid');
 const gearGrid = document.getElementById('gear-shop-grid');
 const seedGrid = document.getElementById('seed-shop-grid');
+const auctionGrid = document.getElementById('auction-grid');
+const auctionRefreshTimer = document.getElementById('auction-refresh-timer');
+const calculatorFruitInput = document.getElementById('calculator-fruit-input');
+const calculatorFruitList = document.getElementById('calculator-fruits-list');
+const calculatorWeightInput = document.getElementById('calculator-weight-input');
+const calculatorMutationSelect = document.getElementById('calculator-mutation-select');
+const calculatorFriendsInput = document.getElementById('calculator-friends-input');
+const calculatorPenaltyInput = document.getElementById('calculator-penalty-input');
+const calculatorSelectedFruit = document.getElementById('calculator-selected-fruit');
+const calculatorResultPrice = document.getElementById('calculator-result-price');
+const calculatorBaseValue = document.getElementById('calculator-base-value');
+const calculatorUpdatedAt = document.getElementById('calculator-updated-at');
+const calculatorFormulaHint = document.getElementById('calculator-formula-hint');
 
 // Translation Functions
 function setLanguage(lang) {
+  if (!translations[lang]) {
+    lang = 'en';
+  }
   currentLang = lang;
   localStorage.setItem('siteLang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   
-  // Update switcher buttons UI
-  if (currentLang === 'ru') {
-    langRuBtn.classList.add('active');
-    langEnBtn.classList.remove('active');
-  } else {
-    langEnBtn.classList.add('active');
-    langRuBtn.classList.remove('active');
-  }
+  langButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === currentLang);
+  });
   
   lastWeatherKey = '';
   updateStaticTranslations();
@@ -738,6 +1887,7 @@ function setLanguage(lang) {
   if (predictionData) {
     renderPredictions();
   }
+  renderCalculator();
 }
 
 function updateStaticTranslations() {
@@ -757,9 +1907,29 @@ function updateStaticTranslations() {
   document.querySelector('.restock-card h3').innerHTML = t.restockHeader;
   const timerLabels = document.querySelectorAll('.timer-box .timer-label');
   if (timerLabels.length >= 3) {
-    timerLabels[0].textContent = t.timerLabelCrates;
+    timerLabels[0].textContent = t.timerLabelSeeds;
     timerLabels[1].textContent = t.timerLabelGears;
-    timerLabels[2].textContent = t.timerLabelSeeds;
+    timerLabels[2].textContent = t.timerLabelCrates;
+  }
+
+  const navLabels = document.querySelectorAll('.quick-nav-link span');
+  if (navLabels.length >= 7) {
+    navLabels[0].textContent = t.navSeeds;
+    navLabels[1].textContent = t.navGears;
+    navLabels[2].textContent = t.navCrates;
+    navLabels[3].textContent = t.navAuction;
+    navLabels[4].textContent = t.navWeather;
+    navLabels[5].textContent = t.navCalculator;
+    navLabels[6].textContent = t.navFuture;
+  }
+
+  const auctionHeading = document.querySelector('.auction-panel-header h4');
+  if (auctionHeading) {
+    auctionHeading.innerHTML = `<i class="fa-solid fa-gavel"></i> ${t.auctionTitle}`;
+  }
+  const auctionRefreshLabel = document.querySelector('.auction-refresh-label');
+  if (auctionRefreshLabel) {
+    auctionRefreshLabel.textContent = t.auctionRefreshIn;
   }
   
   // Weather Card Header & Labels
@@ -776,11 +1946,26 @@ function updateStaticTranslations() {
   // Notification Banner
   document.querySelector('.notification-banner p').innerHTML = t.notificationBanner;
 
-  // Telegram promo banner: swap RU/EN text from data attributes
-  document.querySelectorAll('.tg-promo-banner [data-ru]').forEach(el => {
-    const val = el.getAttribute('data-' + currentLang);
-    if (val) el.textContent = val;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t[key];
+    if (typeof val === 'string') el.textContent = val;
   });
+
+  const calculatorTitle = document.querySelector('#calculator-section .section-title');
+  if (calculatorTitle) calculatorTitle.innerHTML = t.calculatorTitle;
+  const calculatorFruitLabel = document.getElementById('calculator-fruit-label');
+  if (calculatorFruitLabel) calculatorFruitLabel.textContent = t.calculatorFruitLabel;
+  if (calculatorFruitInput) calculatorFruitInput.placeholder = t.calculatorFruitPlaceholder;
+  const calculatorWeightLabel = document.getElementById('calculator-weight-label');
+  if (calculatorWeightLabel) calculatorWeightLabel.textContent = t.calculatorWeightLabel;
+  const calculatorMutationLabel = document.getElementById('calculator-mutation-label');
+  if (calculatorMutationLabel) calculatorMutationLabel.textContent = t.calculatorMutationLabel;
+  const calculatorFriendsLabel = document.getElementById('calculator-friends-label');
+  if (calculatorFriendsLabel) calculatorFriendsLabel.textContent = t.calculatorFriendsLabel;
+  const calculatorPenaltyLabel = document.getElementById('calculator-penalty-label');
+  if (calculatorPenaltyLabel) calculatorPenaltyLabel.textContent = t.calculatorPenaltyLabel;
+  if (calculatorFormulaHint) calculatorFormulaHint.textContent = t.calculatorFormulaHint;
   
   // Filters
   searchInput.placeholder = t.searchPlaceholder;
@@ -838,8 +2023,91 @@ function updateStaticTranslations() {
 }
 
 // Add Switcher Event Listeners
-langRuBtn.addEventListener('click', () => setLanguage('ru'));
-langEnBtn.addEventListener('click', () => setLanguage('en'));
+langButtons.forEach(btn => {
+  btn.addEventListener('click', () => setLanguage(btn.getAttribute('data-lang') || 'en'));
+});
+
+[
+  calculatorFruitInput,
+  calculatorWeightInput,
+  calculatorMutationSelect,
+  calculatorFriendsInput,
+  calculatorPenaltyInput
+].forEach(el => {
+  if (!el) return;
+  el.addEventListener('input', renderCalculator);
+  el.addEventListener('change', renderCalculator);
+});
+
+// Smooth quick navigation with sticky nav offset and active section state
+const quickNavEntries = Array.from(quickNavLinks)
+  .map(link => {
+    const hash = link.getAttribute('href') || '';
+    const target = hash.startsWith('#') ? document.getElementById(hash.slice(1)) : null;
+    return { link, hash, target };
+  })
+  .filter(entry => entry.target);
+
+function getQuickNavOffset() {
+  const nav = document.querySelector('.quick-nav');
+  return (nav ? nav.offsetHeight : 0) + 16;
+}
+
+function scrollToQuickNavTarget(entry) {
+  if (!entry || !entry.target) return;
+  const top = Math.max(0, entry.target.getBoundingClientRect().top + window.scrollY - getQuickNavOffset());
+  window.scrollTo({ top, behavior: 'smooth' });
+  history.replaceState(null, '', entry.hash);
+}
+
+let quickNavRaf = null;
+function updateQuickNavActive() {
+  quickNavRaf = null;
+  if (!quickNavEntries.length) return;
+
+  const topLimit = getQuickNavOffset();
+  const bottomLimit = window.innerHeight;
+  let activeEntry = null;
+  let bestVisible = 0;
+
+  quickNavEntries.forEach(entry => {
+    const rect = entry.target.getBoundingClientRect();
+    const visible = Math.max(0, Math.min(rect.bottom, bottomLimit) - Math.max(rect.top, topLimit));
+    if (visible > bestVisible) {
+      bestVisible = visible;
+      activeEntry = entry;
+    }
+  });
+
+  if (!activeEntry) {
+    const pivot = window.scrollY + topLimit + 24;
+    const passedEntries = quickNavEntries
+      .filter(entry => entry.target.offsetTop <= pivot)
+      .sort((a, b) => a.target.offsetTop - b.target.offsetTop);
+    activeEntry = passedEntries.length ? passedEntries[passedEntries.length - 1] : null;
+  }
+
+  quickNavEntries.forEach(entry => {
+    entry.link.classList.toggle('active', entry === activeEntry);
+  });
+}
+
+function scheduleQuickNavActive() {
+  if (quickNavRaf) return;
+  quickNavRaf = requestAnimationFrame(updateQuickNavActive);
+}
+
+quickNavEntries.forEach(entry => {
+  entry.link.addEventListener('click', event => {
+    event.preventDefault();
+    scrollToQuickNavTarget(entry);
+    updateQuickNavActive();
+  });
+});
+
+window.addEventListener('scroll', scheduleQuickNavActive, { passive: true });
+window.addEventListener('resize', scheduleQuickNavActive);
+setTimeout(updateQuickNavActive, 0);
 
 // API Poll Functions
 async function fetchData() {
@@ -851,11 +2119,25 @@ async function fetchData() {
       const stockRes = await fetch('/api/stock?client=web');
       if (stockRes.ok) {
         newStockData = await stockRes.json();
+        if (newStockData.auction) {
+          auctionData = newStockData.auction;
+        }
       } else if (stockRes.status === 429) {
         console.warn('Stock API rate limited (429)');
       }
     } catch (err) {
       console.error('Error fetching stock:', err);
+    }
+
+    // 1b. Fetch Auction Data. WebSocket updates keep it fresh after initial load.
+    try {
+      const auctionRes = await fetch('/api/auction?client=web');
+      if (auctionRes.ok) {
+        auctionData = await auctionRes.json();
+        renderAuction();
+      }
+    } catch (err) {
+      console.warn('Auction API is not ready yet:', err);
     }
 
     // 2. Fetch API Status
@@ -884,6 +2166,7 @@ async function fetchData() {
       // Update online users count
       updateUsersOnlineUI(newStockData.visitorCount);
       renderDashboard();
+      renderAuction();
     } else if (!stockData) {
       // Only set offline if we don't have any cached data at all
       updateOfflineStatus();
@@ -893,6 +2176,24 @@ async function fetchData() {
     if (!stockData) {
       updateOfflineStatus();
     }
+  }
+}
+
+async function fetchCalculatorData() {
+  try {
+    const res = await fetch('/api/calculator-data?client=web');
+    if (!res.ok) {
+      renderCalculator();
+      return;
+    }
+    const data = await res.json();
+    if (data && Array.isArray(data.fruits)) {
+      calculatorData = data;
+      renderCalculator();
+    }
+  } catch (err) {
+    console.warn('Calculator API is not ready yet:', err);
+    renderCalculator();
   }
 }
 
@@ -1027,13 +2328,7 @@ function updateWeatherUI() {
       lastPhaseKey = phaseKey;
       
       const phaseTranslationKey = 'phase' + phaseLower;
-      let phaseText = t[phaseTranslationKey];
-      
-      // Fallback if phase translation is missing (dynamically format the name)
-      if (!phaseText) {
-        const formattedPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
-        phaseText = formattedPhase;
-      }
+      let phaseText = getLocalizedEnvName(phaseLower, phase, weatherOptions[phaseLower]) || t[phaseTranslationKey] || phase;
       
       const imgHtml = getWeatherImageHtml(phase, w.phaseImage);
       
@@ -1103,7 +2398,7 @@ function updateWeatherUI() {
           const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
           const allOptions = { ...weatherOptions, ...discovered };
           const opt = allOptions[optKey];
-          const displayName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : name;
+          const displayName = getLocalizedEnvName(optKey, name, opt);
           const imgHtml = getWeatherImageHtml(name, image);
           
           weatherBox.innerHTML = `
@@ -1170,10 +2465,252 @@ function renderDashboard() {
   renderMultipliers();
   renderFruitRefresh();
   renderWeatherSettings();
+  renderAuction();
 }
 
 function renderFruitRefresh() {
   // Safe empty fallback
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatAuctionPrice(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return '--';
+  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(num >= 10_000_000_000 ? 0 : 2).replace(/\.?0+$/, '')}B¢`;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(num >= 10_000_000 ? 0 : 2).replace(/\.?0+$/, '')}M¢`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(num >= 10_000 ? 0 : 2).replace(/\.?0+$/, '')}K¢`;
+  return `${Math.floor(num)}¢`;
+}
+
+function formatShortCountdown(targetUnix) {
+  const target = Number(targetUnix || 0);
+  if (!Number.isFinite(target) || target <= 0) return '--:--';
+  const diff = Math.max(0, Math.floor(target - Date.now() / 1000));
+  const hours = Math.floor(diff / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  const seconds = diff % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+  }
+  return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+}
+
+function getAuctionLotDisplayName(lot) {
+  const rawName = lot.name || lot.item || '';
+  return translateItemName(rawName);
+}
+
+function renderAuction() {
+  if (!auctionGrid) return;
+  const t = translations[currentLang];
+  const lots = auctionData && Array.isArray(auctionData.lots) ? auctionData.lots : [];
+
+  if (!lots.length) {
+    auctionGrid.innerHTML = `<div class="loading-placeholder">${t.auctionEmpty}</div>`;
+    updateAuctionTimers();
+    return;
+  }
+
+  auctionGrid.innerHTML = lots.map(lot => {
+    const name = getAuctionLotDisplayName(lot) || lot.lotId || 'Auction lot';
+    const rarityClass = `rarity-${String(lot.rarity || 'common').toLowerCase()}`;
+    const statusClass = lot.expired ? 'expired' : lot.soldOut ? 'sold' : 'active';
+    const statusText = lot.expired ? t.auctionExpired : lot.soldOut ? t.auctionSoldOut : t.auctionAvailable;
+    const stockText = lot.stock === null || lot.stock === undefined
+      ? t.auctionStockUnlimited
+      : t.auctionStockLeft(Math.max(0, Number(lot.stock) || 0));
+    const imageHtml = lot.image
+      ? `<div class="auction-image-wrapper"><img src="${escapeHtml(lot.image)}" alt="${escapeHtml(name)}" class="auction-image" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentNode.classList.add('img-failed');this.remove();"></div>`
+      : `<div class="auction-image-wrapper img-failed"></div>`;
+    const countHtml = Number(lot.count || 1) > 1 ? `<span class="auction-count">x${Number(lot.count)}</span>` : '';
+
+    return `
+      <article class="auction-card ${rarityClass} auction-${statusClass}" data-expires="${Number(lot.expiresAt || 0)}">
+        <div class="auction-card-top">
+          ${imageHtml}
+          ${countHtml}
+          <span class="auction-status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="auction-card-body">
+          <h5>${escapeHtml(name)}</h5>
+          <span class="auction-meta">${escapeHtml(lot.category || lot.rarity || 'Auction')}</span>
+          <div class="auction-info-row">
+            <span><i class="fa-solid fa-box"></i> ${escapeHtml(stockText)}</span>
+            <span class="auction-lot-timer">--:--</span>
+          </div>
+          <div class="auction-price-row">
+            <span>${t.auctionPrice}</span>
+            <strong>${formatAuctionPrice(lot.currentPrice)}</strong>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  updateAuctionTimers();
+}
+
+function updateAuctionTimers() {
+  if (auctionRefreshTimer) {
+    auctionRefreshTimer.textContent = formatShortCountdown(auctionData && auctionData.refreshAt);
+  }
+  if (!auctionGrid) return;
+  auctionGrid.querySelectorAll('.auction-card').forEach(card => {
+    const expiresAt = Number(card.getAttribute('data-expires') || 0);
+    const timer = card.querySelector('.auction-lot-timer');
+    if (timer) timer.textContent = formatShortCountdown(expiresAt);
+  });
+}
+
+function getCaseInsensitiveMapValue(map, name, fallback) {
+  if (!map || typeof map !== 'object') return fallback;
+  if (map[name] !== undefined) return Number(map[name]);
+  const target = String(name || '').toLowerCase();
+  for (const [key, value] of Object.entries(map)) {
+    if (String(key).toLowerCase() === target) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    }
+  }
+  return fallback;
+}
+
+function clampNumber(value, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return min;
+  return Math.min(max, Math.max(min, num));
+}
+
+function translateMutationName(name) {
+  const mutationMap = {
+    none: { ru: 'Нет', es: 'Ninguna', pt: 'Nenhuma', fr: 'Aucune', de: 'Keine', tr: 'Yok', id: 'Tidak ada', uk: 'Немає', pl: 'Brak', zh: '无', ja: 'なし', ko: '없음', ar: 'لا يوجد' },
+    wet: { ru: 'Мокрая', es: 'Mojada', pt: 'Molhada', fr: 'Mouillée', de: 'Nass', tr: 'Islak', id: 'Basah', uk: 'Мокра', pl: 'Mokra', zh: '潮湿', ja: '濡れ', ko: '젖음', ar: 'رطبة' },
+    frozen: { ru: 'Замороженная', es: 'Congelada', pt: 'Congelada', fr: 'Gelée', de: 'Gefroren', tr: 'Donmuş', id: 'Beku', uk: 'Заморожена', pl: 'Zamrożona', zh: '冻结', ja: '凍結', ko: '얼어붙음', ar: 'مجمدة' },
+    electric: { ru: 'Электрическая', es: 'Eléctrica', pt: 'Elétrica', fr: 'Électrique', de: 'Elektrisch', tr: 'Elektrikli', id: 'Listrik', uk: 'Електрична', pl: 'Elektryczna', zh: '电能', ja: '電気', ko: '전기', ar: 'كهربائية' },
+    rainbow: { ru: 'Радужная', es: 'Arcoíris', pt: 'Arco-íris', fr: 'Arc-en-ciel', de: 'Regenbogen', tr: 'Gökkuşağı', id: 'Pelangi', uk: 'Веселкова', pl: 'Tęczowa', zh: '彩虹', ja: '虹', ko: '무지개', ar: 'قوس قزح' },
+    starstruck: { ru: 'Звёздная', es: 'Estelar', pt: 'Estelar', fr: 'Étoilée', de: 'Sternenhaft', tr: 'Yıldızlı', id: 'Bintang', uk: 'Зоряна', pl: 'Gwiazdowa', zh: '星光', ja: '星付き', ko: '별빛', ar: 'نجمية' },
+    aurora: { ru: 'Аврора', es: 'Aurora', pt: 'Aurora', fr: 'Aurore', de: 'Aurora', tr: 'Aurora', id: 'Aurora', uk: 'Аврора', pl: 'Aurora', zh: '极光', ja: 'オーロラ', ko: '오로라', ar: 'الشفق' },
+    ignited: { ru: 'Воспламенённая', es: 'Encendida', pt: 'Incendiada', fr: 'Enflammée', de: 'Entzündet', tr: 'Alevli', id: 'Menyala', uk: 'Запалена', pl: 'Rozpalona', zh: '点燃', ja: '燃焼', ko: '점화', ar: 'مشتعلة' }
+  };
+  const key = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return (mutationMap[key] && mutationMap[key][currentLang]) || name;
+}
+
+function calculateFruitValue(fruit, mutation, weight, friends, penalty) {
+  if (!fruit || !calculatorData) return null;
+  const cfg = calculatorData.config || {};
+  const dr = cfg.diminishingReturns || {};
+  const fruitName = fruit.name;
+  const safeWeight = Math.max(0.01, Number(weight) || 1);
+  const exponent = getCaseInsensitiveMapValue(cfg.sizeExponentOverrides, fruitName, Number(cfg.sizeExponent) || 2.65);
+  const knee = (Number(dr.knee) || 5) * getCaseInsensitiveMapValue(dr.kneeMultipliers, fruitName, 1);
+  let sizePower = Math.pow(safeWeight, exponent);
+
+  if (dr.enabled !== false && knee > 0 && safeWeight > knee) {
+    const tailBase = Number(dr.tailExponent) || 1.5;
+    const tailMultiplier = getCaseInsensitiveMapValue(dr.tailExponentMultipliers, fruitName, 1);
+    const tailExponent = Math.min(tailBase * tailMultiplier, exponent);
+    sizePower = Math.pow(knee, exponent) * Math.pow(safeWeight / knee, tailExponent);
+  }
+
+  let mutationMultiplier = mutation && mutation.name && String(mutation.name).toLowerCase() !== 'none'
+    ? Number(mutation.multiplier) || 1
+    : 1;
+  if (fruit.isSingleHarvest && mutationMultiplier > 1) {
+    mutationMultiplier = 1 + (mutationMultiplier - 1) * (Number(cfg.singleHarvestMutationBonusScale) || 0.15);
+  }
+  mutationMultiplier *= Number(cfg.mutationMultiplier) || 1;
+
+  const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
+  const penaltyMultiplier = 1 - clampNumber(penalty, 0, 1) * 0.8;
+  const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
+  let value = Math.floor((Number(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * penaltyMultiplier * friendsMultiplier);
+
+  const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
+  if (Number.isFinite(minValue) && value < minValue) value = minValue;
+  return value;
+}
+
+function getCalculatorSelectedFruit() {
+  const fruits = calculatorData && Array.isArray(calculatorData.fruits) ? calculatorData.fruits : [];
+  if (!fruits.length) return null;
+  const raw = String(calculatorFruitInput && calculatorFruitInput.value || '').trim().toLowerCase();
+  if (!raw) return fruits[0];
+  const exact = fruits.find(fruit =>
+    String(fruit.name).toLowerCase() === raw ||
+    translateItemName(fruit.name).toLowerCase() === raw
+  );
+  if (exact) return exact;
+  return fruits.find(fruit =>
+    String(fruit.name).toLowerCase().includes(raw) ||
+    translateItemName(fruit.name).toLowerCase().includes(raw)
+  ) || fruits[0];
+}
+
+function renderCalculator() {
+  const t = translations[currentLang];
+  if (!calculatorSelectedFruit || !calculatorResultPrice) return;
+
+  const fruits = calculatorData && Array.isArray(calculatorData.fruits) ? calculatorData.fruits : [];
+  if (!calculatorData || !fruits.length) {
+    calculatorSelectedFruit.textContent = t.calculatorNoData;
+    calculatorResultPrice.textContent = '--';
+    if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue('--');
+    if (calculatorUpdatedAt) calculatorUpdatedAt.textContent = '--';
+    return;
+  }
+
+  if (calculatorFruitList) {
+    calculatorFruitList.innerHTML = fruits.map(fruit => {
+      const display = translateItemName(fruit.name);
+      return `<option value="${escapeHtml(display)}" label="${escapeHtml(fruit.name)}"></option>`;
+    }).join('');
+  }
+
+  if (calculatorMutationSelect) {
+    const previous = calculatorMutationSelect.value || 'None';
+    const mutations = Array.isArray(calculatorData.mutations) && calculatorData.mutations.length
+      ? calculatorData.mutations
+      : [{ name: 'None', multiplier: 1 }];
+    calculatorMutationSelect.innerHTML = mutations.map(mutation => {
+      const label = `${translateMutationName(mutation.name)} x${Number(mutation.multiplier || 1).toFixed(2).replace(/\.?0+$/, '')}`;
+      return `<option value="${escapeHtml(mutation.name)}">${escapeHtml(label)}</option>`;
+    }).join('');
+    if (mutations.some(mutation => mutation.name === previous)) {
+      calculatorMutationSelect.value = previous;
+    }
+  }
+
+  const fruit = getCalculatorSelectedFruit();
+  if (calculatorFruitInput && !calculatorFruitInput.value) {
+    calculatorFruitInput.value = translateItemName(fruit.name);
+  }
+
+  const mutationName = calculatorMutationSelect ? calculatorMutationSelect.value : 'None';
+  const mutation = (calculatorData.mutations || []).find(item => item.name === mutationName) || { name: 'None', multiplier: 1 };
+  const value = calculateFruitValue(
+    fruit,
+    mutation,
+    calculatorWeightInput ? calculatorWeightInput.value : 1,
+    calculatorFriendsInput ? calculatorFriendsInput.value : 0,
+    calculatorPenaltyInput ? calculatorPenaltyInput.value : 0
+  );
+
+  calculatorSelectedFruit.textContent = fruit ? translateItemName(fruit.name) : t.calculatorSelectFruit;
+  calculatorResultPrice.textContent = value == null ? '--' : formatAuctionPrice(value);
+  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(formatAuctionPrice(fruit.baseValue || 0));
+  if (calculatorUpdatedAt) {
+    const dateValue = calculatorData.updatedAt || calculatorData.scrapedAt && calculatorData.scrapedAt * 1000;
+    calculatorUpdatedAt.textContent = dateValue ? t.calculatorUpdatedAt(new Date(dateValue).toLocaleTimeString()) : '--';
+  }
 }
 
 function getFruitEmoji(name) {
@@ -1300,10 +2837,7 @@ function renderMultipliers() {
     const itemEl = document.createElement('div');
     itemEl.className = 'multiplier-item';
 
-    let displayName = name;
-    if (currentLang === 'ru') {
-      displayName = translateItemName(name);
-    }
+    let displayName = translateItemName(name);
 
     const emoji = getFruitEmoji(name);
     // Prefer a real thumbnail image; fall back to emoji; for Asset_ names show the image
@@ -1410,10 +2944,7 @@ document.addEventListener('click', async (e) => {
 
     // Send a test notification to verify it works
     const t = translations[currentLang];
-    let displayName = fruitName;
-    if (currentLang === 'ru') {
-      displayName = translateItemName(fruitName);
-    }
+    let displayName = translateItemName(fruitName);
 
     const testTitle = t.notifTrackedTitle;
     const testOptions = {
@@ -1449,8 +2980,14 @@ function renderShopGrid(gridElement, items) {
       return false;
     }
 
+    const translatedNameForSearch = translateItemName(item.name);
+
     // Search query match
-    if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !translatedNameForSearch.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
 
@@ -1498,8 +3035,9 @@ function renderShopGrid(gridElement, items) {
     const bellTitle = isTracked ? translations[currentLang].bellUntrack : translations[currentLang].bellTrack;
 
     const imageHtml = item.image
-      ? `<div class="item-image-wrapper"><img src="${item.image}" alt="${item.name}" class="item-card-image" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentNode.classList.add('img-failed');this.remove();"></div>`
+      ? `<div class="item-image-wrapper"><img src="${item.image}" alt="${escapeHtml(translateItemName(item.name))}" class="item-card-image" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentNode.classList.add('img-failed');this.remove();"></div>`
       : '';
+    const displayName = translateItemName(item.name);
 
     card.className = cardClass;
     card.innerHTML = `
@@ -1508,7 +3046,7 @@ function renderShopGrid(gridElement, items) {
           <button class="bell-btn ${bellClass}" data-name="${item.name}" title="${bellTitle}">
             <i class="${bellIcon}"></i>
           </button>
-          <h4 class="item-name" title="${item.name}">${item.name}</h4>
+          <h4 class="item-name" title="${escapeHtml(item.name)}">${escapeHtml(displayName)}</h4>
         </div>
         <span class="item-badge ${badgeClass}">${item.rarity}</span>
       </div>
@@ -1599,10 +3137,7 @@ function triggerMultiplierNotification(itemName, currentRate, threshold) {
   }
   const t = translations[currentLang];
   
-  let displayName = itemName;
-  if (currentLang === 'ru') {
-    displayName = translateItemName(itemName);
-  }
+  let displayName = translateItemName(itemName);
 
   const title = t.multiplierPushTitle(displayName);
   const options = {
@@ -1639,7 +3174,8 @@ function triggerNotification(item) {
     return;
   }
   const t = translations[currentLang];
-  const title = t.pushTitle(item.name);
+  const displayName = translateItemName(item.name);
+  const title = t.pushTitle(displayName);
   const options = {
     body: t.pushBody(item.stock, item.price, item.rarity),
     icon: '/logo.png',
@@ -1699,11 +3235,12 @@ async function toggleTracking(itemName, btn) {
     const testTitle = currentItem && currentItem.stock > 0 
       ? translations[currentLang].notifInStockTitle 
       : translations[currentLang].notifTrackedTitle;
+    const displayName = translateItemName(itemName);
       
     const testOptions = {
       body: currentItem && currentItem.stock > 0 
-        ? translations[currentLang].notifInStockBody(itemName, currentItem.stock, currentItem.price)
-        : translations[currentLang].notifTrackedBody(itemName),
+        ? translations[currentLang].notifInStockBody(displayName, currentItem.stock, currentItem.price)
+        : translations[currentLang].notifTrackedBody(displayName),
       icon: '/logo.png',
       badge: '/logo.png'
     };
@@ -1802,12 +3339,10 @@ async function togglePredictionTracking(name, timestamp, isWeather, btn) {
       const optKey = canonicalEnvKey(name);
       const opt = weatherOptions[optKey];
       if (opt) {
-        displayName = currentLang === 'ru' ? opt.ru : opt.en;
+        displayName = getLocalizedEnvName(optKey, name, opt);
       }
     } else {
-      if (currentLang === 'ru') {
-        displayName = translateItemName(name);
-      }
+      displayName = translateItemName(name);
     }
 
     const testTitle = t.notifTrackedTitle;
@@ -1844,7 +3379,7 @@ function renderWeatherSettings() {
   
   Object.keys(allOptions).forEach(key => {
     const opt = allOptions[key];
-    const name = currentLang === 'ru' ? opt.ru : opt.en;
+    const name = getLocalizedEnvName(key, key, opt);
     const isTracked = trackedItems.has('env:' + key);
     const iconHtml = getWeatherSettingsIconHtml(key, opt);
     
@@ -1900,7 +3435,7 @@ async function toggleWeatherTracking(envKey, btn) {
     const discovered = JSON.parse(localStorage.getItem('discoveredEnvs') || '{}');
     const allOptions = { ...weatherOptions, ...discovered };
     const opt = allOptions[envKey] || { emoji: '🌍', ru: envKey, en: envKey };
-    const envName = currentLang === 'ru' ? opt.ru : opt.en;
+    const envName = getLocalizedEnvName(envKey, envKey, opt);
     
     const testTitle = t.notifTrackedTitle;
     const testOptions = {
@@ -2050,13 +3585,13 @@ function triggerWeatherNotification(phaseKey, weatherName) {
   
   if (phaseKey) {
     const phaseTranslationKey = 'phase' + phaseKey;
-    const phaseText = t[phaseTranslationKey] || phaseKey;
+    const phaseText = getLocalizedEnvName(phaseKey, phaseKey, weatherOptions[phaseKey]) || t[phaseTranslationKey] || phaseKey;
     title = currentLang === 'ru' ? '🌍 Изменение времени/луны' : '🌍 Time/Moon Phase Change';
     body = currentLang === 'ru' ? `Началась фаза: ${phaseText}` : `New phase started: ${phaseText}`;
   } else if (weatherName) {
     const optKey = canonicalEnvKey(weatherName);
     const opt = weatherOptions[optKey];
-    const localizedName = opt ? (currentLang === 'ru' ? opt.ru : opt.en) : weatherName;
+    const localizedName = opt ? getLocalizedEnvName(optKey, weatherName, opt) : weatherName;
     title = currentLang === 'ru' ? '🌧️ Изменение погоды' : '🌧️ Weather Change';
     body = currentLang === 'ru' ? `Началась погода: ${localizedName}` : `New weather active: ${localizedName}`;
   }
@@ -2196,12 +3731,10 @@ function renderPredictionGrid(gridId, items, isWeather = false) {
       const optKey = canonicalEnvKey(item.name);
       const opt = weatherOptions[optKey];
       if (opt) {
-        displayName = currentLang === 'ru' ? opt.ru : opt.en;
+        displayName = getLocalizedEnvName(optKey, item.name, opt);
       }
     } else {
-      if (currentLang === 'ru') {
-        displayName = translateItemName(item.name);
-      }
+      displayName = translateItemName(item.name);
       if (item.multiplier) {
         displayName = `${item.multiplier} ${displayName}`;
       }
@@ -2361,8 +3894,8 @@ document.addEventListener('click', (e) => {
 setLanguage(currentLang); // Setup initial translation language
 fetchData();
 fetchPredictions();
-loadItemTranslations();
-setInterval(loadItemTranslations, 5 * 60 * 1000);
+fetchCalculatorData();
+setInterval(fetchCalculatorData, 60 * 1000);
 
 // WebSocket Connection Setup
 let ws = null;
@@ -2403,6 +3936,9 @@ function connectWebSocket() {
           checkForWeatherNotifications(data.stock);
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
+          if (data.stock.auction) {
+            auctionData = data.stock.auction;
+          }
           updateItemImageCache(stockData);
           updateWeatherIconCache(stockData);
           
@@ -2412,6 +3948,14 @@ function connectWebSocket() {
         if (data.predictions) {
           predictionData = data.predictions;
           renderPredictions();
+        }
+        if (data.auction) {
+          auctionData = data.auction;
+          renderAuction();
+        }
+        if (data.calculatorData) {
+          calculatorData = data.calculatorData;
+          renderCalculator();
         }
         
         // Update status indicators
@@ -2427,6 +3971,9 @@ function connectWebSocket() {
           checkForWeatherNotifications(data.stock);
           discoverEnvironments(data.stock.weather);
           stockData = data.stock;
+          if (data.stock.auction) {
+            auctionData = data.stock.auction;
+          }
           updateItemImageCache(stockData);
           updateWeatherIconCache(stockData);
           
@@ -2438,6 +3985,16 @@ function connectWebSocket() {
             lastUpdated: stockData ? stockData.updatedAt : null
           };
           updateStatusUI(statusData);
+        }
+      } else if (data.type === 'auction') {
+        if (data.auction) {
+          auctionData = data.auction;
+          renderAuction();
+        }
+      } else if (data.type === 'calculator-data') {
+        if (data.calculatorData) {
+          calculatorData = data.calculatorData;
+          renderCalculator();
         }
       } else if (data.type === 'predictions') {
         if (data.predictions) {
@@ -2498,14 +4055,12 @@ function triggerPredictionStartNotification(name, timestamp) {
     const optKey = canonicalEnvKey(name);
     const opt = weatherOptions[optKey];
     if (opt) {
-      displayName = currentLang === 'ru' ? opt.ru : opt.en;
+      displayName = getLocalizedEnvName(optKey, name, opt);
     }
     title = currentLang === 'ru' ? '🔔 Событие началось!' : '🔔 Event Started!';
     body = currentLang === 'ru' ? `Событие "${displayName}" началось прямо сейчас!` : `Event "${displayName}" has started right now!`;
   } else {
-    if (currentLang === 'ru') {
-      displayName = translateItemName(name);
-    }
+    displayName = translateItemName(name);
     title = currentLang === 'ru' ? '🔔 Предсказание началось!' : '🔔 Prediction Started!';
     body = currentLang === 'ru' ? `Предмет "${displayName}" должен появиться в продаже прямо сейчас!` : `Item "${displayName}" is expected to be in stock right now!`;
   }
@@ -2613,6 +4168,7 @@ function updatePredictionTimers() {
 setInterval(() => {
   updateTimers();
   updateWeatherUI();
+  updateAuctionTimers();
   if (predictionData) {
     updatePredictionTimers();
   }

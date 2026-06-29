@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grow a Garden 2 Stock Tracker - Live Roblox Seed & Crate Shop Stock</title>
+  <title>Grow a Garden 2 Stock Tracker - Live Seed and Gears Stock | GAG 2 Stock</title>
   <!-- SEO Optimization -->
-  <meta name="description" content="Live real-time stock tracker for Grow a Garden 2 on Roblox. Мониторинг стоков семян, ящиков и снаряжения в реальном времени. Enable live sound push alerts.">
-  <meta name="keywords" content="grow a garden 2, grow a garden stock, grow a garden 2 stock tracker, grow a garden 2 seeds, grow a garden 2 crates, roblox grow a garden, сток предметов вырасти сад, вырасти сад 2 роблокс">
+  <meta name="description" content="Live Grow a Garden 2 stock tracker for Roblox: seed stock, gears stock, crate stock, auction stock, weather, moon phases, future restocks, calculator-style timers and Telegram alerts. Also supports GAG 2 stock and GAG 2 stock tracker searches.">
+  <meta name="keywords" content="gag 2 stock, gag 2, gag 2 stock tracker, grow a garden 2 stock tracker, grow a garden 2 calculator, grow a garden 2 auction stock, grow a garden 2 seed stock, grow a garden 2 gears stock, grow a garden 2 crates, roblox grow a garden 2, вырасти сад 2 стоки">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://grow-a-garden-2-tracker.onrender.com/">
   
   <!-- Open Graph / Facebook / Discord -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://grow-a-garden-2-tracker.onrender.com/">
-  <meta property="og:title" content="Grow a Garden 2 Stock Tracker - Live Seed & Crate Stock">
-  <meta property="og:description" content="Check live active items in Grow a Garden 2 on Roblox. Set push notifications to alert you as soon as rare items are in stock!">
+  <meta property="og:title" content="Grow a Garden 2 Stock Tracker - Live Seed and Gears Stock">
+  <meta property="og:description" content="Track live Grow a Garden 2 seed, gears, crate and auction stock with weather, moon phases, timers and push alerts. GAG 2 stock supported too.">
   <meta property="og:image" content="/logo.png">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary">
   <meta property="twitter:url" content="https://grow-a-garden-2-tracker.onrender.com/">
-  <meta property="twitter:title" content="Grow a Garden 2 Stock Tracker - Live Seed & Crate Stock">
-  <meta property="twitter:description" content="Check live active items in Grow a Garden 2 on Roblox. Set push notifications to alert you as soon as rare items are in stock!">
+  <meta property="twitter:title" content="Grow a Garden 2 Stock Tracker - Live Seed and Gears Stock">
+  <meta property="twitter:description" content="Check live Grow a Garden 2 seed, gears, crate and auction stock with timers, weather and alerts. GAG 2 stock supported too.">
   <meta property="twitter:image" content="/logo.png">
 
   <!-- Structured Data JSON-LD for Search Engines -->
@@ -31,7 +31,8 @@
     "@type": "WebApplication",
     "name": "Grow a Garden 2 Stock Tracker",
     "url": "https://grow-a-garden-2-tracker.onrender.com/",
-    "description": "Live real-time stock tracker for Grow a Garden 2 on Roblox. Check active crate, seed, and gear shop stock with live push notifications.",
+    "description": "Live real-time Grow a Garden 2 stock tracker for Roblox. Check active seed stock, gears stock, crate stock, auction stock, weather, moon phases and future restock timers with live push notifications. GAG 2 stock is included as an alternate search phrase.",
+    "keywords": "gag 2 stock, gag 2 stock tracker, grow a garden 2 calculator, grow a garden 2 auction stock, grow a garden 2 seed stock, grow a garden 2 gears stock",
     "applicationCategory": "UtilityApplication",
     "operatingSystem": "All"
   }
@@ -49,7 +50,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=2.3.1">
+  <link rel="stylesheet" href="style.css?v=2.4.2">
 </head>
 <body>
   <div class="bg-glow"></div>
@@ -59,8 +60,8 @@
     <a href="https://t.me/GrowaGarden2stock_bot" target="_blank" rel="noopener noreferrer" class="tg-promo-banner glass">
       <i class="fa-brands fa-telegram tg-promo-icon"></i>
       <div class="tg-promo-text">
-        <span class="tg-promo-title" data-ru="🔔 Получай уведомления в Telegram!" data-en="🔔 Get alerts in Telegram!">🔔 Получай уведомления в Telegram!</span>
-        <span class="tg-promo-sub" data-ru="Переходи в нашего бота — оповещения о завозах прямо в ЛС" data-en="Try our bot — restock alerts right to your PM">Переходи в нашего бота — оповещения о завозах прямо в ЛС</span>
+        <span class="tg-promo-title" data-i18n="tgPromoTitle">🔔 Получай уведомления в Telegram!</span>
+        <span class="tg-promo-sub" data-i18n="tgPromoSub">Переходи в нашего бота - оповещения о завозах прямо в ЛС</span>
       </div>
       <span class="tg-promo-btn">@GrowaGarden2stock_bot <i class="fa-solid fa-arrow-right"></i></span>
     </a>
@@ -80,6 +81,18 @@
         <div class="lang-switch-container">
           <button class="lang-btn active" id="lang-ru-btn" data-lang="ru">RU</button>
           <button class="lang-btn" id="lang-en-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="es">ES</button>
+          <button class="lang-btn" data-lang="pt">PT</button>
+          <button class="lang-btn" data-lang="fr">FR</button>
+          <button class="lang-btn" data-lang="de">DE</button>
+          <button class="lang-btn" data-lang="tr">TR</button>
+          <button class="lang-btn" data-lang="id">ID</button>
+          <button class="lang-btn" data-lang="uk">UK</button>
+          <button class="lang-btn" data-lang="pl">PL</button>
+          <button class="lang-btn" data-lang="zh">ZH</button>
+          <button class="lang-btn" data-lang="ja">JA</button>
+          <button class="lang-btn" data-lang="ko">KO</button>
+          <button class="lang-btn" data-lang="ar">AR</button>
         </div>
 
         <div class="header-status">
@@ -99,6 +112,16 @@
       </div>
     </header>
 
+    <nav class="quick-nav glass" aria-label="Stock navigation">
+      <a href="#seeds-section" class="quick-nav-link"><i class="fa-solid fa-leaf"></i><span>Seeds</span></a>
+      <a href="#gears-section" class="quick-nav-link"><i class="fa-solid fa-screwdriver-wrench"></i><span>Gears</span></a>
+      <a href="#crates-section" class="quick-nav-link"><i class="fa-solid fa-box-open"></i><span>Crates</span></a>
+      <a href="#auction-section" class="quick-nav-link"><i class="fa-solid fa-gavel"></i><span>Auction</span></a>
+      <a href="#weather-section" class="quick-nav-link"><i class="fa-solid fa-cloud-sun"></i><span>Weather</span></a>
+      <a href="#calculator-section" class="quick-nav-link"><i class="fa-solid fa-calculator"></i><span>Calculator</span></a>
+      <a href="#predictions-section" class="quick-nav-link"><i class="fa-solid fa-hourglass-half"></i><span>Future</span></a>
+    </nav>
+
     <!-- Overview & Stats -->
     <section class="stats-grid">
       <!-- Restock Timers -->
@@ -106,27 +129,38 @@
         <h3><i class="fa-solid fa-clock"></i> Таймеры Завоза (Restock)</h3>
         <div class="timers-container">
           <div class="timer-box">
-            <span class="timer-label">Crates</span>
-            <span class="timer-val" id="timer-crates">--:--:--</span>
+            <span class="timer-label">Normal Seeds</span>
+            <span class="timer-val" id="timer-seeds">--:--:--</span>
           </div>
           <div class="timer-box">
             <span class="timer-label">Gears</span>
             <span class="timer-val" id="timer-gears">--:--:--</span>
           </div>
           <div class="timer-box">
-            <span class="timer-label">Normal Seeds</span>
-            <span class="timer-val" id="timer-seeds">--:--:--</span>
+            <span class="timer-label">Crates</span>
+            <span class="timer-val" id="timer-crates">--:--:--</span>
+          </div>
+        </div>
+        <div class="auction-panel" id="auction-section">
+          <div class="auction-panel-header">
+            <div>
+              <h4><i class="fa-solid fa-gavel"></i> Аукцион</h4>
+            </div>
+            <div class="auction-refresh-pill">
+              <span class="auction-refresh-label">Обновление через</span>
+              <span class="auction-refresh-value"><i class="fa-solid fa-clock"></i><span id="auction-refresh-timer">--:--</span></span>
+            </div>
+          </div>
+          <div class="auction-grid" id="auction-grid">
+            <div class="loading-placeholder">Ожидание данных аукциона...</div>
           </div>
         </div>
       </div>
 
       <!-- Weather & Night Card -->
-      <div class="stats-card glass weather-card">
+      <div class="stats-card glass weather-card" id="weather-section">
         <div class="weather-card-header">
           <h3><i class="fa-solid fa-cloud-sun"></i> Погода и Время Суток</h3>
-          <button class="weather-settings-btn" id="weather-settings-toggle" title="Настройка уведомлений / Settings">
-            <i class="fa-solid fa-cog"></i>
-          </button>
         </div>
         <div class="weather-container">
           <div class="weather-box" id="weather-time-box">
@@ -140,7 +174,7 @@
             <span class="weather-detail" id="weather-detail-timer">--:--:--</span>
           </div>
         </div>
-        <div class="weather-settings-panel" id="weather-settings-panel" style="display: none;">
+        <div class="weather-settings-panel" id="weather-settings-panel">
           <!-- Generated dynamically in app.js -->
         </div>
       </div>
@@ -168,13 +202,51 @@
       </div>
     </section>
 
+    <section class="shop-section glass calculator-section" id="calculator-section">
+      <h2 class="section-title"><i class="fa-solid fa-calculator"></i> Калькулятор цены фрукта</h2>
+      <div class="calculator-layout">
+        <div class="calculator-controls">
+          <label class="calculator-field">
+            <span id="calculator-fruit-label">Фрукт</span>
+            <input type="text" id="calculator-fruit-input" list="calculator-fruits-list" placeholder="Начните писать название фрукта">
+            <datalist id="calculator-fruits-list"></datalist>
+          </label>
+          <label class="calculator-field">
+            <span id="calculator-weight-label">Вес</span>
+            <input type="number" id="calculator-weight-input" min="0.01" step="0.01" value="1">
+          </label>
+          <label class="calculator-field">
+            <span id="calculator-mutation-label">Мутация</span>
+            <select id="calculator-mutation-select"></select>
+          </label>
+          <label class="calculator-field">
+            <span id="calculator-friends-label">Друзья рядом</span>
+            <input type="number" id="calculator-friends-input" min="0" max="20" step="1" value="0">
+          </label>
+          <label class="calculator-field">
+            <span id="calculator-penalty-label">Снижение цены</span>
+            <input type="number" id="calculator-penalty-input" min="0" max="1" step="0.01" value="0">
+          </label>
+        </div>
+        <div class="calculator-result-panel">
+          <div class="calculator-selected" id="calculator-selected-fruit">Ожидание данных калькулятора...</div>
+          <div class="calculator-price" id="calculator-result-price">--</div>
+          <div class="calculator-meta">
+            <span id="calculator-base-value">База: --</span>
+            <span id="calculator-updated-at">--</span>
+          </div>
+          <p id="calculator-formula-hint">Расчёт обновляется автоматически по актуальным данным.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- Main Content Layout wrapper -->
     <div class="main-layout">
       <!-- Left Sidebar: Sell Multipliers -->
       <aside class="sidebar-left glass" id="multipliers-sidebar">
         <h3 class="sidebar-title"><i class="fa-solid fa-chart-line"></i> Множители продажи</h3>
         <div class="multipliers-list" id="multipliers-list">
-          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+          <div class="loading-placeholder">Ожидание актуальных данных...</div>
         </div>
       </aside>
 
@@ -182,11 +254,11 @@
       <div class="main-content-area">
         <!-- Main Content: Shops -->
         <main class="shops-container">
-      <!-- Crate Shop Section -->
-      <section class="shop-section glass" id="crates-section">
-        <h2 class="section-title"><i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)</h2>
-        <div class="cards-grid" id="crate-shop-grid">
-          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+      <!-- Normal Seeds Section -->
+      <section class="shop-section glass" id="seeds-section">
+        <h2 class="section-title"><i class="fa-solid fa-leaf"></i> Обычные семена (Seeds)</h2>
+        <div class="cards-grid" id="seed-shop-grid">
+          <div class="loading-placeholder">Ожидание актуальных данных...</div>
         </div>
       </section>
 
@@ -194,15 +266,15 @@
       <section class="shop-section glass" id="gears-section">
         <h2 class="section-title"><i class="fa-solid fa-screwdriver-wrench"></i> Снаряжение (Gears)</h2>
         <div class="cards-grid" id="gear-shop-grid">
-          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+          <div class="loading-placeholder">Ожидание актуальных данных...</div>
         </div>
       </section>
 
-      <!-- Normal Seeds Section -->
-      <section class="shop-section glass" id="seeds-section">
-        <h2 class="section-title"><i class="fa-solid fa-leaf"></i> Обычные семена (Seeds)</h2>
-        <div class="cards-grid" id="seed-shop-grid">
-          <div class="loading-placeholder">Ожидание данных от Roblox бота...</div>
+      <!-- Crate Shop Section -->
+      <section class="shop-section glass" id="crates-section">
+        <h2 class="section-title"><i class="fa-solid fa-box-open"></i> Магазин Ящиков (Crates)</h2>
+        <div class="cards-grid" id="crate-shop-grid">
+          <div class="loading-placeholder">Ожидание актуальных данных...</div>
         </div>
       </section>
     </main>
@@ -253,6 +325,18 @@
             <span class="badge-method">GET</span>
             <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/predictions</code>
             <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">(Будущие завозы и фазы лун)</span>
+          </div>
+
+          <div class="api-endpoint-box" style="margin-bottom: 0;">
+            <span class="badge-method">GET</span>
+            <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/auction</code>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">(Текущий аукцион и таймер)</span>
+          </div>
+
+          <div class="api-endpoint-box" style="margin-bottom: 0;">
+            <span class="badge-method">GET</span>
+            <code class="endpoint-url">https://grow-a-garden-2-tracker.onrender.com/api/calculator-data</code>
+            <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">(Данные калькулятора: фрукты, мутации и настройки расчёта)</span>
           </div>
         </div>
         
@@ -309,25 +393,21 @@ print("Будущие семена:", data["seeds"])</code></pre>
 
     <!-- SEO Information Section -->
     <section class="shop-section glass seo-info-section" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
-      <h2 class="section-title" style="margin-bottom: 10px;"><i class="fa-solid fa-square-rss"></i> Grow a Garden 2 Stock - Live Tracking & Guide</h2>
+      <h2 class="section-title" style="margin-bottom: 10px;"><i class="fa-solid fa-square-rss"></i> Grow a Garden 2 Stock Tracker - Live Tracking & Guide</h2>
       <div class="seo-content" style="color: var(--text-secondary); font-size: 0.95rem; display: flex; flex-direction: column; gap: 16px; line-height: 1.7;">
         <div>
-          <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">What is Grow a Garden 2 Stock Tracker?</h3>
-          <p>This is a real-time tracking website for the popular Roblox game <strong>Grow a Garden 2</strong>. Here, players can monitor current in-game shops, including the <strong>Crate Shop</strong>, <strong>Gear Shop</strong>, and <strong>Normal Seed Shop</strong>. Since items restock on strict timers, our tracker helps you find rare items (like exotic seeds or legendary crates) the very moment they are available in stock.</p>
+          <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">What is the Grow a Garden 2 Stock Tracker?</h3>
+          <p>This is a real-time <strong>Grow a Garden 2 stock tracker</strong> for Roblox players. It also supports short search phrases like <strong>GAG 2</strong>, <strong>GAG 2 stock</strong> and <strong>GAG 2 stock tracker</strong>. Players can monitor live <strong>seed stock</strong>, <strong>gears stock</strong>, crate stock, weather, moon phases and the new in-game auction from one page. The tracker updates from a Roblox data bot and uses WebSocket updates so rare items appear as soon as the game exposes them.</p>
         </div>
         
         <div>
-          <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">How to get top seeds & items?</h3>
-          <p>Getting rare items like the Golden Seed, Fire Seed, or legendary gears can be extremely competitive. Restock events happen periodically: Crates refresh every 30 minutes, Gears refresh every 15-20 minutes, and Normal Seeds update on separate schedules. Simply turn on the screen sound notifications by clicking the bell icon (🔔) on any item. As long as this web page is open, you will receive a loud browser chime when your selected items are back in stock!</p>
+          <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">Grow a Garden 2 calculator, timers and auction stock</h3>
+          <p>The dashboard works like a compact <strong>Grow a Garden 2 calculator</strong>: it shows restock timers, live item counts, prices, fruit sell multipliers, future predictions and <strong>Grow a Garden 2 auction stock</strong>. You can jump directly to seeds, gears, crates or auction lots and enable browser or Telegram alerts for the items and events you care about.</p>
         </div>
 
         <div>
           <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">Как это работает и зачем нужен мониторинг стоков?</h3>
-          <p>В игре <strong>Grow a Garden 2 Roblox</strong> лимиты на редкие предметы раскупаются игроками за считанные минуты. Наш автоматический игровой бот сканирует внутриигровые магазины и моментально передает актуальные стоки (наличие семян, ящиков и снаряжения) на сайт. Это позволяет вовремя заходить на сервер для покупки нужных вещей по выгодным ценам.</p>
-        </div>
-
-        <div style="border-top: 1px solid var(--border-dim); padding-top: 12px; font-size: 0.85rem; color: var(--text-dim);">
-          <p>Target search keywords: <em>grow a garden stock, grow a garden 2 stock tracker, grow a garden 2 seeds, grow a garden 2 crates, roblox grow a garden shop, live stock tracker, вырасти сад 2 роблокс стоки семян</em>.</p>
+          <p>В <strong>Grow a Garden 2 Roblox</strong> редкие семена, снаряжение, ящики и аукционные лоты могут закончиться очень быстро. Наш сайт показывает актуальный <strong>Grow a Garden 2 stock</strong>, а также помогает тем, кто ищет <strong>GAG 2 stock</strong>, таймеры завозов и события погоды, чтобы игроки могли вовремя зайти в игру и не пропустить нужный предмет.</p>
         </div>
       </div>
     </section>
@@ -338,6 +418,6 @@ print("Будущие семена:", data["seeds"])</code></pre>
     </footer>
   </div>
 
-  <script src="app.js?v=2.3.5"></script>
+  <script src="app.js?v=2.4.5"></script>
 </body>
 </html>
