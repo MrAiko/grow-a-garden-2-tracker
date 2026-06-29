@@ -15,14 +15,14 @@
   <meta property="og:url" content="https://grow-a-garden-2-tracker.onrender.com/">
   <meta property="og:title" content="Grow a Garden 2 Stock Tracker - Live Seed and Gears Stock">
   <meta property="og:description" content="Track live Grow a Garden 2 seed, gears, crate and auction stock with weather, moon phases, timers and push alerts. GAG 2 stock supported too.">
-  <meta property="og:image" content="/logo.png">
+  <meta property="og:image" content="/new.png">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary">
   <meta property="twitter:url" content="https://grow-a-garden-2-tracker.onrender.com/">
   <meta property="twitter:title" content="Grow a Garden 2 Stock Tracker - Live Seed and Gears Stock">
   <meta property="twitter:description" content="Check live Grow a Garden 2 seed, gears, crate and auction stock with timers, weather and alerts. GAG 2 stock supported too.">
-  <meta property="twitter:image" content="/logo.png">
+  <meta property="twitter:image" content="/new.png">
 
   <!-- Structured Data JSON-LD for Search Engines -->
   <script type="application/ld+json">
@@ -39,18 +39,16 @@
   </script>
 
   <!-- Favicon -->
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-  <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144x144.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png">
+  <link rel="shortcut icon" type="image/png" href="/new.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/new.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/new.png">
   <link rel="manifest" href="manifest.json">
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=2.4.2">
+  <link rel="stylesheet" href="style.css?v=2.5.4">
 </head>
 <body>
   <div class="bg-glow"></div>
@@ -69,7 +67,7 @@
     <!-- Header -->
     <header class="dashboard-header glass">
       <div class="header-logo">
-        <img src="/logo.png" alt="Icon" class="logo-image">
+        <img src="/new.png" alt="Grow a Garden 2" class="logo-image">
         <div>
           <h1>Grow a Garden 2</h1>
           <p class="subtitle">Live Stock Tracker & Alerts</p>
@@ -206,14 +204,24 @@
       <h2 class="section-title"><i class="fa-solid fa-calculator"></i> Калькулятор цены фрукта</h2>
       <div class="calculator-layout">
         <div class="calculator-controls">
-          <label class="calculator-field">
+          <div class="calculator-field">
             <span id="calculator-fruit-label">Фрукт</span>
-            <input type="text" id="calculator-fruit-input" list="calculator-fruits-list" placeholder="Начните писать название фрукта">
-            <datalist id="calculator-fruits-list"></datalist>
-          </label>
+            <div class="calculator-fruit-picker" id="calculator-fruit-picker">
+              <i class="fa-solid fa-magnifying-glass calculator-fruit-search-icon"></i>
+              <input type="text" id="calculator-fruit-input" aria-labelledby="calculator-fruit-label" autocomplete="off" spellcheck="false" placeholder="Начните писать название фрукта">
+              <button type="button" class="calculator-fruit-clear" id="calculator-fruit-clear" aria-label="Очистить фрукт">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+              <button type="button" class="calculator-fruit-toggle" id="calculator-fruit-toggle" aria-label="Открыть список фруктов">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+              <div class="calculator-fruit-menu" id="calculator-fruit-menu" role="listbox"></div>
+            </div>
+          </div>
           <label class="calculator-field">
             <span id="calculator-weight-label">Вес</span>
             <input type="number" id="calculator-weight-input" min="0.01" step="0.01" value="1">
+            <small id="calculator-weight-hint" class="calculator-field-hint">Игровой вес плода в kg</small>
           </label>
           <label class="calculator-field">
             <span id="calculator-mutation-label">Мутация</span>
@@ -223,10 +231,14 @@
             <span id="calculator-friends-label">Друзья рядом</span>
             <input type="number" id="calculator-friends-input" min="0" max="20" step="1" value="0">
           </label>
-          <label class="calculator-field">
-            <span id="calculator-penalty-label">Снижение цены</span>
-            <input type="number" id="calculator-penalty-input" min="0" max="1" step="0.01" value="0">
-          </label>
+          <div class="calculator-field">
+            <span id="calculator-multiplier-label">Множитель продаж</span>
+            <button type="button" id="calculator-current-multiplier-btn" class="calculator-multiplier-btn" aria-pressed="false">
+              <i class="fa-solid fa-chart-line"></i>
+              <span id="calculator-current-multiplier-text">По текущему x1</span>
+            </button>
+            <small id="calculator-multiplier-hint" class="calculator-field-hint">Учитывает live-множитель из игры для выбранного фрукта.</small>
+          </div>
         </div>
         <div class="calculator-result-panel">
           <div class="calculator-selected" id="calculator-selected-fruit">Ожидание данных калькулятора...</div>
@@ -397,7 +409,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
       <div class="seo-content" style="color: var(--text-secondary); font-size: 0.95rem; display: flex; flex-direction: column; gap: 16px; line-height: 1.7;">
         <div>
           <h3 style="color: var(--text-primary); margin-bottom: 6px; font-family: var(--font-title); font-size: 1.15rem;">What is the Grow a Garden 2 Stock Tracker?</h3>
-          <p>This is a real-time <strong>Grow a Garden 2 stock tracker</strong> for Roblox players. It also supports short search phrases like <strong>GAG 2</strong>, <strong>GAG 2 stock</strong> and <strong>GAG 2 stock tracker</strong>. Players can monitor live <strong>seed stock</strong>, <strong>gears stock</strong>, crate stock, weather, moon phases and the new in-game auction from one page. The tracker updates from a Roblox data bot and uses WebSocket updates so rare items appear as soon as the game exposes them.</p>
+          <p>This is a real-time <strong>Grow a Garden 2 stock tracker</strong> for Roblox players. It also supports short search phrases like <strong>GAG 2</strong>, <strong>GAG 2 stock</strong> and <strong>GAG 2 stock tracker</strong>. Players can monitor live <strong>seed stock</strong>, <strong>gears stock</strong>, crate stock, weather, moon phases and the new in-game auction from one page. The tracker updates from a live data feed and uses WebSocket updates so rare items appear as soon as the game exposes them.</p>
         </div>
         
         <div>
@@ -418,6 +430,6 @@ print("Будущие семена:", data["seeds"])</code></pre>
     </footer>
   </div>
 
-  <script src="app.js?v=2.4.5"></script>
+  <script src="app.js?v=2.5.4"></script>
 </body>
 </html>

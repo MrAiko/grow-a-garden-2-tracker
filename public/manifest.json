@@ -4,17 +4,17 @@
   "description": "Мониторинг стоков и редких предметов в реальном времени для игры Grow a Garden 2 Roblox.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#6366f1",
+  "background_color": "#050916",
+  "theme_color": "#77ff2e",
   "icons": [
     {
-      "src": "/favicon-192x192.png",
-      "sizes": "192x192",
+      "src": "/new.png",
+      "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/favicon-512x512.png",
-      "sizes": "512x512",
+      "src": "/new.png",
+      "sizes": "1024x1024",
       "type": "image/png"
     }
   ]

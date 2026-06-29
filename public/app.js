@@ -101,7 +101,6 @@ const translations = {
     calculatorWeightLabel: 'Вес',
     calculatorMutationLabel: 'Мутация',
     calculatorFriendsLabel: 'Друзья рядом',
-    calculatorPenaltyLabel: 'Снижение цены',
     calculatorBaseValue: (value) => `База: ${value}`,
     calculatorResultLabel: 'Цена продажи',
     calculatorFormulaHint: 'Расчёт обновляется автоматически по актуальным данным.',
@@ -216,7 +215,6 @@ const translations = {
     calculatorWeightLabel: 'Weight',
     calculatorMutationLabel: 'Mutation',
     calculatorFriendsLabel: 'Friends nearby',
-    calculatorPenaltyLabel: 'Price reduction',
     calculatorBaseValue: (value) => `Base: ${value}`,
     calculatorResultLabel: 'Sell value',
     calculatorFormulaHint: 'Calculation updates automatically from live data.',
@@ -252,7 +250,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Cajas',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Herramientas',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Semillas',
-    loadingPlaceholder: 'Esperando datos del bot de Roblox...',
+    loadingPlaceholder: 'Esperando datos en vivo...',
     noItemsPlaceholder: 'No hay objetos para estos filtros',
     inStockText: ' uds.',
     outOfStockText: 'Sin stock',
@@ -305,7 +303,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Caixas',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Sementes',
-    loadingPlaceholder: 'Aguardando dados do bot Roblox...',
+    loadingPlaceholder: 'Aguardando dados ao vivo...',
     noItemsPlaceholder: 'Nenhum item para estes filtros',
     inStockText: ' un.',
     outOfStockText: 'Sem stock',
@@ -394,7 +392,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Kisten',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Ausrüstung',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Samen',
-    loadingPlaceholder: 'Warte auf Roblox-Bot-Daten...',
+    loadingPlaceholder: 'Warte auf Live-Daten...',
     noItemsPlaceholder: 'Keine Items für diese Filter',
     inStockText: ' Stk.',
     outOfStockText: 'Nicht auf Lager',
@@ -469,7 +467,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Peti',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Peralatan',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Benih',
-    loadingPlaceholder: 'Menunggu data bot Roblox...',
+    loadingPlaceholder: 'Menunggu data live...',
     noItemsPlaceholder: 'Tidak ada item untuk filter ini',
     inStockText: ' pcs',
     outOfStockText: 'Stok habis',
@@ -547,7 +545,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> Skrzynki',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> Ekwipunek',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> Nasiona',
-    loadingPlaceholder: 'Oczekiwanie na dane bota Roblox...',
+    loadingPlaceholder: 'Oczekiwanie na dane na żywo...',
     noItemsPlaceholder: 'Brak przedmiotów dla filtrów',
     inStockText: ' szt.',
     outOfStockText: 'Brak stocku',
@@ -749,9 +747,8 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Peso',
     calculatorMutationLabel: 'Mutación',
     calculatorFriendsLabel: 'Amigos cerca',
-    calculatorPenaltyLabel: 'Reducción',
     calculatorBaseValue: (value) => `Base: ${value}`,
-    calculatorNoData: 'Esperando datos del bot Roblox...',
+    calculatorNoData: 'Esperando datos de la calculadora...',
     calculatorSelectFruit: 'Selecciona una fruta',
     calculatorUpdatedAt: (value) => `Actualizado: ${value}`
   },
@@ -765,9 +762,8 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Peso',
     calculatorMutationLabel: 'Mutação',
     calculatorFriendsLabel: 'Amigos perto',
-    calculatorPenaltyLabel: 'Redução',
     calculatorBaseValue: (value) => `Base: ${value}`,
-    calculatorNoData: 'Aguardando dados do bot Roblox...',
+    calculatorNoData: 'Aguardando dados da calculadora...',
     calculatorSelectFruit: 'Selecione uma fruta',
     calculatorUpdatedAt: (value) => `Atualizado: ${value}`
   },
@@ -781,7 +777,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Poids',
     calculatorMutationLabel: 'Mutation',
     calculatorFriendsLabel: 'Amis proches',
-    calculatorPenaltyLabel: 'Réduction',
     calculatorBaseValue: (value) => `Base : ${value}`,
     calculatorNoData: 'En attente des données Roblox...',
     calculatorSelectFruit: 'Choisissez un fruit',
@@ -797,9 +792,8 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Gewicht',
     calculatorMutationLabel: 'Mutation',
     calculatorFriendsLabel: 'Freunde nah',
-    calculatorPenaltyLabel: 'Reduktion',
     calculatorBaseValue: (value) => `Basis: ${value}`,
-    calculatorNoData: 'Warte auf Roblox-Bot-Daten...',
+    calculatorNoData: 'Warte auf Rechnerdaten...',
     calculatorSelectFruit: 'Wähle eine Frucht',
     calculatorUpdatedAt: (value) => `Aktualisiert: ${value}`
   },
@@ -813,7 +807,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Ağırlık',
     calculatorMutationLabel: 'Mutasyon',
     calculatorFriendsLabel: 'Yakındaki arkadaş',
-    calculatorPenaltyLabel: 'Azaltma',
     calculatorBaseValue: (value) => `Taban: ${value}`,
     calculatorNoData: 'Hesaplayıcı verileri bekleniyor...',
     calculatorSelectFruit: 'Bir meyve seç',
@@ -829,9 +822,8 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Berat',
     calculatorMutationLabel: 'Mutasi',
     calculatorFriendsLabel: 'Teman dekat',
-    calculatorPenaltyLabel: 'Pengurangan',
     calculatorBaseValue: (value) => `Dasar: ${value}`,
-    calculatorNoData: 'Menunggu data bot Roblox...',
+    calculatorNoData: 'Menunggu data kalkulator...',
     calculatorSelectFruit: 'Pilih buah',
     calculatorUpdatedAt: (value) => `Diperbarui: ${value}`
   },
@@ -845,7 +837,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Вага',
     calculatorMutationLabel: 'Мутація',
     calculatorFriendsLabel: 'Друзі поруч',
-    calculatorPenaltyLabel: 'Зниження ціни',
     calculatorBaseValue: (value) => `База: ${value}`,
     calculatorNoData: 'Очікування даних калькулятора...',
     calculatorSelectFruit: 'Виберіть фрукт',
@@ -861,9 +852,8 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'Waga',
     calculatorMutationLabel: 'Mutacja',
     calculatorFriendsLabel: 'Znajomi blisko',
-    calculatorPenaltyLabel: 'Redukcja',
     calculatorBaseValue: (value) => `Baza: ${value}`,
-    calculatorNoData: 'Oczekiwanie na dane bota Roblox...',
+    calculatorNoData: 'Oczekiwanie na dane kalkulatora...',
     calculatorSelectFruit: 'Wybierz owoc',
     calculatorUpdatedAt: (value) => `Zaktualizowano: ${value}`
   },
@@ -877,7 +867,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: '重量',
     calculatorMutationLabel: '突变',
     calculatorFriendsLabel: '附近好友',
-    calculatorPenaltyLabel: '价格降低',
     calculatorBaseValue: (value) => `基础: ${value}`,
     calculatorNoData: '等待 Roblox 机器人数据...',
     calculatorSelectFruit: '选择水果',
@@ -893,7 +882,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: '重さ',
     calculatorMutationLabel: '変異',
     calculatorFriendsLabel: '近くの友達',
-    calculatorPenaltyLabel: '減額',
     calculatorBaseValue: (value) => `基本: ${value}`,
     calculatorNoData: 'Robloxボットのデータ待機中...',
     calculatorSelectFruit: 'フルーツを選択',
@@ -909,7 +897,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: '무게',
     calculatorMutationLabel: '변이',
     calculatorFriendsLabel: '근처 친구',
-    calculatorPenaltyLabel: '가격 감소',
     calculatorBaseValue: (value) => `기본: ${value}`,
     calculatorNoData: 'Roblox 봇 데이터 대기 중...',
     calculatorSelectFruit: '과일 선택',
@@ -925,7 +912,6 @@ const calculatorTranslationOverrides = {
     calculatorWeightLabel: 'الوزن',
     calculatorMutationLabel: 'الطفرة',
     calculatorFriendsLabel: 'الأصدقاء قربك',
-    calculatorPenaltyLabel: 'تخفيض السعر',
     calculatorBaseValue: (value) => `الأساس: ${value}`,
     calculatorNoData: 'بانتظار بيانات بوت Roblox...',
     calculatorSelectFruit: 'اختر فاكهة',
@@ -941,12 +927,26 @@ const neutralLiveDataMessages = {
   ru: {
     loadingPlaceholder: 'Ожидание актуальных данных...',
     calculatorFormulaHint: 'Расчёт обновляется автоматически по актуальным данным.',
-    calculatorNoData: 'Ожидание данных калькулятора...'
+    calculatorNoData: 'Ожидание данных калькулятора...',
+    calculatorWeightLabel: 'Вес, kg',
+    calculatorWeightHint: 'Игровой вес плода в килограммах (kg), как в Grow a Garden 2.',
+    calculatorMultiplierLabel: 'Множитель продаж',
+    calculatorMultiplierHint: 'Учитывает live-множитель из игры для выбранного фрукта.',
+    calculatorCurrentMultiplierButton: (rate) => `Посчитать по текущему x${rate}`,
+    calculatorCurrentMultiplierActive: (rate) => `Учитывается x${rate}`,
+    calculatorCurrentMultiplierUnavailable: 'Нет текущего множителя'
   },
   en: {
     loadingPlaceholder: 'Waiting for live data...',
     calculatorFormulaHint: 'Calculation updates automatically from live data.',
-    calculatorNoData: 'Waiting for calculator data...'
+    calculatorNoData: 'Waiting for calculator data...',
+    calculatorWeightLabel: 'Weight, kg',
+    calculatorWeightHint: 'In-game fruit weight in kilograms (kg), like in Grow a Garden 2.',
+    calculatorMultiplierLabel: 'Sell multiplier',
+    calculatorMultiplierHint: 'Uses the current in-game sell multiplier for the selected fruit.',
+    calculatorCurrentMultiplierButton: (rate) => `Use current x${rate}`,
+    calculatorCurrentMultiplierActive: (rate) => `Using x${rate}`,
+    calculatorCurrentMultiplierUnavailable: 'No current multiplier'
   },
   es: {
     loadingPlaceholder: 'Esperando datos en vivo...',
@@ -1510,6 +1510,10 @@ let predictionData = null;
 let auctionData = null;
 let calculatorData = null;
 let activePredictionTab = 'seeds';
+let selectedCalculatorFruitName = '';
+let calculatorFruitMenuOpen = false;
+let calculatorFruitActiveIndex = 0;
+let calculatorUseCurrentMultiplier = false;
 
 const weatherAssetIds = {
   day: '100486757307207',
@@ -1583,13 +1587,18 @@ Object.assign(weatherNameTranslations.megamoon, { zh: '超级月亮', ja: 'メ�
 function getLocalizedEnvName(key, fallback = '', option = null) {
   const opt = option || (key && weatherOptions[key] ? weatherOptions[key] : null);
   const extra = key && weatherNameTranslations[key] ? weatherNameTranslations[key] : null;
-  return (opt && opt[currentLang]) ||
-    (extra && extra[currentLang]) ||
-    (opt && opt.en) ||
+  const englishName = (opt && opt.en) ||
     (extra && extra.en) ||
     fallback ||
     key ||
     '';
+  if (currentLang !== 'en' && englishName) {
+    const autoName = translateItemName(englishName, currentLang);
+    if (autoName && autoName !== englishName) return autoName;
+  }
+  return (opt && opt[currentLang]) ||
+    (extra && extra[currentLang]) ||
+    englishName;
 }
 
 function applyWeatherImageFilters(imgEl, key) {
@@ -1852,12 +1861,19 @@ const gearGrid = document.getElementById('gear-shop-grid');
 const seedGrid = document.getElementById('seed-shop-grid');
 const auctionGrid = document.getElementById('auction-grid');
 const auctionRefreshTimer = document.getElementById('auction-refresh-timer');
+const calculatorFruitPicker = document.getElementById('calculator-fruit-picker');
 const calculatorFruitInput = document.getElementById('calculator-fruit-input');
-const calculatorFruitList = document.getElementById('calculator-fruits-list');
+const calculatorFruitClear = document.getElementById('calculator-fruit-clear');
+const calculatorFruitToggle = document.getElementById('calculator-fruit-toggle');
+const calculatorFruitMenu = document.getElementById('calculator-fruit-menu');
 const calculatorWeightInput = document.getElementById('calculator-weight-input');
 const calculatorMutationSelect = document.getElementById('calculator-mutation-select');
 const calculatorFriendsInput = document.getElementById('calculator-friends-input');
-const calculatorPenaltyInput = document.getElementById('calculator-penalty-input');
+const calculatorWeightHint = document.getElementById('calculator-weight-hint');
+const calculatorMultiplierLabel = document.getElementById('calculator-multiplier-label');
+const calculatorCurrentMultiplierBtn = document.getElementById('calculator-current-multiplier-btn');
+const calculatorCurrentMultiplierText = document.getElementById('calculator-current-multiplier-text');
+const calculatorMultiplierHint = document.getElementById('calculator-multiplier-hint');
 const calculatorSelectedFruit = document.getElementById('calculator-selected-fruit');
 const calculatorResultPrice = document.getElementById('calculator-result-price');
 const calculatorBaseValue = document.getElementById('calculator-base-value');
@@ -1959,12 +1975,13 @@ function updateStaticTranslations() {
   if (calculatorFruitInput) calculatorFruitInput.placeholder = t.calculatorFruitPlaceholder;
   const calculatorWeightLabel = document.getElementById('calculator-weight-label');
   if (calculatorWeightLabel) calculatorWeightLabel.textContent = t.calculatorWeightLabel;
+  if (calculatorWeightHint) calculatorWeightHint.textContent = t.calculatorWeightHint || 'Game fruit weight in kg';
   const calculatorMutationLabel = document.getElementById('calculator-mutation-label');
   if (calculatorMutationLabel) calculatorMutationLabel.textContent = t.calculatorMutationLabel;
   const calculatorFriendsLabel = document.getElementById('calculator-friends-label');
   if (calculatorFriendsLabel) calculatorFriendsLabel.textContent = t.calculatorFriendsLabel;
-  const calculatorPenaltyLabel = document.getElementById('calculator-penalty-label');
-  if (calculatorPenaltyLabel) calculatorPenaltyLabel.textContent = t.calculatorPenaltyLabel;
+  if (calculatorMultiplierLabel) calculatorMultiplierLabel.textContent = t.calculatorMultiplierLabel || 'Sell multiplier';
+  if (calculatorMultiplierHint) calculatorMultiplierHint.textContent = t.calculatorMultiplierHint || 'Uses the current in-game sell multiplier for the selected fruit.';
   if (calculatorFormulaHint) calculatorFormulaHint.textContent = t.calculatorFormulaHint;
   
   // Filters
@@ -2028,15 +2045,67 @@ langButtons.forEach(btn => {
 });
 
 [
-  calculatorFruitInput,
   calculatorWeightInput,
   calculatorMutationSelect,
-  calculatorFriendsInput,
-  calculatorPenaltyInput
+  calculatorFriendsInput
 ].forEach(el => {
   if (!el) return;
   el.addEventListener('input', renderCalculator);
   el.addEventListener('change', renderCalculator);
+});
+
+if (calculatorCurrentMultiplierBtn) {
+  calculatorCurrentMultiplierBtn.addEventListener('click', () => {
+    calculatorUseCurrentMultiplier = !calculatorUseCurrentMultiplier;
+    renderCalculator();
+  });
+}
+
+if (calculatorFruitInput) {
+  calculatorFruitInput.addEventListener('input', () => {
+    selectedCalculatorFruitName = '';
+    calculatorFruitActiveIndex = 0;
+    openCalculatorFruitMenu();
+    renderCalculator();
+  });
+  calculatorFruitInput.addEventListener('change', () => {
+    if (!String(calculatorFruitInput.value || '').trim()) {
+      selectedCalculatorFruitName = '';
+    }
+    renderCalculator();
+  });
+  calculatorFruitInput.addEventListener('focus', () => {
+    openCalculatorFruitMenu();
+  });
+  calculatorFruitInput.addEventListener('keydown', handleCalculatorFruitKeydown);
+}
+
+if (calculatorFruitToggle) {
+  calculatorFruitToggle.addEventListener('click', () => {
+    if (calculatorFruitMenuOpen) {
+      closeCalculatorFruitMenu();
+    } else {
+      calculatorFruitInput && calculatorFruitInput.focus();
+      openCalculatorFruitMenu();
+    }
+  });
+}
+
+if (calculatorFruitClear) {
+  calculatorFruitClear.addEventListener('click', () => {
+    if (!calculatorFruitInput) return;
+    calculatorFruitInput.value = '';
+    selectedCalculatorFruitName = '';
+    calculatorFruitActiveIndex = 0;
+    calculatorFruitInput.focus();
+    openCalculatorFruitMenu();
+    renderCalculator();
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!calculatorFruitPicker || calculatorFruitPicker.contains(event.target)) return;
+  closeCalculatorFruitMenu();
 });
 
 // Smooth quick navigation with sticky nav offset and active section state
@@ -2466,6 +2535,7 @@ function renderDashboard() {
   renderFruitRefresh();
   renderWeatherSettings();
   renderAuction();
+  renderCalculator();
 }
 
 function renderFruitRefresh() {
@@ -2601,10 +2671,15 @@ function translateMutationName(name) {
     ignited: { ru: 'Воспламенённая', es: 'Encendida', pt: 'Incendiada', fr: 'Enflammée', de: 'Entzündet', tr: 'Alevli', id: 'Menyala', uk: 'Запалена', pl: 'Rozpalona', zh: '点燃', ja: '燃焼', ko: '점화', ar: 'مشتعلة' }
   };
   const key = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanName = normalizeAutoTranslationName(name);
+  if (currentLang !== 'en' && cleanName) {
+    const autoName = translateItemName(cleanName, currentLang);
+    if (autoName && autoName !== cleanName) return autoName;
+  }
   return (mutationMap[key] && mutationMap[key][currentLang]) || name;
 }
 
-function calculateFruitValue(fruit, mutation, weight, friends, penalty) {
+function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier) {
   if (!fruit || !calculatorData) return null;
   const cfg = calculatorData.config || {};
   const dr = cfg.diminishingReturns || {};
@@ -2630,20 +2705,243 @@ function calculateFruitValue(fruit, mutation, weight, friends, penalty) {
   mutationMultiplier *= Number(cfg.mutationMultiplier) || 1;
 
   const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
-  const penaltyMultiplier = 1 - clampNumber(penalty, 0, 1) * 0.8;
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
-  let value = Math.floor((Number(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * penaltyMultiplier * friendsMultiplier);
+  const liveMultiplier = Math.max(1, Number(currentMultiplier) || 1);
+  let value = Math.floor((Number(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
 
   const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
   if (Number.isFinite(minValue) && value < minValue) value = minValue;
   return value;
 }
 
+function formatMultiplierRate(rate) {
+  const value = Number(rate);
+  if (!Number.isFinite(value) || value <= 0) return '1';
+  return value.toFixed(value >= 10 ? 0 : 2).replace(/\.?0+$/, '');
+}
+
+function getCurrentFruitMultiplier(fruit) {
+  if (!fruit) return null;
+  const targetName = normalizeCalculatorFruitText(fruit.name);
+  const targetKey = normalizeCalculatorFruitText(fruit.key || fruit.name).replace(/[^a-z0-9]/g, '');
+  const targetImage = normalizeCalculatorFruitText(fruit.image || '').replace(/\D/g, '');
+  const entries = normalizeFruitMultipliers(stockData && stockData.fruitMultipliers);
+
+  for (const entry of entries) {
+    const entryName = normalizeCalculatorFruitText(entry.name);
+    const entryKey = normalizeCalculatorFruitText(entry.key).replace(/[^a-z0-9]/g, '');
+    const entryImage = normalizeCalculatorFruitText(entry.image || '').replace(/\D/g, '');
+    if (
+      entryName === targetName ||
+      entryKey === targetKey ||
+      (targetImage && entryImage === targetImage)
+    ) {
+      const rate = Number(entry.rate);
+      return Number.isFinite(rate) && rate > 0 ? rate : null;
+    }
+  }
+
+  return null;
+}
+
+function updateCalculatorMultiplierButton(fruit) {
+  if (!calculatorCurrentMultiplierBtn || !calculatorCurrentMultiplierText) return;
+  const t = translations[currentLang];
+  const rate = getCurrentFruitMultiplier(fruit);
+  const usableRate = rate && rate > 0 ? rate : 1;
+  const formatted = formatMultiplierRate(usableRate);
+  const hasLiveRate = rate !== null;
+
+  calculatorCurrentMultiplierBtn.disabled = !fruit || !hasLiveRate;
+  calculatorCurrentMultiplierBtn.classList.toggle('is-active', calculatorUseCurrentMultiplier && hasLiveRate);
+  calculatorCurrentMultiplierBtn.setAttribute('aria-pressed', calculatorUseCurrentMultiplier && hasLiveRate ? 'true' : 'false');
+
+  if (!fruit) {
+    calculatorCurrentMultiplierText.textContent = t.calculatorSelectFruit;
+  } else if (!hasLiveRate) {
+    calculatorCurrentMultiplierText.textContent = t.calculatorCurrentMultiplierUnavailable || 'No current multiplier';
+  } else if (calculatorUseCurrentMultiplier) {
+    const value = t.calculatorCurrentMultiplierActive || ((x) => `Using x${x}`);
+    calculatorCurrentMultiplierText.textContent = typeof value === 'function' ? value(formatted) : value;
+  } else {
+    const value = t.calculatorCurrentMultiplierButton || ((x) => `Use current x${x}`);
+    calculatorCurrentMultiplierText.textContent = typeof value === 'function' ? value(formatted) : value;
+  }
+}
+
+function getCalculatorFruits() {
+  return calculatorData && Array.isArray(calculatorData.fruits) ? calculatorData.fruits : [];
+}
+
+function normalizeCalculatorFruitText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getCalculatorFruitDisplay(fruit) {
+  return translateItemName(fruit && fruit.name || '');
+}
+
+function getCalculatorFruitImage(fruit) {
+  if (!fruit) return '';
+  return fruit.image || itemImageCache.get(String(fruit.name || '').toLowerCase().trim()) || '';
+}
+
+function getCalculatorFruitMenuItems() {
+  const raw = normalizeCalculatorFruitText(calculatorFruitInput && calculatorFruitInput.value);
+  const fruits = getCalculatorFruits();
+  if (!raw) return fruits.slice(0, 80);
+
+  return fruits
+    .map(fruit => {
+      const original = String(fruit.name || '');
+      const display = getCalculatorFruitDisplay(fruit);
+      const originalLower = original.toLowerCase();
+      const displayLower = display.toLowerCase();
+      let score = 99;
+      if (displayLower === raw || originalLower === raw) score = 0;
+      else if (displayLower.startsWith(raw)) score = 1;
+      else if (originalLower.startsWith(raw)) score = 2;
+      else if (displayLower.includes(raw)) score = 3;
+      else if (originalLower.includes(raw)) score = 4;
+      return { fruit, score };
+    })
+    .filter(item => item.score < 99)
+    .sort((a, b) => a.score - b.score || (Number(b.fruit.baseValue) || 0) - (Number(a.fruit.baseValue) || 0))
+    .slice(0, 80)
+    .map(item => item.fruit);
+}
+
+function openCalculatorFruitMenu() {
+  calculatorFruitMenuOpen = true;
+  if (calculatorFruitPicker) calculatorFruitPicker.classList.add('is-open');
+  renderCalculatorFruitMenu();
+}
+
+function closeCalculatorFruitMenu() {
+  calculatorFruitMenuOpen = false;
+  if (calculatorFruitPicker) calculatorFruitPicker.classList.remove('is-open');
+}
+
+function updateCalculatorFruitPickerState() {
+  if (!calculatorFruitPicker || !calculatorFruitInput) return;
+  calculatorFruitPicker.classList.toggle('has-value', Boolean(String(calculatorFruitInput.value || '').trim()));
+}
+
+function selectCalculatorFruit(fruit) {
+  if (!fruit || !calculatorFruitInput) return;
+  selectedCalculatorFruitName = fruit.name;
+  calculatorFruitInput.value = getCalculatorFruitDisplay(fruit);
+  updateCalculatorFruitPickerState();
+  calculatorFruitActiveIndex = 0;
+  closeCalculatorFruitMenu();
+  renderCalculator();
+}
+
+function renderCalculatorFruitMenu() {
+  if (!calculatorFruitMenu) return;
+  const t = translations[currentLang];
+  const fruits = getCalculatorFruits();
+
+  if (!fruits.length) {
+    calculatorFruitMenu.innerHTML = `<div class="calculator-fruit-empty">${escapeHtml(t.calculatorNoData)}</div>`;
+    return;
+  }
+
+  const items = getCalculatorFruitMenuItems();
+  if (!items.length) {
+    const emptyText = currentLang === 'ru' ? 'Ничего не найдено' : 'No matches';
+    calculatorFruitMenu.innerHTML = `<div class="calculator-fruit-empty">${escapeHtml(emptyText)}</div>`;
+    return;
+  }
+
+  calculatorFruitActiveIndex = Math.max(0, Math.min(calculatorFruitActiveIndex, items.length - 1));
+  calculatorFruitMenu.innerHTML = '';
+
+  items.forEach((fruit, index) => {
+    const display = getCalculatorFruitDisplay(fruit);
+    const original = String(fruit.name || '');
+    const image = getCalculatorFruitImage(fruit);
+    const emoji = getFruitEmoji(original);
+    const isSelected = selectedCalculatorFruitName === fruit.name;
+    const isActive = index === calculatorFruitActiveIndex;
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = `calculator-fruit-option${isSelected ? ' is-selected' : ''}${isActive ? ' is-active' : ''}`;
+    row.setAttribute('role', 'option');
+    row.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    row.dataset.name = original;
+    row.innerHTML = `
+      <span class="calculator-fruit-option-icon">
+        ${image
+          ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(display)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.style.display='none';this.parentNode.classList.add('img-failed');"><span class="calculator-fruit-emoji">${emoji}</span>`
+          : `<span class="calculator-fruit-emoji">${emoji}</span>`}
+      </span>
+      <span class="calculator-fruit-option-main">
+        <span class="calculator-fruit-option-name">${escapeHtml(display)}</span>
+        <span class="calculator-fruit-option-sub">${escapeHtml(original)}</span>
+      </span>
+      <span class="calculator-fruit-option-price">${escapeHtml(formatAuctionPrice(fruit.baseValue))}</span>
+    `;
+    row.addEventListener('mousedown', event => event.preventDefault());
+    row.addEventListener('mousemove', () => {
+      if (calculatorFruitActiveIndex === index) return;
+      calculatorFruitActiveIndex = index;
+      renderCalculatorFruitMenu();
+    });
+    row.addEventListener('click', () => selectCalculatorFruit(fruit));
+    calculatorFruitMenu.appendChild(row);
+  });
+}
+
+function scrollCalculatorActiveFruitIntoView() {
+  if (!calculatorFruitMenu) return;
+  requestAnimationFrame(() => {
+    const active = calculatorFruitMenu.querySelector('.calculator-fruit-option.is-active');
+    if (active) active.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function handleCalculatorFruitKeydown(event) {
+  const items = getCalculatorFruitMenuItems();
+  if (!items.length && event.key !== 'Escape') return;
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (!calculatorFruitMenuOpen) openCalculatorFruitMenu();
+    calculatorFruitActiveIndex = (calculatorFruitActiveIndex + 1) % items.length;
+    renderCalculatorFruitMenu();
+    scrollCalculatorActiveFruitIntoView();
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (!calculatorFruitMenuOpen) openCalculatorFruitMenu();
+    calculatorFruitActiveIndex = (calculatorFruitActiveIndex - 1 + items.length) % items.length;
+    renderCalculatorFruitMenu();
+    scrollCalculatorActiveFruitIntoView();
+  } else if (event.key === 'Enter' && calculatorFruitMenuOpen) {
+    event.preventDefault();
+    selectCalculatorFruit(items[calculatorFruitActiveIndex] || items[0]);
+  } else if (event.key === 'Escape') {
+    closeCalculatorFruitMenu();
+  }
+}
+
 function getCalculatorSelectedFruit() {
-  const fruits = calculatorData && Array.isArray(calculatorData.fruits) ? calculatorData.fruits : [];
+  const fruits = getCalculatorFruits();
   if (!fruits.length) return null;
   const raw = String(calculatorFruitInput && calculatorFruitInput.value || '').trim().toLowerCase();
-  if (!raw) return fruits[0];
+
+  if (!raw) {
+    selectedCalculatorFruitName = '';
+    return null;
+  }
+
+  if (selectedCalculatorFruitName) {
+    const selected = fruits.find(fruit => fruit.name === selectedCalculatorFruitName);
+    if (selected) return selected;
+    selectedCalculatorFruitName = '';
+  }
+
   const exact = fruits.find(fruit =>
     String(fruit.name).toLowerCase() === raw ||
     translateItemName(fruit.name).toLowerCase() === raw
@@ -2652,28 +2950,26 @@ function getCalculatorSelectedFruit() {
   return fruits.find(fruit =>
     String(fruit.name).toLowerCase().includes(raw) ||
     translateItemName(fruit.name).toLowerCase().includes(raw)
-  ) || fruits[0];
+  ) || null;
 }
 
 function renderCalculator() {
   const t = translations[currentLang];
   if (!calculatorSelectedFruit || !calculatorResultPrice) return;
+  updateCalculatorFruitPickerState();
 
-  const fruits = calculatorData && Array.isArray(calculatorData.fruits) ? calculatorData.fruits : [];
+  const fruits = getCalculatorFruits();
   if (!calculatorData || !fruits.length) {
     calculatorSelectedFruit.textContent = t.calculatorNoData;
     calculatorResultPrice.textContent = '--';
     if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue('--');
     if (calculatorUpdatedAt) calculatorUpdatedAt.textContent = '--';
+    updateCalculatorMultiplierButton(null);
+    renderCalculatorFruitMenu();
     return;
   }
 
-  if (calculatorFruitList) {
-    calculatorFruitList.innerHTML = fruits.map(fruit => {
-      const display = translateItemName(fruit.name);
-      return `<option value="${escapeHtml(display)}" label="${escapeHtml(fruit.name)}"></option>`;
-    }).join('');
-  }
+  renderCalculatorFruitMenu();
 
   if (calculatorMutationSelect) {
     const previous = calculatorMutationSelect.value || 'None';
@@ -2690,23 +2986,22 @@ function renderCalculator() {
   }
 
   const fruit = getCalculatorSelectedFruit();
-  if (calculatorFruitInput && !calculatorFruitInput.value) {
-    calculatorFruitInput.value = translateItemName(fruit.name);
-  }
 
   const mutationName = calculatorMutationSelect ? calculatorMutationSelect.value : 'None';
   const mutation = (calculatorData.mutations || []).find(item => item.name === mutationName) || { name: 'None', multiplier: 1 };
+  const currentMultiplier = calculatorUseCurrentMultiplier ? (getCurrentFruitMultiplier(fruit) || 1) : 1;
   const value = calculateFruitValue(
     fruit,
     mutation,
     calculatorWeightInput ? calculatorWeightInput.value : 1,
     calculatorFriendsInput ? calculatorFriendsInput.value : 0,
-    calculatorPenaltyInput ? calculatorPenaltyInput.value : 0
+    currentMultiplier
   );
+  updateCalculatorMultiplierButton(fruit);
 
   calculatorSelectedFruit.textContent = fruit ? translateItemName(fruit.name) : t.calculatorSelectFruit;
   calculatorResultPrice.textContent = value == null ? '--' : formatAuctionPrice(value);
-  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(formatAuctionPrice(fruit.baseValue || 0));
+  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(fruit ? formatAuctionPrice(fruit.baseValue || 0) : '--');
   if (calculatorUpdatedAt) {
     const dateValue = calculatorData.updatedAt || calculatorData.scrapedAt && calculatorData.scrapedAt * 1000;
     calculatorUpdatedAt.textContent = dateValue ? t.calculatorUpdatedAt(new Date(dateValue).toLocaleTimeString()) : '--';
@@ -2951,7 +3246,7 @@ document.addEventListener('click', async (e) => {
       body: currentLang === 'ru' 
         ? `Вы получите звуковое оповещение, когда множитель на "${displayName}" станет >= x${threshold.toFixed(1)}.`
         : `We will notify you when "${displayName}" multiplier becomes >= x${threshold.toFixed(1)}.`,
-      icon: '/logo.png',
+      icon: '/new.png',
       tag: 'multiplier-tracked-alert-' + fruitName
     };
 
@@ -3142,8 +3437,8 @@ function triggerMultiplierNotification(itemName, currentRate, threshold) {
   const title = t.multiplierPushTitle(displayName);
   const options = {
     body: t.multiplierPushBody(currentRate, threshold),
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/new.png',
+    badge: '/new.png',
     tag: 'multiplier-alert-' + itemName,
     requireInteraction: true
   };
@@ -3178,8 +3473,8 @@ function triggerNotification(item) {
   const title = t.pushTitle(displayName);
   const options = {
     body: t.pushBody(item.stock, item.price, item.rarity),
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/new.png',
+    badge: '/new.png',
     tag: 'stock-alert-' + item.name,
     requireInteraction: true
   };
@@ -3241,8 +3536,8 @@ async function toggleTracking(itemName, btn) {
       body: currentItem && currentItem.stock > 0 
         ? translations[currentLang].notifInStockBody(displayName, currentItem.stock, currentItem.price)
         : translations[currentLang].notifTrackedBody(displayName),
-      icon: '/logo.png',
-      badge: '/logo.png'
+      icon: '/new.png',
+      badge: '/new.png'
     };
 
     if (navigator.serviceWorker.controller) {
@@ -3348,8 +3643,8 @@ async function togglePredictionTracking(name, timestamp, isWeather, btn) {
     const testTitle = t.notifTrackedTitle;
     const testOptions = {
       body: t.notifTrackedBody(displayName),
-      icon: '/logo.png',
-      badge: '/logo.png'
+      icon: '/new.png',
+      badge: '/new.png'
     };
 
     if (navigator.serviceWorker.controller) {
@@ -3440,8 +3735,8 @@ async function toggleWeatherTracking(envKey, btn) {
     const testTitle = t.notifTrackedTitle;
     const testOptions = {
       body: t.notifTrackedBody(envName),
-      icon: '/logo.png',
-      badge: '/logo.png'
+      icon: '/new.png',
+      badge: '/new.png'
     };
 
     if (navigator.serviceWorker.controller) {
@@ -3598,8 +3893,8 @@ function triggerWeatherNotification(phaseKey, weatherName) {
   
   const options = {
     body: body,
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/new.png',
+    badge: '/new.png',
     tag: 'weather-alert-' + (phaseKey || weatherName),
     requireInteraction: true
   };
@@ -4067,8 +4362,8 @@ function triggerPredictionStartNotification(name, timestamp) {
 
   const options = {
     body: body,
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/new.png',
+    badge: '/new.png',
     tag: 'pred-alert-' + name + '-' + timestamp,
     requireInteraction: true
   };

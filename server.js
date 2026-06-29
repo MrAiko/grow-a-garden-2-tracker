@@ -275,8 +275,7 @@ function isUsefulTranslation(sourceText, translatedText, targetLang) {
   if (!translated) return false;
   if (targetLang === 'en') return true;
   const sourceLooksEnglish = /[a-z]/i.test(source);
-  const phraseLike = /[\s'’-]/.test(source);
-  return !(sourceLooksEnglish && phraseLike && translated.toLowerCase() === source.toLowerCase());
+  return !(sourceLooksEnglish && translated.toLowerCase() === source.toLowerCase());
 }
 
 async function translateTextAutomatically(text, targetLang) {
@@ -465,7 +464,7 @@ function normalizeCalculatorData(input) {
 
   return {
     version: 1,
-    source: input.source || 'roblox-scraper',
+    source: input.source || 'live-data',
     fruits,
     mutations,
     config,
@@ -715,7 +714,7 @@ app.post('/api/translate-names', rateLimiter(120, 60000), async (req, res) => {
       const before = translationCache[lang] && translationCache[lang][translationCacheKey(name)];
       const translated = await translateTextAutomatically(name, lang);
       const after = translationCache[lang] && translationCache[lang][translationCacheKey(name)];
-      if ((!before && after) || (before && after && before.text !== after.text)) changed = true;
+      if ((before && !after) || (!before && after) || (before && after && before.text !== after.text)) changed = true;
       translations[name] = translated;
     }
   }
