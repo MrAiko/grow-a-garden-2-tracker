@@ -183,7 +183,15 @@ end
 
 local function cleanPhaseName(name)
     local formatted = formatCamelCase(name)
-    if formatted == "Night" then return "Moon" end
+    local key = string.lower(tostring(formatted or name or "")):gsub("[^%w]", "")
+    if key == "night" then return "Moon" end
+    if key == "blood" or key == "bloodmoon" then return "Blood Moon" end
+    if key == "gold" or key == "goldmoon" then return "Gold Moon" end
+    if key == "chained" or key == "chainedmoon" then return "Chained Moon" end
+    if key == "pizza" or key == "pizzamoon" then return "Pizza Moon" end
+    if key == "rainbowmoon" then return "Rainbow Moon" end
+    if key == "solar" or key == "solareclipse" then return "Solar Eclipse" end
+    if key == "mega" or key == "megamoon" then return "Mega Moon" end
     return formatted
 end
 
@@ -197,6 +205,37 @@ local function isTechnicalPhaseName(name)
         or string.find(key, "controller") or string.find(key, "module")
         or string.find(key, "request") or string.find(key, "response")
         or string.find(key, "snapshot") or string.find(key, "event")
+end
+
+local PHASE_FALLBACK_IMAGES = {
+    day = "100486757307207",
+    sunset = "86217612022586",
+    moon = "91446334780160",
+    bloodmoon = "140465339393451",
+    goldmoon = "84902063004871",
+    rainbowmoon = "93602895495056",
+    megamoon = "107925838920918",
+}
+
+local function getPhaseKey(name)
+    if not name or name == "" or isTechnicalPhaseName(name) then return nil end
+    local key = normalizeName(name)
+    if key == "night" then return "moon" end
+    if key == "day" or key == "sunset" or key == "moon" then return key end
+    if key == "blood" or key == "bloodmoon" then return "bloodmoon" end
+    if key == "gold" or key == "goldmoon" then return "goldmoon" end
+    if key == "chained" or key == "chainedmoon" then return "chainedmoon" end
+    if key == "pizza" or key == "pizzamoon" then return "pizzamoon" end
+    if key == "rainbowmoon" then return "rainbowmoon" end
+    if key == "solar" or key == "solareclipse" then return "solareclipse" end
+    if key == "mega" or key == "megamoon" then return "megamoon" end
+    if string.sub(key, -4) == "moon" or string.find(key, "eclipse") then return key end
+    return nil
+end
+
+local function getPhaseFallbackImage(name)
+    local phaseKey = getPhaseKey(name)
+    return phaseKey and PHASE_FALLBACK_IMAGES[phaseKey] or nil
 end
 
 local WEATHER_STATE_NAMES = {
@@ -776,7 +815,6 @@ end
 
 local function isWeatherCardActive(card)
     if not card or not card:IsA("GuiObject") then return false end
-    if isInstanceVisible(card) then return true end
     if hasTruthyAttribute(card, { "Playing", "Active", "IsActive", "Enabled", "playing", "active" }) then
         return true
     end
@@ -850,6 +888,11 @@ end
 local function findImageId(instance, expectedName)
     if not instance then return nil end
     local expectedKey = normalizeName(expectedName or instance.Name or "")
+    local expectedPhaseKey = getPhaseKey(expectedName or instance.Name or "")
+    local phaseFallback = expectedPhaseKey and PHASE_FALLBACK_IMAGES[expectedPhaseKey] or nil
+    if phaseFallback then
+        return phaseFallback
+    end
 
     local function extractId(str)
         if not str or str == "" then return nil end
@@ -888,6 +931,12 @@ local function findImageId(instance, expectedName)
     local function matchesExpectedIconName(name)
         if expectedKey == "" then return false end
         local key = normalizeName(name)
+        if expectedPhaseKey then
+            return key == expectedPhaseKey
+                or key == expectedPhaseKey .. "icon"
+                or key == expectedPhaseKey .. "image"
+                or key == expectedPhaseKey .. "vector"
+        end
         if expectedKey == "rain" then
             return key == "rain" or key == "raining" or key == "rainy"
                 or key == "rainicon" or key == "rainimage" or key == "rainvector"
@@ -980,11 +1029,7 @@ end
 
 local function isWeatherPhaseName(name)
     if isTechnicalPhaseName(name) then return false end
-    local key = normalizeName(name)
-    return (key == "night" or key == "day" or key == "sunset")
-        or string.find(key, "moon") or string.find(key, "eclipse")
-        or key == "blood" or key == "gold" or key == "chained"
-        or key == "pizza" or key == "solar" or key == "mega"
+    return getPhaseKey(name) ~= nil
 end
 
 local weatherCatalogCache = {}
@@ -1148,7 +1193,7 @@ end
 local function getActiveWeatherAndPhase()
     local activePhase = getDefaultPhase()
     local workspacePhase = findActivePhaseAsset(workspace, true)
-    if workspacePhase then activePhase = workspacePhase end
+    if workspacePhase and not isTechnicalPhaseName(workspacePhase) then activePhase = workspacePhase end
 
     local activeWeathers = {}
     local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
@@ -1163,8 +1208,6 @@ local function getActiveWeatherAndPhase()
         for _, child in ipairs(frame:GetChildren()) do
             if child:IsA("GuiObject") and isWeatherCardActive(child) then
                 local name = child.Name
-                local lowerName = string.lower(name)
-                local lowerKey = normalizeName(name)
                 local weatherName = formatCamelCase(name)
                 local isPhase = isWeatherPhaseName(name)
                 if not isPhase then
@@ -1172,26 +1215,13 @@ local function getActiveWeatherAndPhase()
                     activeWeathers[weatherName] = { playing = true, endTime = endTime, image = findImageId(child, weatherName) }
                 else
                     activePhaseImage = findImageId(child, name)
-                    if lowerName == "day" then
-                        uiPhase = "Day"
-                    elseif lowerName == "sunset" then
-                        uiPhase = "Sunset"
-                    elseif lowerName == "night" or lowerName == "moon" then
-                        uiPhase = "Moon"
-                    end
-                    for _, phaseName in ipairs(getKnownPhaseNames()) do
-                        local phaseKey = normalizeName(phaseName)
-                        local cleanName = cleanPhaseName(phaseName)
-                        local cleanKey = normalizeName(cleanName)
-                        if lowerKey == phaseKey or lowerKey == cleanKey or string.find(lowerKey, phaseKey) or string.find(lowerKey, cleanKey) then
-                            uiPhase = cleanName
-                        end
-                    end
+                    uiPhase = cleanPhaseName(name)
                 end
             end
         end
     end
-    if uiPhase then activePhase = uiPhase end
+    if uiPhase and not isTechnicalPhaseName(uiPhase) then activePhase = uiPhase end
+    activePhaseImage = getPhaseFallbackImage(activePhase) or activePhaseImage
     return activePhase, activePhaseImage, activeWeathers, endTime
 end
 
@@ -1215,12 +1245,14 @@ end
 
 local function getCatalogImageByName(catalog, name)
     if not catalog or not name then return nil end
-    local wantedKey = normalizeName(name)
+    local wantedKey = getPhaseKey(name) or normalizeName(name)
     if wantedKey == "" then return nil end
     for catalogName, item in pairs(catalog) do
         if type(item) == "table" then
             local itemName = item.name or catalogName
-            if normalizeName(catalogName) == wantedKey or normalizeName(itemName) == wantedKey then
+            local catalogKey = getPhaseKey(catalogName) or normalizeName(catalogName)
+            local itemKey = getPhaseKey(itemName) or normalizeName(itemName)
+            if catalogKey == wantedKey or itemKey == wantedKey then
                 return item.image
             end
         end
