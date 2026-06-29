@@ -585,7 +585,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> 箱子',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> 装备',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> 种子',
-    loadingPlaceholder: '等待 Roblox 机器人数据...',
+    loadingPlaceholder: '等待实时数据...',
     noItemsPlaceholder: '没有符合筛选的物品',
     inStockText: ' 个',
     outOfStockText: '缺货',
@@ -667,7 +667,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> 상자',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> 장비',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> 씨앗',
-    loadingPlaceholder: 'Roblox 봇 데이터 대기 중...',
+    loadingPlaceholder: '실시간 데이터 대기 중...',
     noItemsPlaceholder: '필터에 맞는 아이템이 없습니다',
     inStockText: '개',
     outOfStockText: '품절',
@@ -778,7 +778,7 @@ const calculatorTranslationOverrides = {
     calculatorMutationLabel: 'Mutation',
     calculatorFriendsLabel: 'Amis proches',
     calculatorBaseValue: (value) => `Base : ${value}`,
-    calculatorNoData: 'En attente des données Roblox...',
+    calculatorNoData: 'En attente des données du calculateur...',
     calculatorSelectFruit: 'Choisissez un fruit',
     calculatorUpdatedAt: (value) => `Mis à jour : ${value}`
   },
@@ -868,7 +868,7 @@ const calculatorTranslationOverrides = {
     calculatorMutationLabel: '突变',
     calculatorFriendsLabel: '附近好友',
     calculatorBaseValue: (value) => `基础: ${value}`,
-    calculatorNoData: '等待 Roblox 机器人数据...',
+    calculatorNoData: '等待计算器数据...',
     calculatorSelectFruit: '选择水果',
     calculatorUpdatedAt: (value) => `已更新: ${value}`
   },
@@ -883,7 +883,7 @@ const calculatorTranslationOverrides = {
     calculatorMutationLabel: '変異',
     calculatorFriendsLabel: '近くの友達',
     calculatorBaseValue: (value) => `基本: ${value}`,
-    calculatorNoData: 'Robloxボットのデータ待機中...',
+    calculatorNoData: '計算データを待機中...',
     calculatorSelectFruit: 'フルーツを選択',
     calculatorUpdatedAt: (value) => `更新: ${value}`
   },
@@ -898,7 +898,7 @@ const calculatorTranslationOverrides = {
     calculatorMutationLabel: '변이',
     calculatorFriendsLabel: '근처 친구',
     calculatorBaseValue: (value) => `기본: ${value}`,
-    calculatorNoData: 'Roblox 봇 데이터 대기 중...',
+    calculatorNoData: '계산기 데이터 대기 중...',
     calculatorSelectFruit: '과일 선택',
     calculatorUpdatedAt: (value) => `업데이트: ${value}`
   },
@@ -913,7 +913,7 @@ const calculatorTranslationOverrides = {
     calculatorMutationLabel: 'الطفرة',
     calculatorFriendsLabel: 'الأصدقاء قربك',
     calculatorBaseValue: (value) => `الأساس: ${value}`,
-    calculatorNoData: 'بانتظار بيانات بوت Roblox...',
+    calculatorNoData: 'بانتظار بيانات الحاسبة...',
     calculatorSelectFruit: 'اختر فاكهة',
     calculatorUpdatedAt: (value) => `تم التحديث: ${value}`
   }
@@ -2560,10 +2560,22 @@ function formatAuctionPrice(value) {
   return `${Math.floor(num)}¢`;
 }
 
-function formatShortCountdown(targetUnix) {
+function getAuctionNowUnix() {
+  const serverNow = Number(auctionData && auctionData.serverNow);
+  if (Number.isFinite(serverNow) && serverNow > 0) {
+    const updatedAtMs = Number(auctionData && auctionData.updatedAt);
+    if (Number.isFinite(updatedAtMs) && updatedAtMs > 0) {
+      return serverNow + Math.max(0, (Date.now() - updatedAtMs) / 1000);
+    }
+    return serverNow;
+  }
+  return Date.now() / 1000;
+}
+
+function formatShortCountdown(targetUnix, nowUnix = Date.now() / 1000) {
   const target = Number(targetUnix || 0);
   if (!Number.isFinite(target) || target <= 0) return '--:--';
-  const diff = Math.max(0, Math.floor(target - Date.now() / 1000));
+  const diff = Math.max(0, Math.floor(target - nowUnix));
   const hours = Math.floor(diff / 3600);
   const minutes = Math.floor((diff % 3600) / 60);
   const seconds = diff % 60;
@@ -2629,14 +2641,15 @@ function renderAuction() {
 }
 
 function updateAuctionTimers() {
+  const auctionNow = getAuctionNowUnix();
   if (auctionRefreshTimer) {
-    auctionRefreshTimer.textContent = formatShortCountdown(auctionData && auctionData.refreshAt);
+    auctionRefreshTimer.textContent = formatShortCountdown(auctionData && auctionData.refreshAt, auctionNow);
   }
   if (!auctionGrid) return;
   auctionGrid.querySelectorAll('.auction-card').forEach(card => {
     const expiresAt = Number(card.getAttribute('data-expires') || 0);
     const timer = card.querySelector('.auction-lot-timer');
-    if (timer) timer.textContent = formatShortCountdown(expiresAt);
+    if (timer) timer.textContent = formatShortCountdown(expiresAt, auctionNow);
   });
 }
 

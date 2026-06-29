@@ -515,8 +515,8 @@ function normalizeAuctionData(input) {
           : lot.stockQuantity;
       const stock = stockValue === undefined || stockValue === null ? null : safeNumber(stockValue, 0);
       const expiresAt = safeNumber(lot.expiresAt, 0);
-      const soldOut = stock !== null && stock <= 0;
-      const expired = expiresAt > 0 && expiresAt <= nowSec;
+      const soldOut = typeof lot.soldOut === 'boolean' ? lot.soldOut : stock !== null && stock <= 0;
+      const expired = typeof lot.expired === 'boolean' ? lot.expired : expiresAt > 0 && expiresAt <= nowSec;
       const rawImage = lot.image || lot.icon || lot.displayImage || lot.thumbnail || lot.assetId || null;
       const currentPrice = lot.currentPrice !== undefined ? lot.currentPrice
         : lot.price !== undefined ? lot.price
