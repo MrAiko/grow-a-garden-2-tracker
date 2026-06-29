@@ -238,19 +238,135 @@ local function getPhaseFallbackImage(name)
     return phaseKey and PHASE_FALLBACK_IMAGES[phaseKey] or nil
 end
 
-local WEATHER_STATE_NAMES = {
-    rain = "Rain", raining = "Rain", rainy = "Rain",
-    starfall = "Starfall",
-    snowfall = "Snowfall", snow = "Snowfall",
-    rainbow = "Rainbow",
-    thunderstorm = "Thunderstorm", lightning = "Thunderstorm",
-    aurora = "Aurora", auroraborealis = "Aurora",
-    sunburst = "Sunburst"
+local isDecorativeWeatherCatalogName
+
+local weatherDataCache = nil
+local weatherDataByKeyCache = nil
+local weatherDataCacheAt = -999
+local WEATHER_DATA_REFRESH_INTERVAL = 5
+
+local function getWeatherValues()
+    return ReplicatedStorage:FindFirstChild("WeatherValues")
+end
+
+local function normalizeWeatherImageRef(value)
+    if value == nil then return nil end
+    local str = tostring(value)
+    if str == "" or str == "0" or str == "112886786873408" then return nil end
+    if string.sub(str, 1, 4) == "http" or string.sub(str, 1, 1) == "/" then return str end
+    local id = string.match(str, "[iI][dD]=(%d+)") or string.match(str, "rbxassetid://(%d+)") or string.match(str, "%d+")
+    if id and id ~= "0" and id ~= "112886786873408" then return id end
+    return str
+end
+
+local function stripWeatherWrapperTokens(key)
+    local stripped = key
+    for _, token in ipairs({ "weather", "event", "active", "state", "card", "frame", "ui", "button", "container", "holder" }) do
+        stripped = string.gsub(stripped, token, "")
+    end
+    return stripped
+end
+
+local WEATHER_CANONICAL_NAME_OVERRIDES = {
+    lightning = "Thunderstorm"
 }
 
-local function cleanWeatherStateName(name)
+local function canonicalWeatherDisplayName(rawName)
+    local key = normalizeName(rawName)
+    return WEATHER_CANONICAL_NAME_OVERRIDES[key] or formatCamelCase(rawName) or rawName
+end
+
+local function addWeatherDataEntry(entries, byKey, rawName, image)
+    if type(rawName) ~= "string" or rawName == "" then return end
+    if isTechnicalPhaseName(rawName) or isDecorativeWeatherCatalogName(rawName) then return end
+
+    local displayName = canonicalWeatherDisplayName(rawName)
+    local key = normalizeName(rawName)
+    local displayKey = normalizeName(displayName)
+    if key == "" or byKey[key] or byKey[displayKey] then return end
+
+    local entry = {
+        name = displayName,
+        rawName = rawName,
+        key = key,
+        image = normalizeWeatherImageRef(image)
+    }
+    table.insert(entries, entry)
+    byKey[key] = entry
+    byKey[displayKey] = entry
+    byKey[stripWeatherWrapperTokens(key)] = entry
+end
+
+local function getWeatherDataEntries()
+    local now = os.clock()
+    if weatherDataCache and (now - weatherDataCacheAt) < WEATHER_DATA_REFRESH_INTERVAL then
+        return weatherDataCache, weatherDataByKeyCache
+    end
+
+    local entries, byKey = {}, {}
+    local shared = SharedModules or ReplicatedStorage:FindFirstChild("SharedModules")
+    local weatherDataModule = shared and shared:FindFirstChild("WeatherData")
+    if weatherDataModule then
+        local ok, weatherData = pcall(function() return require(weatherDataModule) end)
+        local rawData = ok and type(weatherData) == "table" and weatherData.Data or nil
+        if type(rawData) == "table" then
+            for rawKey, item in pairs(rawData) do
+                local rawName = nil
+                local image = nil
+                if type(item) == "table" then
+                    rawName = item.Name or item.name or item.DisplayName or item.displayName or item.Id or item.ID
+                        or (type(rawKey) == "string" and rawKey or nil)
+                    image = item.IMG or item.img or item.Image or item.Icon or item.IconImage or item.ImageId or item.ImageID
+                        or item.Asset or item.AssetId or item.AssetID or item.Texture or item.TextureId
+                elseif type(item) == "string" then
+                    rawName = item
+                elseif type(rawKey) == "string" then
+                    rawName = rawKey
+                end
+                addWeatherDataEntry(entries, byKey, rawName, image)
+            end
+        end
+    end
+
+    local weatherValues = getWeatherValues()
+    if weatherValues then
+        local okAttrs, attrs = pcall(function() return weatherValues:GetAttributes() end)
+        if okAttrs and type(attrs) == "table" then
+            for attrName, _ in pairs(attrs) do
+                if type(attrName) == "string" then
+                    local rawName = string.match(attrName, "(.+)_Playing$") or string.match(attrName, "(.+)_EndTime$")
+                    addWeatherDataEntry(entries, byKey, rawName, nil)
+                end
+            end
+        end
+    end
+
+    weatherDataCache = entries
+    weatherDataByKeyCache = byKey
+    weatherDataCacheAt = now
+    return entries, byKey
+end
+
+local function findWeatherDataEntryByName(name)
     local key = normalizeName(name)
-    return WEATHER_STATE_NAMES[key]
+    if key == "" then return nil end
+    local _, byKey = getWeatherDataEntries()
+    if byKey[key] then return byKey[key] end
+
+    local stripped = stripWeatherWrapperTokens(key)
+    if byKey[stripped] then return byKey[stripped] end
+
+    for entryKey, entry in pairs(byKey) do
+        if entryKey ~= "" and string.find(key, entryKey, 1, true) then
+            return entry
+        end
+    end
+    return nil
+end
+
+local function cleanWeatherStateName(name)
+    local entry = findWeatherDataEntryByName(name)
+    return entry and entry.name or nil
 end
 
 local function isKnownWeatherStateName(name)
@@ -267,7 +383,7 @@ local DECORATIVE_WEATHER_NAMES = {
     content = true, main = true, mainframe = true
 }
 
-local function isDecorativeWeatherCatalogName(name)
+isDecorativeWeatherCatalogName = function(name)
     local key = normalizeName(name)
     if DECORATIVE_WEATHER_NAMES[key] then return true end
     return string.find(key, "background")
@@ -813,18 +929,76 @@ local function hasTruthyAttribute(instance, names)
     return false
 end
 
+local function valueLooksTruthy(value)
+    if value == true then return true end
+    if type(value) == "number" then return value > 0 end
+    if type(value) == "string" then
+        local lower = string.lower(value)
+        return lower == "true" or lower == "active" or lower == "playing"
+            or lower == "enabled" or lower == "on" or lower == "yes"
+            or string.find(lower, "%d+:%d+") ~= nil
+            or string.find(lower, "%d+m") ~= nil
+            or string.find(lower, "%d+s") ~= nil
+    end
+    return false
+end
+
+local function hasTruthyStateSignal(instance, names)
+    if not instance then return false end
+    if hasTruthyAttribute(instance, names) then return true end
+
+    local instanceKey = normalizeName(instance.Name)
+    local nameMatches = false
+    for _, stateName in ipairs(names) do
+        local stateKey = normalizeName(stateName)
+        if instanceKey == stateKey or string.find(instanceKey, stateKey, 1, true) then
+            nameMatches = true
+            break
+        end
+    end
+    if not nameMatches then return false end
+
+    if instance:IsA("BoolValue") or instance:IsA("StringValue")
+       or instance:IsA("IntValue") or instance:IsA("NumberValue") then
+        local ok, value = pcall(function() return instance.Value end)
+        return ok and valueLooksTruthy(value)
+    end
+    return false
+end
+
+local function textLooksActive(text)
+    local lower = string.lower(tostring(text or ""))
+    if lower == "" then return false end
+    if string.find(lower, "starts") or string.find(lower, "start in")
+       or string.find(lower, "начн") or string.find(lower, "скоро") then
+        return false
+    end
+    return string.find(lower, "%d+:%d+") ~= nil
+        or string.find(lower, "%d+m") ~= nil
+        or string.find(lower, "%d+s") ~= nil
+        or string.find(lower, "active") ~= nil
+        or string.find(lower, "playing") ~= nil
+        or string.find(lower, "ends") ~= nil
+        or string.find(lower, "remaining") ~= nil
+        or string.find(lower, "left") ~= nil
+        or string.find(lower, "актив") ~= nil
+        or string.find(lower, "ид") ~= nil
+end
+
 local function isWeatherCardActive(card)
     if not card or not card:IsA("GuiObject") then return false end
-    if hasTruthyAttribute(card, { "Playing", "Active", "IsActive", "Enabled", "playing", "active" }) then
+    if not isInstanceVisible(card) then return false end
+    local stateNames = { "Playing", "Active", "IsActive", "Enabled", "Running", "Started", "playing", "active", "enabled", "running" }
+    if hasTruthyStateSignal(card, stateNames) then
         return true
     end
     for _, desc in ipairs(card:GetDescendants()) do
-        if hasTruthyAttribute(desc, { "Playing", "Active", "IsActive", "Enabled", "playing", "active" }) then
+        if hasTruthyStateSignal(desc, stateNames) then
             return true
         end
-        if desc:IsA("TextLabel") then
+        if desc:IsA("TextLabel") and isInstanceVisible(desc) then
             local text = string.lower(tostring(desc.Text or ""))
-            if text ~= "" and (string.find(text, "%d+:%d+") or string.find(text, "start") or string.find(text, "нач")) then
+            if textLooksActive(text) then
                 return true
             end
         end
@@ -846,10 +1020,27 @@ local function parseTimeToSeconds(timeStr)
     return total
 end
 
+local function findWeatherUI()
+    local exact = PlayerGui:FindFirstChild("WeatherUI")
+    if exact then return exact end
+    exact = PlayerGui:FindFirstChild("Weather")
+    if exact then return exact end
+    exact = PlayerGui:FindFirstChild("EnvironmentUI")
+    if exact then return exact end
+
+    for _, child in ipairs(PlayerGui:GetChildren()) do
+        local key = normalizeName(child.Name)
+        if string.find(key, "weather", 1, true) or string.find(key, "environment", 1, true) then
+            return child
+        end
+    end
+    return nil
+end
+
 local function getActiveTimerText()
-    local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
+    local weatherUI = findWeatherUI()
     if not weatherUI then return nil end
-    local frame = weatherUI:FindFirstChild("Frame")
+    local frame = weatherUI:FindFirstChild("Frame") or weatherUI
     if frame then
         for _, child in ipairs(frame:GetChildren()) do
             if child:IsA("GuiObject") and isWeatherCardActive(child) then
@@ -1032,6 +1223,258 @@ local function isWeatherPhaseName(name)
     return getPhaseKey(name) ~= nil
 end
 
+local function resolveWeatherCardName(instance)
+    if not instance then return nil, false end
+    local rawName = instance.Name
+    if isTechnicalPhaseName(rawName) or isDecorativeWeatherCatalogName(rawName) then
+        return nil, false
+    end
+
+    if isWeatherPhaseName(rawName) then
+        return cleanPhaseName(rawName), true
+    end
+
+    local weatherName = cleanWeatherStateName(rawName)
+    if weatherName then
+        return weatherName, false
+    end
+
+    local okAttrs, attrs = pcall(function() return instance:GetAttributes() end)
+    if okAttrs and type(attrs) == "table" then
+        for _, value in pairs(attrs) do
+            if type(value) == "string" then
+                if isWeatherPhaseName(value) then
+                    return cleanPhaseName(value), true
+                end
+                weatherName = cleanWeatherStateName(value)
+                if weatherName then
+                    return weatherName, false
+                end
+            end
+        end
+    end
+
+    for _, desc in ipairs(instance:GetDescendants()) do
+        if desc:IsA("TextLabel") and isInstanceVisible(desc) then
+            local text = tostring(desc.Text or "")
+            if isWeatherPhaseName(text) then
+                return cleanPhaseName(text), true
+            end
+            weatherName = cleanWeatherStateName(text)
+            if weatherName then
+                return weatherName, false
+            end
+        elseif desc:IsA("StringValue") then
+            local text = tostring(desc.Value or "")
+            if isWeatherPhaseName(text) then
+                return cleanPhaseName(text), true
+            end
+            weatherName = cleanWeatherStateName(text)
+            if weatherName then
+                return weatherName, false
+            end
+        end
+    end
+
+    return nil, false
+end
+
+local function getWeatherFrameCards(frame)
+    local cards, seen = {}, {}
+    local function add(inst)
+        if not inst or seen[inst] or not inst:IsA("GuiObject") then return end
+        local name = resolveWeatherCardName(inst)
+        if not name then return end
+        seen[inst] = true
+        table.insert(cards, inst)
+    end
+
+    if not frame then return cards end
+    for _, child in ipairs(frame:GetChildren()) do
+        add(child)
+    end
+    for _, desc in ipairs(frame:GetDescendants()) do
+        add(desc)
+    end
+    return cards
+end
+
+local function findWeatherFrameCard(frame, name)
+    if not frame or not name then return nil end
+    local wantedEntry = findWeatherDataEntryByName(name)
+    local wantedKey = wantedEntry and wantedEntry.key or normalizeName(name)
+    if wantedKey == "" then return nil end
+
+    for _, card in ipairs(getWeatherFrameCards(frame)) do
+        local cardName = resolveWeatherCardName(card) or card.Name
+        local cardEntry = findWeatherDataEntryByName(card.Name) or findWeatherDataEntryByName(cardName)
+        local cardKey = cardEntry and cardEntry.key or normalizeName(cardName)
+        if cardKey == wantedKey then
+            return card
+        end
+    end
+    return nil
+end
+
+local function getWeatherStateScanRoots()
+    local roots, seen = {}, {}
+    local function add(root)
+        if root and not seen[root] then
+            seen[root] = true
+            table.insert(roots, root)
+        end
+    end
+
+    add(findWeatherUI())
+    add(ReplicatedStorage:FindFirstChild("Weather"))
+    add(ReplicatedStorage:FindFirstChild("WeatherState"))
+    add(ReplicatedStorage:FindFirstChild("Environment"))
+    add(ReplicatedStorage:FindFirstChild("ActiveWeather"))
+
+    local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
+    if playerScripts then
+        local controllers = findChildByNormalizedName(playerScripts, { "Controllers", "controllers" })
+        add(findChildByNormalizedName(controllers, { "WeatherController", "weathercontroller", "Weather Controller" }))
+        add(findChildByNormalizedName(controllers, { "EnvironmentController", "environmentcontroller", "Environment Controller" }))
+    end
+
+    return roots
+end
+
+local function readWeatherNameFromValue(value)
+    if type(value) ~= "string" then return nil, false end
+    if isWeatherPhaseName(value) then
+        return cleanPhaseName(value), true
+    end
+    local weatherName = cleanWeatherStateName(value)
+    if weatherName then
+        return weatherName, false
+    end
+    return nil, false
+end
+
+local function getActiveWeatherFromWeatherValues(endTime, frame)
+    local weathers = {}
+    local weatherValues = getWeatherValues()
+    if not weatherValues then
+        return weathers, endTime or 0
+    end
+
+    local function readAttr(rawName, suffix)
+        if not rawName then return nil end
+        local ok, value = pcall(function() return weatherValues:GetAttribute(rawName .. "_" .. suffix) end)
+        return ok and value or nil
+    end
+
+    local maxEndTime = endTime or 0
+    local entries = getWeatherDataEntries()
+    for _, entry in ipairs(entries) do
+        local playing = readAttr(entry.rawName, "Playing")
+        if playing == nil and entry.name ~= entry.rawName then
+            playing = readAttr(entry.name, "Playing")
+        end
+
+        if valueLooksTruthy(playing) then
+            local rawEndTime = readAttr(entry.rawName, "EndTime")
+            if rawEndTime == nil and entry.name ~= entry.rawName then
+                rawEndTime = readAttr(entry.name, "EndTime")
+            end
+
+            local eventEndTime = tonumber(rawEndTime) or maxEndTime
+            if eventEndTime > maxEndTime then
+                maxEndTime = eventEndTime
+            end
+
+            local card = findWeatherFrameCard(frame, entry.rawName) or findWeatherFrameCard(frame, entry.name)
+            local image = entry.image or (card and findImageId(card, entry.name) or nil)
+            weathers[entry.name] = {
+                playing = true,
+                endTime = eventEndTime,
+                image = image
+            }
+        end
+    end
+
+    return weathers, maxEndTime
+end
+
+local function getActiveWeatherFromStateRoots(endTime)
+    local weathers = {}
+    local phase = nil
+    local visited = 0
+    local stateNames = { "Active", "Playing", "Enabled", "Running", "Current", "CurrentWeather", "ActiveWeather", "Weather" }
+
+    local function addWeather(name, imageRoot)
+        if not name then return end
+        weathers[name] = {
+            playing = true,
+            endTime = endTime or 0,
+            image = imageRoot and findImageId(imageRoot, name) or nil
+        }
+    end
+
+    local function scanInstance(inst)
+        if not inst or isTechnicalPhaseName(inst.Name) then return end
+
+        local attrName = nil
+        local okAttrs, attrs = pcall(function() return inst:GetAttributes() end)
+        if okAttrs and type(attrs) == "table" then
+            for attrKey, attrValue in pairs(attrs) do
+                local attrKeyNorm = normalizeName(attrKey)
+                if attrKeyNorm == "weather" or attrKeyNorm == "currentweather" or attrKeyNorm == "activeweather"
+                   or attrKeyNorm == "phase" or attrKeyNorm == "currentphase" then
+                    local name, isPhase = readWeatherNameFromValue(attrValue)
+                    if name then
+                        if isPhase then phase = name else attrName = name end
+                    end
+                end
+            end
+        end
+
+        local nameFromValue, valueIsPhase = nil, false
+        if inst:IsA("StringValue") then
+            nameFromValue, valueIsPhase = readWeatherNameFromValue(inst.Value)
+        end
+
+        local nameFromInstance, instanceIsPhase = nil, false
+        if isWeatherPhaseName(inst.Name) then
+            nameFromInstance, instanceIsPhase = cleanPhaseName(inst.Name), true
+        else
+            nameFromInstance = cleanWeatherStateName(inst.Name)
+        end
+        local activeByState = hasTruthyStateSignal(inst, stateNames)
+
+        if attrName then
+            addWeather(attrName, inst)
+        elseif nameFromValue then
+            if valueIsPhase then
+                phase = nameFromValue
+            elseif activeByState or normalizeName(inst.Name) == "weather"
+                or normalizeName(inst.Name) == "currentweather" or normalizeName(inst.Name) == "activeweather" then
+                addWeather(nameFromValue, inst)
+            end
+        elseif nameFromInstance and not instanceIsPhase and activeByState then
+            addWeather(nameFromInstance, inst)
+        elseif nameFromInstance and instanceIsPhase and activeByState then
+            phase = nameFromInstance
+        end
+    end
+
+    for _, root in ipairs(getWeatherStateScanRoots()) do
+        scanInstance(root)
+        local ok, descendants = pcall(function() return root:GetDescendants() end)
+        if ok then
+            for _, desc in ipairs(descendants) do
+                visited = visited + 1
+                if visited > 3500 then break end
+                scanInstance(desc)
+            end
+        end
+    end
+
+    return weathers, phase
+end
+
 local weatherCatalogCache = {}
 local WEATHER_CATALOG_RESCAN_INTERVAL = 120
 local WEATHER_CATALOG_SCAN_LIMIT = 5000
@@ -1061,7 +1504,7 @@ local function getWeatherCatalogScanRoots()
         end
     end
 
-    local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
+    local weatherUI = findWeatherUI()
     add(weatherUI)
 
     local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
@@ -1116,13 +1559,19 @@ local function rebuildWeatherCatalogCache()
         end
     end
 
-    local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
-    local frame = weatherUI and weatherUI:FindFirstChild("Frame")
+    local weatherUI = findWeatherUI()
+    local frame = weatherUI and (weatherUI:FindFirstChild("Frame") or weatherUI)
     if frame then
-        for _, child in ipairs(frame:GetChildren()) do
-            if child:IsA("GuiObject") then
-                add(child.Name, child, true)
-            end
+        for _, child in ipairs(getWeatherFrameCards(frame)) do
+            local displayName = resolveWeatherCardName(child)
+            add(displayName or child.Name, child, true)
+        end
+    end
+    for _, entry in ipairs(getWeatherDataEntries()) do
+        if not catalog[entry.name] then
+            local card = frame and (findWeatherFrameCard(frame, entry.rawName) or findWeatherFrameCard(frame, entry.name)) or nil
+            local image = entry.image or (card and findImageId(card, entry.name) or nil)
+            catalog[entry.name] = { name = entry.name, image = image }
         end
     end
 
@@ -1161,13 +1610,19 @@ local function getWeatherCatalog()
         }
     end
 
-    local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
-    local frame = weatherUI and weatherUI:FindFirstChild("Frame")
+    local weatherUI = findWeatherUI()
+    local frame = weatherUI and (weatherUI:FindFirstChild("Frame") or weatherUI)
     if frame then
-        for _, child in ipairs(frame:GetChildren()) do
-            if child:IsA("GuiObject") then
-                add(child.Name, child, true)
-            end
+        for _, child in ipairs(getWeatherFrameCards(frame)) do
+            local displayName = resolveWeatherCardName(child)
+            add(displayName or child.Name, child, true)
+        end
+    end
+    for _, entry in ipairs(getWeatherDataEntries()) do
+        if not catalog[entry.name] then
+            local card = frame and (findWeatherFrameCard(frame, entry.rawName) or findWeatherFrameCard(frame, entry.name)) or nil
+            local image = entry.image or (card and findImageId(card, entry.name) or nil)
+            catalog[entry.name] = { name = entry.name, image = image }
         end
     end
 
@@ -1196,29 +1651,50 @@ local function getActiveWeatherAndPhase()
     if workspacePhase and not isTechnicalPhaseName(workspacePhase) then activePhase = workspacePhase end
 
     local activeWeathers = {}
-    local weatherUI = PlayerGui:FindFirstChild("WeatherUI")
-    local frame = weatherUI and weatherUI:FindFirstChild("Frame")
+    local weatherUI = findWeatherUI()
+    local frame = weatherUI and (weatherUI:FindFirstChild("Frame") or weatherUI)
     local timerText = getActiveTimerText()
     local parsedSec = parseTimeToSeconds(timerText)
     local endTime = parsedSec > 0 and (os.time() + parsedSec) or 0
 
     local activePhaseImage = nil
     local uiPhase = nil
+    local valuesWeathers, valuesEndTime = getActiveWeatherFromWeatherValues(endTime, frame)
+    if valuesEndTime and valuesEndTime > endTime then
+        endTime = valuesEndTime
+    end
+    for weatherName, info in pairs(valuesWeathers or {}) do
+        activeWeathers[weatherName] = info
+    end
+
     if frame then
-        for _, child in ipairs(frame:GetChildren()) do
+        for _, child in ipairs(getWeatherFrameCards(frame)) do
             if child:IsA("GuiObject") and isWeatherCardActive(child) then
-                local name = child.Name
-                local weatherName = formatCamelCase(name)
-                local isPhase = isWeatherPhaseName(name)
+                local weatherName, isPhase = resolveWeatherCardName(child)
+                local name = weatherName or child.Name
                 if not isPhase then
-                    weatherName = cleanWeatherStateName(name) or weatherName
-                    activeWeathers[weatherName] = { playing = true, endTime = endTime, image = findImageId(child, weatherName) }
+                    weatherName = cleanWeatherStateName(name) or weatherName or formatCamelCase(name)
+                    local existing = activeWeathers[weatherName] or {}
+                    activeWeathers[weatherName] = {
+                        playing = true,
+                        endTime = existing.endTime or endTime,
+                        image = existing.image or findImageId(child, weatherName)
+                    }
                 else
                     activePhaseImage = findImageId(child, name)
                     uiPhase = cleanPhaseName(name)
                 end
             end
         end
+    end
+    local stateWeathers, statePhase = getActiveWeatherFromStateRoots(endTime)
+    for weatherName, info in pairs(stateWeathers or {}) do
+        if not activeWeathers[weatherName] then
+            activeWeathers[weatherName] = info
+        end
+    end
+    if statePhase and not isTechnicalPhaseName(statePhase) then
+        uiPhase = uiPhase or statePhase
     end
     if uiPhase and not isTechnicalPhaseName(uiPhase) then activePhase = uiPhase end
     activePhaseImage = getPhaseFallbackImage(activePhase) or activePhaseImage
