@@ -98,11 +98,10 @@ const DEFAULT_WEATHER_CATALOG = {
   megamoon: { name: "Mega Moon", image: "107925838920918" }
 };
 
-const LOCKED_DEFAULT_WEATHER_IMAGES = new Set(
-  Object.entries(DEFAULT_WEATHER_CATALOG)
-    .filter(([, item]) => item && isValidWeatherImage(item.image))
-    .map(([key]) => key)
-);
+// Runtime UI vectors from WeatherUI are more reliable than hardcoded defaults.
+// Keep this empty so Day/Sunset/Moon and future weather icons can be corrected
+// automatically when the scraper sends a real in-game image.
+const LOCKED_DEFAULT_WEATHER_IMAGES = new Set();
 
 function normalizeEnvKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
