@@ -13,6 +13,9 @@ const AUCTION_DATA_FILE = path.join(__dirname, process.env.AUCTION_DATA_FILE || 
 const CALCULATOR_DATA_FILE = path.join(__dirname, process.env.CALCULATOR_DATA_FILE || 'calculator_data.json');
 const TRANSLATION_CACHE_FILE = path.join(__dirname, process.env.TRANSLATION_CACHE_FILE || 'translation_cache.json');
 const WEATHER_CATALOG_IMAGES_FILE = path.join(__dirname, process.env.WEATHER_CATALOG_IMAGES_FILE || 'weather_catalog_images.json');
+const WIKI_CROP_DATA_API_URL = 'https://growagarden2.fandom.com/api.php?action=parse&page=Module:Crop%20Data&prop=wikitext&format=json&origin=*';
+const WIKI_CROP_DATA_SOURCE_URL = 'https://growagarden2.fandom.com/wiki/Crops';
+const WIKI_CROP_DATA_REFRESH_MS = 6 * 60 * 60 * 1000;
 
 // WebSocket clients pool
 const wsClients = new Set();
@@ -85,6 +88,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
 let currentStock = null;
 let currentAuction = null;
 let currentCalculatorData = null;
+let wikiCropCalculatorData = null;
+let wikiCropCalculatorDataAt = 0;
+let wikiCropCalculatorDataPromise = null;
 const activeSessions = {};
 const SPECIAL_PHASES = ["bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon", "solareclipse"];
 
@@ -499,6 +505,8 @@ function normalizeCalculatorData(input) {
       baseValue,
       baseValuePerKg: Number.isFinite(baseValuePerKg) && baseValuePerKg > 0 ? baseValuePerKg : undefined,
       averageSizePower: Number.isFinite(averageSizePower) && averageSizePower > 0 ? averageSizePower : undefined,
+      pricingMode: item.pricingMode || item.mode || undefined,
+      sourceUrl: item.sourceUrl || undefined,
       image: formatImageForClient(item.image),
       isSingleHarvest: item.isSingleHarvest === true,
       averageWeight: Number.isFinite(averageWeight)
@@ -535,6 +543,7 @@ function normalizeCalculatorData(input) {
     sizeExponent: safeNumber(cfg.sizeExponent, 2.65),
     sizeExponentOverrides: cfg.sizeExponentOverrides && typeof cfg.sizeExponentOverrides === 'object' ? cfg.sizeExponentOverrides : { Mushroom: 1.9, Bamboo: 1.75 },
     singleHarvestMutationBonusScale: safeNumber(cfg.singleHarvestMutationBonusScale, 0.15),
+    rottenPenaltyMultiplier: safeNumber(cfg.rottenPenaltyMultiplier ?? cfg.decayPenaltyMultiplier, 0.2),
     minimumValues: cfg.minimumValues && typeof cfg.minimumValues === 'object' ? cfg.minimumValues : { Carrot: 4 },
     diminishingReturns: {
       enabled: dr.enabled !== false,
@@ -548,6 +557,7 @@ function normalizeCalculatorData(input) {
   return {
     version: 1,
     source: input.source || 'live-data',
+    sourceUrl: input.sourceUrl || undefined,
     fruits,
     mutations,
     config,
@@ -559,6 +569,137 @@ function normalizeCalculatorData(input) {
 function prepareCalculatorDataResponse(data) {
   if (!data) return null;
   return JSON.parse(JSON.stringify(data));
+}
+
+function normalizeCropKey(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function parseWikiCropModuleData(wikitext) {
+  const text = String(wikitext || '');
+  const fruits = [];
+  const seen = new Set();
+  const cropBlockRegex = /\["([^"]+)"\]\s*=\s*\{([\s\S]*?)(?=\n\t\["[^"]+"\]\s*=\s*\{|\n}\s*\n\nfunction|\n}\s*\nlocal|\nreturn\s+p)/g;
+  let match;
+
+  while ((match = cropBlockRegex.exec(text))) {
+    const name = match[1].trim();
+    const body = match[2] || '';
+    const averageWeight = Number((body.match(/averageWeight\s*=\s*([0-9.]+)/) || [])[1]);
+    const averageValue = Number((body.match(/averageValue\s*=\s*([0-9.]+)/) || [])[1]);
+    if (!name || !Number.isFinite(averageWeight) || averageWeight <= 0 || !Number.isFinite(averageValue) || averageValue <= 0) continue;
+
+    const key = normalizeCropKey(name);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    fruits.push({
+      name,
+      baseValue: averageValue,
+      averageWeight,
+      baseValuePerKg: averageValue / averageWeight,
+      pricingMode: 'wiki-per-kg',
+      sourceUrl: WIKI_CROP_DATA_SOURCE_URL
+    });
+  }
+
+  return {
+    version: 1,
+    source: 'fandom-crops',
+    sourceUrl: WIKI_CROP_DATA_SOURCE_URL,
+    fruits,
+    mutations: [{ name: 'None', multiplier: 1 }],
+    config: {
+      sizeMultiplier: 1,
+      mutationMultiplier: 1,
+      sizeExponent: 2.65,
+      sizeExponentOverrides: { Mushroom: 1.9, Bamboo: 1.75 },
+      singleHarvestMutationBonusScale: 0.15,
+      rottenPenaltyMultiplier: 0.2,
+      minimumValues: { Carrot: 4 },
+      diminishingReturns: {
+        enabled: true,
+        knee: 5,
+        tailExponent: 1.5,
+        kneeMultipliers: {},
+        tailExponentMultipliers: {}
+      }
+    },
+    scrapedAt: Math.floor(Date.now() / 1000)
+  };
+}
+
+async function fetchWikiCropCalculatorData(force = false) {
+  const now = Date.now();
+  if (!force && wikiCropCalculatorData && (now - wikiCropCalculatorDataAt) < WIKI_CROP_DATA_REFRESH_MS) {
+    return wikiCropCalculatorData;
+  }
+  if (wikiCropCalculatorDataPromise) return wikiCropCalculatorDataPromise;
+
+  wikiCropCalculatorDataPromise = (async () => {
+    try {
+      const response = await fetch(WIKI_CROP_DATA_API_URL, {
+        headers: { 'User-Agent': 'GrowAGarden2StockTracker/1.0 (+https://grow-a-garden-2-tracker.onrender.com)' }
+      });
+      if (!response.ok) throw new Error(`Fandom API returned ${response.status}`);
+      const payload = await response.json();
+      const wikitext = payload && payload.parse && payload.parse.wikitext && payload.parse.wikitext['*'];
+      const parsed = normalizeCalculatorData(parseWikiCropModuleData(wikitext));
+      if (parsed && parsed.fruits && parsed.fruits.length) {
+        wikiCropCalculatorData = parsed;
+        wikiCropCalculatorDataAt = Date.now();
+      }
+    } catch (err) {
+      console.error('Error fetching Fandom crop data:', err.message || err);
+    } finally {
+      wikiCropCalculatorDataPromise = null;
+    }
+    return wikiCropCalculatorData;
+  })();
+
+  return wikiCropCalculatorDataPromise;
+}
+
+function mergeCalculatorDataWithWikiData(calculatorData, wikiData) {
+  const live = normalizeCalculatorData(calculatorData) || null;
+  const wiki = normalizeCalculatorData(wikiData) || null;
+  if (!live) return wiki;
+  if (!wiki || !Array.isArray(wiki.fruits) || !wiki.fruits.length) return live;
+
+  const wikiByKey = new Map(wiki.fruits.map(fruit => [normalizeCropKey(fruit.name), fruit]));
+  const mergedKeys = new Set();
+  const fruits = live.fruits.map(fruit => {
+    const wikiFruit = wikiByKey.get(normalizeCropKey(fruit.name));
+    if (!wikiFruit) return fruit;
+    mergedKeys.add(normalizeCropKey(wikiFruit.name));
+    return {
+      ...fruit,
+      baseValue: wikiFruit.baseValue,
+      averageWeight: wikiFruit.averageWeight,
+      baseValuePerKg: wikiFruit.baseValuePerKg,
+      pricingMode: 'wiki-per-kg',
+      sourceUrl: WIKI_CROP_DATA_SOURCE_URL
+    };
+  });
+
+  wiki.fruits.forEach(fruit => {
+    const key = normalizeCropKey(fruit.name);
+    if (!mergedKeys.has(key) && !fruits.some(existing => normalizeCropKey(existing.name) === key)) {
+      fruits.push(fruit);
+    }
+  });
+
+  fruits.sort((a, b) => (Number(b.baseValue) || 0) - (Number(a.baseValue) || 0) || a.name.localeCompare(b.name));
+  return {
+    ...live,
+    source: live.source === 'live-data' ? 'live-data+fandom-crops' : live.source,
+    sourceUrl: WIKI_CROP_DATA_SOURCE_URL,
+    fruits,
+    config: {
+      ...live.config,
+      rottenPenaltyMultiplier: safeNumber(live.config && live.config.rottenPenaltyMultiplier, 0.2)
+    },
+    updatedAt: Date.now()
+  };
 }
 
 function safeNumber(value, fallback = 0) {
@@ -622,13 +763,16 @@ function normalizeAuctionData(input) {
     .filter(lot => lot && typeof lot === 'object')
     .map((lot, index) => {
       const lotId = normalizeAuctionLotId(lot.lotId || lot.id || index);
-      const stockUnknown = lot.stockUnknown === true;
       const stockUnlimited = lot.stockUnlimited === true;
+      const fallbackStockQuantity = lot.stockQuantity === undefined || lot.stockQuantity === null
+        ? null
+        : safeNumber(lot.stockQuantity, NaN);
+      const stockUnknown = lot.stockUnknown === true && !(Number.isFinite(fallbackStockQuantity) && fallbackStockQuantity >= 0);
       const stockValue = stockUnknown || stockUnlimited ? null : lot.stock !== undefined
         ? lot.stock
         : stockMap[lotId] !== undefined
           ? stockMap[lotId]
-          : lot.stockQuantity;
+          : fallbackStockQuantity;
       const stock = stockValue === undefined || stockValue === null ? null : safeNumber(stockValue, 0);
       const expiresAt = safeNumber(lot.expiresAt, 0);
       const soldOut = typeof lot.soldOut === 'boolean' ? lot.soldOut : !stockUnknown && !stockUnlimited && stock !== null && stock <= 0;
@@ -827,7 +971,17 @@ app.get('/api/auction', rateLimiter(300, 60000), (req, res) => {
   res.json(prepareAuctionResponse(currentAuction));
 });
 
-app.get('/api/calculator-data', rateLimiter(300, 60000), (req, res) => {
+app.get('/api/calculator-data', rateLimiter(300, 60000), async (req, res) => {
+  const wikiData = await fetchWikiCropCalculatorData(req.query && req.query.refresh === '1');
+  if (wikiData) {
+    const merged = currentCalculatorData
+      ? mergeCalculatorDataWithWikiData(currentCalculatorData, wikiData)
+      : wikiData;
+    if (merged) {
+      currentCalculatorData = merged;
+      saveCalculatorData();
+    }
+  }
   if (!currentCalculatorData) {
     return res.status(404).json({ error: 'No calculator data available yet' });
   }
@@ -1554,7 +1708,8 @@ async function handleUpdateStock(newStock) {
 
   let calculatorUpdated = false;
   if (newStock.calculatorData && typeof newStock.calculatorData === 'object') {
-    const normalizedCalculatorData = normalizeCalculatorData(newStock.calculatorData);
+    const wikiData = await fetchWikiCropCalculatorData(false);
+    const normalizedCalculatorData = mergeCalculatorDataWithWikiData(newStock.calculatorData, wikiData);
     if (normalizedCalculatorData && normalizedCalculatorData.fruits.length > 0) {
       currentCalculatorData = normalizedCalculatorData;
       saveCalculatorData();

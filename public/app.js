@@ -1016,9 +1016,13 @@ Object.entries(neutralLiveDataMessages).forEach(([lang, values]) => {
 
 if (translations.ru) {
   translations.ru.calculatorBaseValue = (average, perKg) => `Средняя: ${average} | за kg: ${perKg}`;
+  translations.ru.calculatorRottenLabel = 'Сгнивший фрукт';
+  translations.ru.calculatorRottenHint = 'В игре полностью сгнивший фрукт продаётся за 20% цены.';
 }
 if (translations.en) {
   translations.en.calculatorBaseValue = (average, perKg) => `Average: ${average} | per kg: ${perKg}`;
+  translations.en.calculatorRottenLabel = 'Rotten fruit';
+  translations.en.calculatorRottenHint = 'Fully rotten fruit sells for 20% of the value.';
 }
 
 // English to Russian item name translation mapping
@@ -1906,6 +1910,9 @@ const calculatorMultiplierLabel = document.getElementById('calculator-multiplier
 const calculatorCurrentMultiplierBtn = document.getElementById('calculator-current-multiplier-btn');
 const calculatorCurrentMultiplierText = document.getElementById('calculator-current-multiplier-text');
 const calculatorMultiplierHint = document.getElementById('calculator-multiplier-hint');
+const calculatorRottenToggle = document.getElementById('calculator-rotten-toggle');
+const calculatorRottenLabel = document.getElementById('calculator-rotten-label');
+const calculatorRottenHint = document.getElementById('calculator-rotten-hint');
 const calculatorSelectedFruit = document.getElementById('calculator-selected-fruit');
 const calculatorResultPrice = document.getElementById('calculator-result-price');
 const calculatorBaseValue = document.getElementById('calculator-base-value');
@@ -2014,6 +2021,8 @@ function updateStaticTranslations() {
   if (calculatorFriendsLabel) calculatorFriendsLabel.textContent = t.calculatorFriendsLabel;
   if (calculatorMultiplierLabel) calculatorMultiplierLabel.textContent = t.calculatorMultiplierLabel || 'Sell multiplier';
   if (calculatorMultiplierHint) calculatorMultiplierHint.textContent = t.calculatorMultiplierHint || 'Uses the current in-game sell multiplier for the selected fruit.';
+  if (calculatorRottenLabel) calculatorRottenLabel.textContent = t.calculatorRottenLabel || 'Rotten fruit';
+  if (calculatorRottenHint) calculatorRottenHint.textContent = t.calculatorRottenHint || 'Price is reduced to 20%.';
   if (calculatorFormulaHint) calculatorFormulaHint.textContent = t.calculatorFormulaHint;
   
   // Filters
@@ -2095,7 +2104,8 @@ langButtons.forEach(btn => {
 [
   calculatorWeightInput,
   calculatorMutationSelect,
-  calculatorFriendsInput
+  calculatorFriendsInput,
+  calculatorRottenToggle
 ].forEach(el => {
   if (!el) return;
   el.addEventListener('input', renderCalculator);
@@ -2850,7 +2860,7 @@ function translateMutationName(name) {
   return (mutationMap[key] && mutationMap[key][currentLang]) || name;
 }
 
-function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier) {
+function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier, rotten) {
   if (!fruit || !calculatorData) return null;
   const cfg = calculatorData.config || {};
   const fruitName = fruit.name;
@@ -2868,8 +2878,11 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
   const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
   const liveMultiplier = Math.max(1, Number(currentMultiplier) || 1);
+  const rottenMultiplier = rotten ? Math.max(0, Number(cfg.rottenPenaltyMultiplier ?? cfg.decayPenaltyMultiplier) || 0.2) : 1;
   const baseValuePerKg = getCalculatorBaseValuePerKg(fruit);
-  let value = Math.floor(baseValuePerKg * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
+  const usesLinearKg = fruit.pricingMode === 'wiki-per-kg' || calculatorData.source === 'fandom-crops';
+  const weightFactor = usesLinearKg ? safeWeight : sizePower;
+  let value = Math.floor(baseValuePerKg * weightFactor * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier * rottenMultiplier);
 
   const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
   if (Number.isFinite(minValue) && value < minValue) value = minValue;
@@ -3186,7 +3199,8 @@ function renderCalculator() {
     mutation,
     calculatorWeightInput ? calculatorWeightInput.value : 1,
     calculatorFriendsInput ? calculatorFriendsInput.value : 0,
-    currentMultiplier
+    currentMultiplier,
+    calculatorRottenToggle ? calculatorRottenToggle.checked : false
   );
   updateCalculatorMultiplierButton(fruit);
 
