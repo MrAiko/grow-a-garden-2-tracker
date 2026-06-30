@@ -100,6 +100,36 @@ let currentCalculatorData = null;
 let wikiCropCalculatorData = null;
 let wikiCropCalculatorDataAt = 0;
 let wikiCropCalculatorDataPromise = null;
+
+// Global pre-serialized cache for API responses to handle thousands of concurrent requests
+let cachedInitPayloadString = '';
+let cachedStockResponseString = '{}';
+let cachedPredictionsResponseString = '{}';
+let cachedAuctionResponseString = '{}';
+let cachedCalculatorResponseString = '{}';
+let cachedStatusResponseString = '{}';
+
+function updateCachedResponses() {
+  try {
+    cachedStockResponseString = JSON.stringify(prepareStockResponse(currentStock));
+    cachedPredictionsResponseString = JSON.stringify(preparePredictionsResponse(currentPredictions));
+    cachedAuctionResponseString = JSON.stringify(prepareAuctionResponse(currentAuction));
+    cachedCalculatorResponseString = JSON.stringify(prepareCalculatorDataResponse(currentCalculatorData));
+    cachedStatusResponseString = JSON.stringify({
+      status: 'online',
+      lastUpdated: currentStock ? currentStock.updatedAt : null
+    });
+    cachedInitPayloadString = JSON.stringify({
+      type: 'init',
+      stock: prepareStockResponse(currentStock),
+      auction: prepareAuctionResponse(currentAuction),
+      calculatorData: prepareCalculatorDataResponse(currentCalculatorData),
+      predictions: preparePredictionsResponse(currentPredictions)
+    });
+  } catch (err) {
+    console.error('Error updating cached responses:', err);
+  }
+}
 const activeSessions = {};
 const SPECIAL_PHASES = ["bloodmoon", "goldmoon", "chainedmoon", "pizzamoon", "rainbowmoon", "solareclipse"];
 
@@ -296,6 +326,9 @@ try {
   console.error('Error loading translation cache:', err);
   translationCache = {};
 }
+
+// Initial build of pre-serialized cache
+updateCachedResponses();
 
 function saveTranslationCache() {
   try {
@@ -974,34 +1007,37 @@ app.get('/api/stock', rateLimiter(300, 60000), (req, res) => {
   if (!currentStock) {
     return res.status(404).json({ error: 'No stock data available yet' });
   }
-  
-  res.json(prepareStockResponse(currentStock));
+  res.setHeader('Content-Type', 'application/json');
+  res.send(cachedStockResponseString || '{}');
 });
 
 app.get('/api/auction', rateLimiter(300, 60000), (req, res) => {
   if (!currentAuction) {
     return res.status(404).json({ error: 'No auction data available yet' });
   }
-
-  res.json(prepareAuctionResponse(currentAuction));
+  res.setHeader('Content-Type', 'application/json');
+  res.send(cachedAuctionResponseString || '{}');
 });
 
 app.get('/api/calculator-data', rateLimiter(300, 60000), async (req, res) => {
-  const wikiData = await fetchWikiCropCalculatorData(req.query && req.query.refresh === '1');
-  if (wikiData) {
-    const merged = currentCalculatorData
-      ? mergeCalculatorDataWithWikiData(currentCalculatorData, wikiData)
-      : wikiData;
-    if (merged) {
-      currentCalculatorData = merged;
-      saveCalculatorData();
+  if (req.query && req.query.refresh === '1') {
+    const wikiData = await fetchWikiCropCalculatorData(true);
+    if (wikiData) {
+      const merged = currentCalculatorData
+        ? mergeCalculatorDataWithWikiData(currentCalculatorData, wikiData)
+        : wikiData;
+      if (merged) {
+        currentCalculatorData = merged;
+        saveCalculatorData();
+        updateCachedResponses();
+      }
     }
   }
   if (!currentCalculatorData) {
     return res.status(404).json({ error: 'No calculator data available yet' });
   }
-
-  res.json(prepareCalculatorDataResponse(currentCalculatorData));
+  res.setHeader('Content-Type', 'application/json');
+  res.send(cachedCalculatorResponseString || '{}');
 });
 
 app.post('/api/translate-names', rateLimiter(120, 60000), async (req, res) => {
@@ -1745,16 +1781,6 @@ async function handleUpdateStock(newStock) {
   };
 
   saveStockData();
-  broadcast({
-    type: 'stock',
-    stock: prepareStockResponse(currentStock)
-  });
-  if (auctionUpdated) {
-    broadcast({
-      type: 'auction',
-      auction: prepareAuctionResponse(currentAuction)
-    });
-  }
 
   let calculatorUpdated = false;
   if (newStock.calculatorData && typeof newStock.calculatorData === 'object') {
@@ -1767,6 +1793,19 @@ async function handleUpdateStock(newStock) {
     }
   }
 
+  // Update pre-serialized cache
+  updateCachedResponses();
+
+  broadcast({
+    type: 'stock',
+    stock: prepareStockResponse(currentStock)
+  });
+  if (auctionUpdated) {
+    broadcast({
+      type: 'auction',
+      auction: prepareAuctionResponse(currentAuction)
+    });
+  }
   if (calculatorUpdated) {
     broadcast({
       type: 'calculator-data',
@@ -1831,15 +1870,14 @@ app.get('/api/predictions', rateLimiter(300, 60000), (req, res) => {
   if (!currentPredictions) {
     return res.status(404).json({ error: 'No prediction data available yet' });
   }
-  res.json(preparePredictionsResponse(currentPredictions));
+  res.setHeader('Content-Type', 'application/json');
+  res.send(cachedPredictionsResponseString || '{}');
 });
 
 // Serve web app status endpoint
 app.get('/api/status', rateLimiter(300, 60000), (req, res) => {
-  res.json({
-    status: 'online',
-    lastUpdated: currentStock ? currentStock.updatedAt : null
-  });
+  res.setHeader('Content-Type', 'application/json');
+  res.send(cachedStatusResponseString || '{}');
 });
 
 
@@ -2134,6 +2172,7 @@ async function fetchDiscordPredictions() {
       if (totalItems > 0) {
         currentPredictions = parsed;
         savePredictionsData();
+        updateCachedResponses();
         broadcast({
           type: 'predictions',
           predictions: preparePredictionsResponse(currentPredictions)
@@ -2175,14 +2214,18 @@ wss.on('connection', (ws) => {
   wsClients.add(ws);
   broadcastUserCount();
   
-  // Immediately push the current data to the connecting client
-  ws.send(JSON.stringify({
-    type: 'init',
-    stock: prepareStockResponse(currentStock),
-    auction: prepareAuctionResponse(currentAuction),
-    calculatorData: prepareCalculatorDataResponse(currentCalculatorData),
-    predictions: preparePredictionsResponse(currentPredictions)
-  }));
+  // Immediately push the current data to the connecting client using pre-serialized cache
+  if (cachedInitPayloadString) {
+    ws.send(cachedInitPayloadString);
+  } else {
+    ws.send(JSON.stringify({
+      type: 'init',
+      stock: prepareStockResponse(currentStock),
+      auction: prepareAuctionResponse(currentAuction),
+      calculatorData: prepareCalculatorDataResponse(currentCalculatorData),
+      predictions: preparePredictionsResponse(currentPredictions)
+    }));
+  }
   
   ws.on('message', async (message) => {
     try {
@@ -2235,6 +2278,11 @@ function broadcast(data) {
   const payload = JSON.stringify(data);
   for (const client of wsClients) {
     if (client.readyState === WebSocket.OPEN) {
+      if (client.bufferedAmount > 1024 * 1024) { // 1MB buffer clog detection (terminates slow clients)
+        client.terminate();
+        wsClients.delete(client);
+        continue;
+      }
       client.send(payload);
     }
   }
