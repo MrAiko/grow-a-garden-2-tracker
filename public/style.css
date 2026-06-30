@@ -2031,6 +2031,171 @@ body::before {
   line-height: 1.45;
 }
 
+.calculator-section {
+  position: relative;
+  overflow: visible;
+  border-left: 0;
+  border-top: 1px solid rgba(118, 255, 56, 0.34);
+  background:
+    linear-gradient(135deg, rgba(118, 255, 56, 0.12), rgba(56, 201, 255, 0.06) 42%, rgba(255, 212, 59, 0.08)),
+    rgba(4, 13, 14, 0.86);
+}
+
+.calculator-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.calculator-layout {
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 20px;
+}
+
+.calculator-controls {
+  align-content: start;
+  padding: 2px;
+}
+
+.calculator-field {
+  padding: 10px;
+  border: 1px solid rgba(56, 201, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(1, 8, 14, 0.28);
+}
+
+.calculator-field input,
+.calculator-field select,
+.calculator-fruit-picker,
+.calculator-multiplier-btn {
+  border-radius: 9px;
+}
+
+.calculator-check-field {
+  grid-template-columns: 42px 1fr;
+  padding: 12px;
+}
+
+.calculator-check-field input[type="checkbox"] {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  min-height: 22px;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.44);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.calculator-check-field input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+
+.calculator-check-field input[type="checkbox"]:checked {
+  border-color: rgba(118, 255, 56, 0.68);
+  background: rgba(118, 255, 56, 0.26);
+}
+
+.calculator-check-field input[type="checkbox"]:checked::after {
+  transform: translateX(16px);
+  background: #76ff38;
+}
+
+.calculator-result-panel {
+  position: relative;
+  justify-content: space-between;
+  min-height: 280px;
+  padding: 22px;
+  border-color: rgba(118, 255, 56, 0.28);
+  background:
+    linear-gradient(145deg, rgba(118, 255, 56, 0.13), rgba(56, 201, 255, 0.07) 44%, rgba(255, 212, 59, 0.1)),
+    rgba(1, 8, 14, 0.72);
+}
+
+.calculator-selected {
+  color: var(--text-primary);
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.calculator-price {
+  font-size: clamp(38px, 6vw, 64px);
+  color: #d9ff3d;
+  text-shadow: 0 0 24px rgba(118, 255, 56, 0.24);
+}
+
+.calculator-meta span {
+  padding: 7px 9px;
+  border: 1px solid rgba(56, 201, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.calculator-fruit-menu {
+  max-height: 380px;
+  border-radius: 12px;
+}
+
+.calculator-fruit-option {
+  grid-template-columns: 48px minmax(0, 1fr) minmax(74px, auto);
+  padding: 10px;
+}
+
+.glass {
+  border-color: rgba(118, 255, 56, 0.18);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.quick-nav {
+  border-color: rgba(118, 255, 56, 0.16);
+  background:
+    linear-gradient(180deg, rgba(118, 255, 56, 0.06), rgba(56, 201, 255, 0.035)),
+    rgba(3, 12, 15, 0.78);
+}
+
+.quick-nav-link {
+  border-radius: 8px;
+  background: rgba(1, 8, 14, 0.52);
+}
+
+.quick-nav-link.active,
+.quick-nav-link:hover {
+  background:
+    linear-gradient(135deg, rgba(118, 255, 56, 0.18), rgba(56, 201, 255, 0.09)),
+    rgba(1, 8, 14, 0.62);
+}
+
+.shop-section {
+  border-color: rgba(118, 255, 56, 0.16);
+}
+
+.item-card,
+.auction-card {
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    rgba(2, 10, 16, 0.76);
+}
+
+.item-card:hover,
+.auction-card:hover {
+  border-color: rgba(118, 255, 56, 0.34);
+}
+
 @media (max-width: 760px) {
   .calculator-layout {
     grid-template-columns: 1fr;
@@ -2533,6 +2698,24 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.multipliers-updated-at {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(126, 255, 88, 0.12);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.multipliers-updated-at::before {
+  content: "\\f017";
+  margin-right: 7px;
+  color: var(--color-warning);
+  font: var(--fa-font-solid);
 }
 
 /* Live countdown to the next fruit multiplier refresh. */

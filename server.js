@@ -1659,6 +1659,9 @@ async function handleUpdateStock(newStock) {
   } else if (currentStock && currentStock.fruitMultipliers) {
     fruitMultipliers = currentStock.fruitMultipliers;
   }
+  const fruitMultipliersUpdatedAt = hasIncomingMultipliers
+    ? Date.now()
+    : (currentStock && currentStock.fruitMultipliersUpdatedAt) || null;
 
   // Fruit refresh countdown: the scraper sends the remaining seconds until the next
   // in-game multiplier refresh. We convert it to an ABSOLUTE unix timestamp so the
@@ -1688,6 +1691,7 @@ async function handleUpdateStock(newStock) {
     weather: newStock.weather,
     weatherCatalog: newStock.weatherCatalog || (currentStock && currentStock.weatherCatalog) || {},
     fruitMultipliers: fruitMultipliers,
+    fruitMultipliersUpdatedAt: fruitMultipliersUpdatedAt,
     // Absolute unix timestamp (seconds) when the next fruit refresh happens.
     fruitRefreshAt: fruitRefreshAt,
     auction: currentAuction,

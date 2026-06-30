@@ -1018,11 +1018,23 @@ if (translations.ru) {
   translations.ru.calculatorBaseValue = (average, perKg) => `Средняя: ${average} | за kg: ${perKg}`;
   translations.ru.calculatorRottenLabel = 'Сгнивший фрукт';
   translations.ru.calculatorRottenHint = 'В игре полностью сгнивший фрукт продаётся за 20% цены.';
+  translations.ru.calculatorSingleHarvestPenaltyLabel = 'Штраф одноразовых растений';
+  translations.ru.calculatorSingleHarvestPenaltyHint = 'Если включить, x10 станет x2.35 для single-harvest, как в игровом коде.';
 }
 if (translations.en) {
   translations.en.calculatorBaseValue = (average, perKg) => `Average: ${average} | per kg: ${perKg}`;
   translations.en.calculatorRottenLabel = 'Rotten fruit';
   translations.en.calculatorRottenHint = 'Fully rotten fruit sells for 20% of the value.';
+  translations.en.calculatorSingleHarvestPenaltyLabel = 'Single-harvest penalty';
+  translations.en.calculatorSingleHarvestPenaltyHint = 'When enabled, x10 becomes x2.35 for single-harvest crops.';
+}
+if (translations.ru) {
+  translations.ru.multipliersUpdatedAt = (time) => `\u041e\u0431\u043d\u043e\u0432\u0438\u043b\u0438\u0441\u044c \u0432 ${time}`;
+  translations.ru.multipliersUpdatedWaiting = '\u041c\u043d\u043e\u0436\u0438\u0442\u0435\u043b\u0438 \u0435\u0449\u0435 \u043d\u0435 \u043e\u0431\u043d\u043e\u0432\u043b\u044f\u043b\u0438\u0441\u044c';
+}
+if (translations.en) {
+  translations.en.multipliersUpdatedAt = (time) => `Updated at ${time}`;
+  translations.en.multipliersUpdatedWaiting = 'Waiting for multiplier update';
 }
 
 // English to Russian item name translation mapping
@@ -1904,6 +1916,9 @@ const calculatorFruitToggle = document.getElementById('calculator-fruit-toggle')
 const calculatorFruitMenu = document.getElementById('calculator-fruit-menu');
 const calculatorWeightInput = document.getElementById('calculator-weight-input');
 const calculatorMutationSelect = document.getElementById('calculator-mutation-select');
+const calculatorSingleHarvestPenaltyToggle = document.getElementById('calculator-single-harvest-penalty-toggle');
+const calculatorSingleHarvestPenaltyLabel = document.getElementById('calculator-single-harvest-penalty-label');
+const calculatorSingleHarvestPenaltyHint = document.getElementById('calculator-single-harvest-penalty-hint');
 const calculatorFriendsInput = document.getElementById('calculator-friends-input');
 const calculatorWeightHint = document.getElementById('calculator-weight-hint');
 const calculatorMultiplierLabel = document.getElementById('calculator-multiplier-label');
@@ -2017,6 +2032,8 @@ function updateStaticTranslations() {
   if (calculatorWeightHint) calculatorWeightHint.textContent = t.calculatorWeightHint || 'Game fruit weight in kg';
   const calculatorMutationLabel = document.getElementById('calculator-mutation-label');
   if (calculatorMutationLabel) calculatorMutationLabel.textContent = t.calculatorMutationLabel;
+  if (calculatorSingleHarvestPenaltyLabel) calculatorSingleHarvestPenaltyLabel.textContent = t.calculatorSingleHarvestPenaltyLabel || 'Single-harvest penalty';
+  if (calculatorSingleHarvestPenaltyHint) calculatorSingleHarvestPenaltyHint.textContent = t.calculatorSingleHarvestPenaltyHint || 'When enabled, mutation multipliers are reduced for one-time crops.';
   const calculatorFriendsLabel = document.getElementById('calculator-friends-label');
   if (calculatorFriendsLabel) calculatorFriendsLabel.textContent = t.calculatorFriendsLabel;
   if (calculatorMultiplierLabel) calculatorMultiplierLabel.textContent = t.calculatorMultiplierLabel || 'Sell multiplier';
@@ -2052,6 +2069,7 @@ function updateStaticTranslations() {
   if (multList && (!stockData || !stockData.fruitMultipliers || Object.keys(stockData.fruitMultipliers).length === 0)) {
     multList.innerHTML = `<div class="loading-placeholder">${t.loadingPlaceholder}</div>`;
   }
+  updateMultipliersUpdatedAt();
 
   // Predictions Warning
   const predWarning = document.getElementById('predictions-warning');
@@ -2104,6 +2122,7 @@ langButtons.forEach(btn => {
 [
   calculatorWeightInput,
   calculatorMutationSelect,
+  calculatorSingleHarvestPenaltyToggle,
   calculatorFriendsInput,
   calculatorRottenToggle
 ].forEach(el => {
@@ -2719,6 +2738,22 @@ function formatShortCountdown(targetUnix, nowUnix = Date.now() / 1000) {
   return `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
 }
 
+function normalizeTimestampMs(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return numeric < 100000000000 ? numeric * 1000 : numeric;
+}
+
+function formatTimeOfDay(value) {
+  const timestampMs = normalizeTimestampMs(value);
+  if (!timestampMs) return null;
+  return new Date(timestampMs).toLocaleTimeString(currentLang || 'en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
 function getAuctionLotDisplayName(lot) {
   const rawName = lot.name || lot.item || '';
   return translateItemName(rawName);
@@ -2860,7 +2895,7 @@ function translateMutationName(name) {
   return (mutationMap[key] && mutationMap[key][currentLang]) || name;
 }
 
-function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier, rotten) {
+function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier, rotten, applySingleHarvestPenalty) {
   if (!fruit || !calculatorData) return null;
   const cfg = calculatorData.config || {};
   const fruitName = fruit.name;
@@ -2870,19 +2905,21 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
   let mutationMultiplier = mutation && mutation.name && String(mutation.name).toLowerCase() !== 'none'
     ? Number(mutation.multiplier) || 1
     : 1;
-  if (fruit.isSingleHarvest && mutationMultiplier > 1) {
+  if (applySingleHarvestPenalty && fruit.isSingleHarvest && mutationMultiplier > 1) {
     mutationMultiplier = 1 + (mutationMultiplier - 1) * (Number(cfg.singleHarvestMutationBonusScale) || 0.15);
   }
   mutationMultiplier *= Number(cfg.mutationMultiplier) || 1;
 
   const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
-  const liveMultiplier = Math.max(1, Number(currentMultiplier) || 1);
+  const rawLiveMultiplier = Number(currentMultiplier);
+  const liveMultiplier = Number.isFinite(rawLiveMultiplier) && rawLiveMultiplier > 0 ? rawLiveMultiplier : 1;
   const rottenMultiplier = rotten ? Math.max(0, Number(cfg.rottenPenaltyMultiplier ?? cfg.decayPenaltyMultiplier) || 0.2) : 1;
   const baseValuePerKg = getCalculatorBaseValuePerKg(fruit);
   const usesLinearKg = fruit.pricingMode === 'wiki-per-kg' || calculatorData.source === 'fandom-crops';
   const weightFactor = usesLinearKg ? safeWeight : sizePower;
-  let value = Math.floor(baseValuePerKg * weightFactor * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier * rottenMultiplier);
+  const rawValue = baseValuePerKg * weightFactor * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier * rottenMultiplier;
+  let value = Math.floor(rawValue + 1e-6);
 
   const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
   if (Number.isFinite(minValue) && value < minValue) value = minValue;
@@ -3200,7 +3237,8 @@ function renderCalculator() {
     calculatorWeightInput ? calculatorWeightInput.value : 1,
     calculatorFriendsInput ? calculatorFriendsInput.value : 0,
     currentMultiplier,
-    calculatorRottenToggle ? calculatorRottenToggle.checked : false
+    calculatorRottenToggle ? calculatorRottenToggle.checked : false,
+    calculatorSingleHarvestPenaltyToggle ? calculatorSingleHarvestPenaltyToggle.checked : false
   );
   updateCalculatorMultiplierButton(fruit);
 
@@ -3313,9 +3351,23 @@ function fruitThumbUrl(assetId) {
 let multipliersPage = 0;
 const MULTIPLIERS_PER_PAGE = 10;
 
+function updateMultipliersUpdatedAt() {
+  const el = document.getElementById('multipliers-updated-at');
+  if (!el) return;
+  const t = translations[currentLang] || translations.en;
+  const time = formatTimeOfDay(stockData && stockData.fruitMultipliersUpdatedAt);
+  if (time) {
+    const formatter = t.multipliersUpdatedAt || translations.en.multipliersUpdatedAt;
+    el.textContent = formatter(time);
+  } else {
+    el.textContent = t.multipliersUpdatedWaiting || translations.en.multipliersUpdatedWaiting;
+  }
+}
+
 function renderMultipliers() {
   const listContainer = document.getElementById('multipliers-list');
   if (!listContainer) return;
+  updateMultipliersUpdatedAt();
 
   const items = normalizeFruitMultipliers(stockData && stockData.fruitMultipliers)
     .sort((a, b) => b.rate - a.rate);

@@ -39,20 +39,20 @@
   </script>
 
   <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico?v=2.5.17" sizes="any">
-  <link rel="shortcut icon" href="/favicon.ico?v=2.5.17">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=2.5.17">
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png?v=2.5.17">
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=2.5.17">
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=2.5.17">
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=2.5.17">
-  <link rel="manifest" href="manifest.json?v=2.5.17">
+  <link rel="icon" href="/favicon.ico?v=2.5.21" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico?v=2.5.21">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=2.5.21">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png?v=2.5.21">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=2.5.21">
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=2.5.21">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=2.5.21">
+  <link rel="manifest" href="manifest.json?v=2.5.21">
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=2.5.17">
+  <link rel="stylesheet" href="style.css?v=2.5.21">
 </head>
 <body>
   <div class="bg-glow"></div>
@@ -231,6 +231,11 @@
             <span id="calculator-mutation-label">Р СљРЎС“РЎвЂљР В°РЎвЂ Р С‘РЎРЏ</span>
             <select id="calculator-mutation-select"></select>
           </label>
+          <label class="calculator-field calculator-check-field">
+            <input type="checkbox" id="calculator-single-harvest-penalty-toggle">
+            <span id="calculator-single-harvest-penalty-label">Single-harvest penalty</span>
+            <small id="calculator-single-harvest-penalty-hint" class="calculator-field-hint">Use the in-game mutation penalty for one-time crops.</small>
+          </label>
           <label class="calculator-field">
             <span id="calculator-friends-label">Р вЂќРЎР‚РЎС“Р В·РЎРЉРЎРЏ РЎР‚РЎРЏР Т‘Р С•Р С</span>
             <input type="number" id="calculator-friends-input" min="0" max="20" step="1" value="0">
@@ -269,6 +274,7 @@
         <div class="multipliers-list" id="multipliers-list">
           <div class="loading-placeholder">Р С›Р В¶Р С‘Р Т‘Р В°Р Р…Р С‘Р Вµ Р В°Р С”РЎвЂљРЎС“Р В°Р В»РЎРЉР Р…РЎвЂ№РЎвЂ¦ Р Т‘Р В°Р Р…Р Р…РЎвЂ№РЎвЂ¦...</div>
         </div>
+        <div class="multipliers-updated-at" id="multipliers-updated-at">--</div>
       </aside>
 
       <!-- Right Area: Shops and Predictions -->
@@ -439,6 +445,6 @@ print("Р вЂРЎС“Р Т‘РЎС“РЎвЂ°Р С‘Р Вµ РЎРѓ
     </footer>
   </div>
 
-  <script src="app.js?v=2.5.17"></script>
+  <script src="app.js?v=2.5.21"></script>
 </body>
 </html>
