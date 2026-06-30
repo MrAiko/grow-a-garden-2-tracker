@@ -33,15 +33,24 @@ app.use((req, res, next) => {
 // In-memory Rate Limiting to prevent bot spam/DDoS
 const ipRequestCounts = new Map();
 
-// Periodic cleanup of rate limiter map every 10 minutes to prevent memory leaks
+// Periodic cleanup of rate limiter map every 5 minutes to prevent memory leaks
 setInterval(() => {
   const now = Date.now();
   for (const [ip, data] of ipRequestCounts.entries()) {
-    if (now - data.resetTime > 60000) {
+    if (now > data.resetTime) {
       ipRequestCounts.delete(ip);
     }
   }
-}, 10 * 60 * 1000);
+}, 5 * 60 * 1000);
+
+// Helper to set Map key-value while enforcing a maximum size (LRU-like cache eviction)
+function safeMapSet(map, key, value, maxSize = 200) {
+  map.set(key, value);
+  if (map.size > maxSize) {
+    const firstKey = map.keys().next().value;
+    map.delete(firstKey);
+  }
+}
 
 function rateLimiter(limit, windowMs) {
   return (req, res, next) => {
@@ -1055,7 +1064,7 @@ app.get('/api/proxy-image', async (req, res) => {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    proxiedImageCache.set(imageUrl, { contentType, buffer });
+    safeMapSet(proxiedImageCache, imageUrl, { contentType, buffer }, 100);
     
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=604800'); // Cache for 7 days
@@ -1100,7 +1109,7 @@ app.get('/api/fruit-image', rateLimiter(300, 60000), async (req, res) => {
     const contentType = response.headers.get('content-type') || 'image/png';
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    proxiedImageCache.set(imageUrl, { contentType, buffer });
+    safeMapSet(proxiedImageCache, imageUrl, { contentType, buffer }, 100);
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=604800');
@@ -1127,7 +1136,7 @@ async function resolveAssetThumbnail(assetId) {
       const data = await response.json();
       if (data && data.data && data.data[0] && data.data[0].imageUrl) {
         const imageUrl = data.data[0].imageUrl;
-        resolvedImageCache.set(assetId, imageUrl);
+        safeMapSet(resolvedImageCache, assetId, imageUrl, 500);
         return imageUrl;
       }
     }
@@ -1188,7 +1197,7 @@ async function resolveAssetThumbnailsBatch(assetIds) {
           data.data.forEach(item => {
             if (item.targetId && item.imageUrl) {
               const id = String(item.targetId);
-              resolvedImageCache.set(id, item.imageUrl);
+              safeMapSet(resolvedImageCache, id, item.imageUrl, 500);
               results[id] = item.imageUrl;
             }
           });
@@ -1326,6 +1335,34 @@ async function handleUpdateStock(newStock) {
 
   const jobId = newStock.jobId || 'default';
   const now = Date.now();
+
+  // Reject updates from older server instances (stale stock data)
+  if (currentStock && currentStock.restockTimes && newStock.restockTimes) {
+    let isOlder = false;
+    let hasValidNew = false;
+    let isSystemReset = false;
+    for (const [shopKey, info] of Object.entries(newStock.restockTimes)) {
+      if (info && typeof info.next === 'number') {
+        const newNext = info.next;
+        const oldNext = currentStock.restockTimes[shopKey] ? currentStock.restockTimes[shopKey].next : 0;
+        if (oldNext > 0 && newNext > 0) {
+          if (newNext < oldNext) {
+            if (oldNext - newNext > 86400) {
+              isSystemReset = true;
+            } else {
+              isOlder = true;
+            }
+          } else if (newNext > oldNext) {
+            hasValidNew = true;
+          }
+        }
+      }
+    }
+    if (isOlder && !hasValidNew && !isSystemReset) {
+      console.log(`[Stale stock update rejected] Job ID: ${jobId}. Payload next restock times are older than currentStock.`);
+      return { success: false, error: 'Stale stock data rejected' };
+    }
+  }
 
   if (newStock.weatherCatalog && typeof newStock.weatherCatalog === 'object') {
     for (const [key, item] of Object.entries(newStock.weatherCatalog)) {
@@ -2130,6 +2167,11 @@ function broadcastUserCount() {
 }
 
 wss.on('connection', (ws) => {
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+
   wsClients.add(ws);
   broadcastUserCount();
   
@@ -2175,9 +2217,13 @@ wss.on('connection', (ws) => {
 // Heartbeat to keep connection alive and prune dead ones
 const interval = setInterval(() => {
   for (const client of wsClients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.ping();
+    if (client.isAlive === false) {
+      client.terminate();
+      wsClients.delete(client);
+      continue;
     }
+    client.isAlive = false;
+    client.ping();
   }
 }, 30000);
 
