@@ -70,6 +70,15 @@ body {
   line-height: 1.6;
 }
 
+body:not(.i18n-ready) .container {
+  opacity: 0;
+}
+
+body.i18n-ready .container {
+  opacity: 1;
+  transition: opacity 120ms ease;
+}
+
 /* Fresh Grass Grid Pattern backdrop */
 body::before {
   content: "";

@@ -71,7 +71,15 @@ function rateLimiter(limit, windowMs) {
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Limit payload size to prevent RAM exhaust crashes
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders(res, filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.html') res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    if (ext === '.js') res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (ext === '.css') res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    if (ext === '.json') res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  }
+}));
 
 // Cache in-memory
 let currentStock = null;
@@ -567,6 +575,27 @@ function normalizeAuctionLotId(lotId) {
   return String(lotId ?? '').replace(/^Lot_/, '');
 }
 
+function computeAuctionCurrentPrice(lot, nowSec = Math.floor(Date.now() / 1000)) {
+  if (!lot || typeof lot !== 'object') return null;
+  const explicit = lot.currentPrice !== undefined ? lot.currentPrice
+    : lot.price !== undefined ? lot.price
+      : lot.cost;
+  if (explicit !== undefined && explicit !== null) return safeNumber(explicit, 0);
+
+  const startPrice = safeNumber(lot.startPrice, NaN);
+  if (!Number.isFinite(startPrice) || startPrice < 0) return null;
+  const decrementIntervalSeconds = safeNumber(lot.decrementIntervalSeconds, 0);
+  const minPrice = safeNumber(lot.minPrice, 0);
+  if (decrementIntervalSeconds <= 0) return Math.floor(startPrice);
+
+  const rolledAt = safeNumber(lot.rolledAt, 0);
+  const decrementPercent = safeNumber(lot.decrementPercent, 0);
+  const elapsed = Math.max(0, nowSec - rolledAt);
+  const ticks = Math.floor(elapsed / decrementIntervalSeconds);
+  const step = Math.round(startPrice * decrementPercent / 100);
+  return Math.max(minPrice, Math.floor(startPrice - step * ticks));
+}
+
 function normalizeAuctionData(input) {
   if (!input || typeof input !== 'object') return null;
 
@@ -597,10 +626,7 @@ function normalizeAuctionData(input) {
       const soldOut = typeof lot.soldOut === 'boolean' ? lot.soldOut : stock !== null && stock <= 0;
       const expired = typeof lot.expired === 'boolean' ? lot.expired : expiresAt > 0 && expiresAt <= nowSec;
       const rawImage = lot.image || lot.icon || lot.displayImage || lot.thumbnail || lot.assetId || null;
-      const currentPrice = lot.currentPrice !== undefined ? lot.currentPrice
-        : lot.price !== undefined ? lot.price
-          : lot.startPrice !== undefined ? lot.startPrice
-            : lot.cost;
+      const currentPrice = computeAuctionCurrentPrice(lot, nowSec);
 
       return {
         lotId,

@@ -2064,6 +2064,22 @@ function updateStaticTranslations() {
   }
 }
 
+function cleanMojibakeFallbackText(root = document.body) {
+  if (!root) return;
+  const mojibakePattern = /(Р |РЎ|РЋ|РІР‚|вЂ|СЂСџ)/;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (mojibakePattern.test(node.nodeValue || '')) {
+      nodes.push(node);
+    }
+  }
+  nodes.forEach(node => {
+    node.nodeValue = '';
+  });
+}
+
 // Add Switcher Event Listeners
 langButtons.forEach(btn => {
   btn.addEventListener('click', () => setLanguage(btn.getAttribute('data-lang') || 'en'));
@@ -4311,6 +4327,8 @@ document.addEventListener('click', (e) => {
 
 // Init and Loops
 setLanguage(currentLang); // Setup initial translation language
+cleanMojibakeFallbackText();
+document.body.classList.add('i18n-ready');
 fetchData();
 fetchPredictions();
 fetchCalculatorData();
