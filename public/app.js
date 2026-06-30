@@ -1530,7 +1530,8 @@ const rainbowMoonImageIds = ['93602895495056'];
 
 function isRainbowMoonImageRef(imageRef) {
   const ref = String(imageRef || '').toLowerCase();
-  return rainbowMoonImageIds.some(id => ref.includes(id));
+  const key = normalizeEnvKey(ref);
+  return key.includes('rainbowmoon') || rainbowMoonImageIds.some(id => ref.includes(id));
 }
 
 const weatherOptions = {
@@ -1704,6 +1705,11 @@ if (localStorage.getItem('weatherIconCacheResetV4') !== '1') {
   weatherIconCache.delete('rainbow');
   localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
   localStorage.setItem('weatherIconCacheResetV4', '1');
+}
+if (localStorage.getItem('weatherIconCacheResetV5') !== '1') {
+  weatherIconCache.delete('rainbow');
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+  localStorage.setItem('weatherIconCacheResetV5', '1');
 }
 
 function rememberWeatherIcon(key, imageRef) {
@@ -2935,10 +2941,20 @@ function updateCalculatorFruitPickerState() {
   calculatorFruitPicker.classList.toggle('has-value', Boolean(String(calculatorFruitInput.value || '').trim()));
 }
 
+function formatCalculatorWeightValue(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return '';
+  return trimFixedNumber(num.toFixed(2));
+}
+
 function selectCalculatorFruit(fruit) {
   if (!fruit || !calculatorFruitInput) return;
   selectedCalculatorFruitName = fruit.name;
   calculatorFruitInput.value = getCalculatorFruitDisplay(fruit);
+  const avgWeight = formatCalculatorWeightValue(fruit.averageWeight ?? fruit.avgWeight ?? fruit.weight);
+  if (avgWeight && calculatorWeightInput) {
+    calculatorWeightInput.value = avgWeight;
+  }
   updateCalculatorFruitPickerState();
   calculatorFruitActiveIndex = 0;
   closeCalculatorFruitMenu();

@@ -180,7 +180,8 @@ function imageRefContainsAny(image, ids) {
 }
 
 function isRainbowMoonImage(image) {
-  return imageRefContainsAny(image, RAINBOW_MOON_IMAGE_IDS);
+  const refKey = normalizeEnvKey(image);
+  return refKey.includes('rainbowmoon') || imageRefContainsAny(image, RAINBOW_MOON_IMAGE_IDS);
 }
 
 function isValidWeatherImageForKey(name, image) {
@@ -487,6 +488,9 @@ function normalizeCalculatorData(input) {
       baseValue,
       image: formatImageForClient(item.image),
       isSingleHarvest: item.isSingleHarvest === true,
+      averageWeight: Number.isFinite(Number(item.averageWeight ?? item.avgWeight ?? item.weight))
+        ? Number(item.averageWeight ?? item.avgWeight ?? item.weight)
+        : undefined,
       sizeExponent: Number.isFinite(Number(item.sizeExponent)) ? Number(item.sizeExponent) : undefined
     });
   });
@@ -559,12 +563,21 @@ function extractAuctionLots(input) {
   return [];
 }
 
+function normalizeAuctionLotId(lotId) {
+  return String(lotId ?? '').replace(/^Lot_/, '');
+}
+
 function normalizeAuctionData(input) {
   if (!input || typeof input !== 'object') return null;
 
   const nowSec = Math.floor(Date.now() / 1000);
   const rawLots = extractAuctionLots(input);
-  const stockMap = input.stock && typeof input.stock === 'object' ? input.stock : {};
+  const stockMap = {};
+  if (input.stock && typeof input.stock === 'object') {
+    Object.entries(input.stock).forEach(([key, value]) => {
+      stockMap[normalizeAuctionLotId(key)] = value;
+    });
+  }
   const rollInterval = safeNumber(input.rollIntervalSeconds, 0);
   const rollWindowUnix = safeNumber(input.rollWindowUnix, 0);
   const timerShiftSeconds = safeNumber(input.timerShiftSeconds, 0);
@@ -573,7 +586,7 @@ function normalizeAuctionData(input) {
   const lots = rawLots
     .filter(lot => lot && typeof lot === 'object')
     .map((lot, index) => {
-      const lotId = String(lot.lotId || lot.id || index);
+      const lotId = normalizeAuctionLotId(lot.lotId || lot.id || index);
       const stockValue = lot.stock !== undefined
         ? lot.stock
         : stockMap[lotId] !== undefined
