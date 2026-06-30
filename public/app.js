@@ -2837,19 +2837,19 @@ function getCaseInsensitiveMapValue(map, name, fallback) {
   return fallback;
 }
 
-function getCalculatorSizePower(fruitName, weight) {
+function getCalculatorSizePower(fruitName, sizeRatio) {
   const cfg = calculatorData && calculatorData.config || {};
   const dr = cfg.diminishingReturns || {};
-  const safeWeight = Math.max(0.01, Number(weight) || 1);
+  const safeRatio = Math.max(0.01, Number(sizeRatio) || 1);
   const exponent = getCaseInsensitiveMapValue(cfg.sizeExponentOverrides, fruitName, Number(cfg.sizeExponent) || 2.65);
   const knee = (Number(dr.knee) || 5) * getCaseInsensitiveMapValue(dr.kneeMultipliers, fruitName, 1);
-  let sizePower = Math.pow(safeWeight, exponent);
+  let sizePower = Math.pow(safeRatio, exponent);
 
-  if (dr.enabled !== false && knee > 0 && safeWeight > knee) {
+  if (dr.enabled !== false && knee > 0 && safeRatio > knee) {
     const tailBase = Number(dr.tailExponent) || 1.5;
     const tailMultiplier = getCaseInsensitiveMapValue(dr.tailExponentMultipliers, fruitName, 1);
     const tailExponent = Math.min(tailBase * tailMultiplier, exponent);
-    sizePower = Math.pow(knee, exponent) * Math.pow(safeWeight / knee, tailExponent);
+    sizePower = Math.pow(knee, exponent) * Math.pow(safeRatio / knee, tailExponent);
   }
 
   return Number.isFinite(sizePower) && sizePower > 0 ? sizePower : 1;
@@ -2865,7 +2865,7 @@ function getCalculatorBaseValuePerKg(fruit) {
   const averageWeight = Number(fruit.averageWeight ?? fruit.avgWeight ?? fruit.weight);
   const divisor = Number(fruit.averageSizePower) > 0
     ? Number(fruit.averageSizePower)
-    : getCalculatorSizePower(fruit.name, Number.isFinite(averageWeight) && averageWeight > 0 ? averageWeight : 1);
+    : getCalculatorSizePower(fruit.name, averageWeight / (averageWeight || 1));
   return divisor > 0 ? baseValue / divisor : baseValue;
 }
 
@@ -2899,9 +2899,31 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
   if (!fruit || !calculatorData) return null;
   const cfg = calculatorData.config || {};
   const fruitName = fruit.name;
-  const safeWeight = Math.max(0.01, Number(weight) || 1);
-  const sizePower = getCalculatorSizePower(fruitName, safeWeight);
-
+  
+  // 1. Average weight
+  const averageWeight = Number(fruit.averageWeight ?? fruit.avgWeight ?? fruit.weight) || 1;
+  const safeWeight = Math.max(0.01, Number(weight) || averageWeight);
+  
+  // 2. Size ratio: Weight / AverageWeight
+  const sizeRatio = safeWeight / averageWeight;
+  
+  // 3. Size power (exponent and diminishing returns)
+  const exponent = getCaseInsensitiveMapValue(cfg.sizeExponentOverrides, fruitName, Number(cfg.sizeExponent) || 2.65);
+  const dr = cfg.diminishingReturns || {};
+  const knee = (Number(dr.knee) || 5) * getCaseInsensitiveMapValue(dr.kneeMultipliers, fruitName, 1);
+  
+  let sizePower = Math.pow(sizeRatio, exponent);
+  if (dr.enabled !== false && knee > 0 && sizeRatio > knee) {
+    const tailBase = Number(dr.tailExponent) || 1.5;
+    const tailMultiplier = getCaseInsensitiveMapValue(dr.tailExponentMultipliers, fruitName, 1);
+    const tailExponent = Math.min(tailBase * tailMultiplier, exponent);
+    sizePower = Math.pow(knee, exponent) * Math.pow(sizeRatio / knee, tailExponent);
+  }
+  
+  // 4. Size multiplier flag
+  const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
+  
+  // 5. Mutation multiplier
   let mutationMultiplier = mutation && mutation.name && String(mutation.name).toLowerCase() !== 'none'
     ? Number(mutation.multiplier) || 1
     : 1;
@@ -2909,21 +2931,40 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
     mutationMultiplier = 1 + (mutationMultiplier - 1) * (Number(cfg.singleHarvestMutationBonusScale) || 0.15);
   }
   mutationMultiplier *= Number(cfg.mutationMultiplier) || 1;
-
-  const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
+  
+  // 6. Rot multiplier
+  let rotValue = 0;
+  if (typeof rotten === 'number') {
+    rotValue = rotten;
+  } else if (typeof rotten === 'boolean') {
+    rotValue = rotten ? 1 : 0;
+  }
+  const rottenPenaltyScale = Number(cfg.rottenPenaltyMultiplier ?? cfg.decayPenaltyMultiplier) || 0.8;
+  const rottenMultiplier = rotValue > 0 ? 1 - Math.min(1, Math.max(0, rotValue)) * rottenPenaltyScale : 1;
+  
+  // 7. Friends multiplier
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
-  const rawLiveMultiplier = Number(currentMultiplier);
-  const liveMultiplier = Number.isFinite(rawLiveMultiplier) && rawLiveMultiplier > 0 ? rawLiveMultiplier : 1;
-  const rottenMultiplier = rotten ? Math.max(0, Number(cfg.rottenPenaltyMultiplier ?? cfg.decayPenaltyMultiplier) || 0.2) : 1;
-  const baseValuePerKg = getCalculatorBaseValuePerKg(fruit);
-  const usesLinearKg = fruit.pricingMode === 'wiki-per-kg' || calculatorData.source === 'fandom-crops';
-  const weightFactor = usesLinearKg ? safeWeight : sizePower;
-  const rawValue = baseValuePerKg * weightFactor * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier * rottenMultiplier;
-  let value = Math.floor(rawValue + 1e-6);
-
-  const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
-  if (Number.isFinite(minValue) && value < minValue) value = minValue;
-  return value;
+  
+  // 8. Base price
+  const baseValue = Number(fruit.baseValue) || 0;
+  
+  // Intermediate floor (Script 1)
+  const rawCalculatedPrice = baseValue * sizePower * sizeMultiplier * mutationMultiplier * rottenMultiplier * friendsMultiplier;
+  let calculatedPrice = Math.floor(rawCalculatedPrice + 1e-6);
+  
+  // Minimum override
+  const minOverride = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
+  if (Number.isFinite(minOverride) && calculatedPrice < minOverride) {
+    calculatedPrice = minOverride;
+  }
+  
+  // 9. Store overrides and market multipliers (Script 2)
+  const globalMult = Number(cfg.globalMultiplier) || 1;
+  const cropMult = getCaseInsensitiveMapValue(cfg.priceMultipliers, fruitName, 1);
+  const liveMultiplier = Number.isFinite(Number(currentMultiplier)) && Number(currentMultiplier) > 0 ? Number(currentMultiplier) : 1;
+  
+  const finalPrice = Math.floor(calculatedPrice * globalMult * cropMult * liveMultiplier + 1e-6);
+  return finalPrice;
 }
 
 function formatMultiplierRate(rate) {
