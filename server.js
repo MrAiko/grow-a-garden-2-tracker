@@ -168,7 +168,24 @@ function isValidWeatherImage(image) {
     !ref.includes('asset=112886786873408');
 }
 
+const RAINBOW_MOON_IMAGE_IDS = new Set(['93602895495056']);
+
+function imageRefContainsAny(image, ids) {
+  const ref = String(image || '').toLowerCase();
+  if (!ref) return false;
+  for (const id of ids) {
+    if (ref.includes(id)) return true;
+  }
+  return false;
+}
+
+function isRainbowMoonImage(image) {
+  return imageRefContainsAny(image, RAINBOW_MOON_IMAGE_IDS);
+}
+
 function isValidWeatherImageForKey(name, image) {
+  const key = canonicalWeatherKey(name);
+  if (key === 'rainbow' && isRainbowMoonImage(image)) return false;
   return isValidWeatherImage(image);
 }
 
@@ -229,6 +246,14 @@ try {
   }
 } catch (err) {
   console.error('Error loading weather catalog images:', err);
+}
+if (weatherCatalogImages.rainbow) {
+  const rainbowImage = typeof weatherCatalogImages.rainbow === 'string'
+    ? weatherCatalogImages.rainbow
+    : weatherCatalogImages.rainbow.image;
+  if (isRainbowMoonImage(rainbowImage)) {
+    delete weatherCatalogImages.rainbow;
+  }
 }
 
 const TRANSLATION_LANGS = new Set(['ru', 'es', 'pt', 'fr', 'de', 'tr', 'id', 'uk', 'pl', 'zh', 'ja', 'ko', 'ar']);
@@ -403,6 +428,47 @@ function formatImageForClient(image) {
   return `/api/fruit-image?asset=${encodeURIComponent(ref)}`;
 }
 
+const COMPACT_NUMBER_SUFFIXES = {
+  k: 1_000,
+  'к': 1_000,
+  m: 1_000_000,
+  'м': 1_000_000,
+  b: 1_000_000_000,
+  'б': 1_000_000_000,
+  t: 1_000_000_000_000,
+  q: 1_000_000_000_000_000,
+  qa: 1_000_000_000_000_000,
+  qd: 1_000_000_000_000_000,
+  quad: 1_000_000_000_000_000,
+  qi: 1_000_000_000_000_000_000,
+  sx: 1_000_000_000_000_000_000_000,
+  sp: 1_000_000_000_000_000_000_000_000,
+  oc: 1_000_000_000_000_000_000_000_000_000,
+  no: 1_000_000_000_000_000_000_000_000_000_000,
+  dc: 1_000_000_000_000_000_000_000_000_000_000_000
+};
+
+function parseCompactNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (value === null || value === undefined) return NaN;
+
+  const raw = String(value).trim();
+  if (!raw) return NaN;
+
+  const compact = raw
+    .replace(/\s+/g, '')
+    .replace(/[¢]/g, '')
+    .replace(/[,，](?=\d{3}(?:\D|$))/g, '');
+  const match = compact.match(/^(-?\d+(?:[.,]\d+)?)([a-zа-я]+)?/i);
+  if (!match) return NaN;
+
+  const number = Number(match[1].replace(',', '.'));
+  if (!Number.isFinite(number)) return NaN;
+
+  const suffix = String(match[2] || '').toLowerCase();
+  return number * (COMPACT_NUMBER_SUFFIXES[suffix] || 1);
+}
+
 function normalizeCalculatorData(input) {
   if (!input || typeof input !== 'object') return null;
 
@@ -411,7 +477,7 @@ function normalizeCalculatorData(input) {
   rawFruits.forEach(item => {
     if (!item || typeof item !== 'object') return;
     const name = String(item.name || item.seedName || '').trim();
-    const baseValue = Number(item.baseValue ?? item.sellValue ?? item.value);
+    const baseValue = parseCompactNumber(item.baseValue ?? item.sellValue ?? item.value);
     if (!name || !Number.isFinite(baseValue) || baseValue < 0) return;
     const key = name.toLowerCase();
     const prev = fruitsByName.get(key);
@@ -479,7 +545,7 @@ function prepareCalculatorDataResponse(data) {
 }
 
 function safeNumber(value, fallback = 0) {
-  const num = Number(value);
+  const num = parseCompactNumber(value);
   return Number.isFinite(num) ? num : fallback;
 }
 
@@ -628,6 +694,35 @@ function buildWeatherCatalog(stock) {
   return catalog;
 }
 
+function sanitizeWeatherImages(data) {
+  if (!data || typeof data !== 'object') return data;
+
+  if (data.weatherCatalog && typeof data.weatherCatalog === 'object') {
+    for (const [key, item] of Object.entries(data.weatherCatalog)) {
+      if (!item || typeof item !== 'object') continue;
+      if (item.image && !isValidWeatherImageForKey(key, item.image)) {
+        item.image = null;
+      }
+    }
+  }
+
+  if (data.weather && typeof data.weather === 'object') {
+    if (data.weather.phaseImage && !isValidWeatherImageForKey(data.weather.phase, data.weather.phaseImage)) {
+      data.weather.phaseImage = null;
+    }
+
+    if (data.weather.weathers && typeof data.weather.weathers === 'object') {
+      for (const [name, info] of Object.entries(data.weather.weathers)) {
+        if (info && typeof info === 'object' && info.image && !isValidWeatherImageForKey(name, info.image)) {
+          delete info.image;
+        }
+      }
+    }
+  }
+
+  return data;
+}
+
 
 function prepareStockResponse(stock) {
   if (!stock) return null;
@@ -657,7 +752,9 @@ function prepareStockResponse(stock) {
     });
   }
 
+  sanitizeWeatherImages(data);
   data.weatherCatalog = buildWeatherCatalog(data);
+  sanitizeWeatherImages(data);
   
   data.visitorCount = Math.max(wsClients.size, 1);
   return data;

@@ -1931,11 +1931,15 @@ body::before {
 
 .calculator-fruit-option-price {
   justify-self: end;
+  min-width: 0;
+  max-width: 150px;
   color: var(--color-warning);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  white-space: nowrap;
+  line-height: 1.18;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .calculator-fruit-empty {
@@ -1970,9 +1974,12 @@ body::before {
 .calculator-price {
   color: var(--color-warning);
   font-family: var(--font-title);
-  font-size: 38px;
+  font-size: clamp(28px, 4vw, 38px);
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.08;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
   text-shadow: 0 0 18px rgba(255, 212, 59, 0.26);
 }
 

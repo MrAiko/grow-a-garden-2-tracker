@@ -626,7 +626,7 @@ Object.assign(translations, {
     sectionCrates: '<i class="fa-solid fa-box-open"></i> クレート',
     sectionGears: '<i class="fa-solid fa-screwdriver-wrench"></i> ギア',
     sectionSeeds: '<i class="fa-solid fa-leaf"></i> 種',
-    loadingPlaceholder: 'Roblox ボットのデータ待機中...',
+    loadingPlaceholder: 'ライブデータを待機中...',
     noItemsPlaceholder: '条件に合うアイテムがありません',
     inStockText: ' 個',
     outOfStockText: '在庫切れ',
@@ -1526,6 +1526,13 @@ const weatherAssetIds = {
   megamoon: '107925838920918'
 };
 
+const rainbowMoonImageIds = ['93602895495056'];
+
+function isRainbowMoonImageRef(imageRef) {
+  const ref = String(imageRef || '').toLowerCase();
+  return rainbowMoonImageIds.some(id => ref.includes(id));
+}
+
 const weatherOptions = {
   day: { emoji: '☀️', ru: 'День', en: 'Day' },
   sunset: { emoji: '🌇', ru: 'Закат', en: 'Sunset' },
@@ -1647,24 +1654,30 @@ function isEmojiFallbackImage(imageRef) {
 function isInvalidWeatherImageRef(imageRef, key = '') {
   if (!imageRef) return true;
   const ref = String(imageRef).trim().toLowerCase();
+  const normKey = canonicalEnvKey(key);
   if (!ref || ref === 'null' || ref === 'undefined' || ref === 'none' || ref === '0') return true;
   if (isEmojiFallbackImage(ref)) return true;
+  if (normKey === 'rainbow' && isRainbowMoonImageRef(ref)) return true;
   return ref.includes('asset=0') ||
     ref.includes('rbxassetid://0') ||
     ref.includes('112886786873408') ||
     ref.includes('asset=112886786873408');
 }
 
-function firstValidWeatherImageRef(...refs) {
+function firstValidWeatherImageRefForKey(key, ...refs) {
   for (const ref of refs) {
-    if (!isInvalidWeatherImageRef(ref)) return ref;
+    if (!isInvalidWeatherImageRef(ref, key)) return ref;
   }
   return '';
 }
 
+function firstValidWeatherImageRef(...refs) {
+  return firstValidWeatherImageRefForKey('', ...refs);
+}
+
 const rawWeatherIconCache = JSON.parse(localStorage.getItem('weatherIconCache') || '[]');
 const filteredWeatherIconCache = Array.isArray(rawWeatherIconCache)
-  ? rawWeatherIconCache.filter(([, imageRef]) => !isInvalidWeatherImageRef(imageRef))
+  ? rawWeatherIconCache.filter(([key, imageRef]) => !isInvalidWeatherImageRef(imageRef, key))
   : [];
 const weatherIconCache = new Map(filteredWeatherIconCache);
 if (filteredWeatherIconCache.length !== rawWeatherIconCache.length) {
@@ -1686,6 +1699,11 @@ if (localStorage.getItem('weatherIconCacheResetV3') !== '1') {
   weatherIconCache.delete('snowfall');
   localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
   localStorage.setItem('weatherIconCacheResetV3', '1');
+}
+if (localStorage.getItem('weatherIconCacheResetV4') !== '1') {
+  weatherIconCache.delete('rainbow');
+  localStorage.setItem('weatherIconCache', JSON.stringify(Array.from(weatherIconCache.entries())));
+  localStorage.setItem('weatherIconCacheResetV4', '1');
 }
 
 function rememberWeatherIcon(key, imageRef) {
@@ -1730,7 +1748,8 @@ function getWeatherCatalogImageRef(key) {
 
 function getWeatherPreferredImageRef(key, liveImageRef) {
   const normKey = canonicalEnvKey(key);
-  return firstValidWeatherImageRef(
+  return firstValidWeatherImageRefForKey(
+    normKey,
     liveImageRef,
     getWeatherCatalogImageRef(normKey),
     weatherIconCache.get(normKey),
@@ -2551,13 +2570,89 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+const COMPACT_NUMBER_SUFFIXES = {
+  k: 1_000,
+  'к': 1_000,
+  m: 1_000_000,
+  'м': 1_000_000,
+  b: 1_000_000_000,
+  'б': 1_000_000_000,
+  t: 1_000_000_000_000,
+  q: 1_000_000_000_000_000,
+  qa: 1_000_000_000_000_000,
+  qd: 1_000_000_000_000_000,
+  quad: 1_000_000_000_000_000,
+  qi: 1_000_000_000_000_000_000,
+  sx: 1_000_000_000_000_000_000_000,
+  sp: 1_000_000_000_000_000_000_000_000,
+  oc: 1_000_000_000_000_000_000_000_000_000,
+  no: 1_000_000_000_000_000_000_000_000_000_000,
+  dc: 1_000_000_000_000_000_000_000_000_000_000_000
+};
+
+const COMPACT_PRICE_UNITS = [
+  { value: 1e33, suffix: 'Dc' },
+  { value: 1e30, suffix: 'No' },
+  { value: 1e27, suffix: 'Oc' },
+  { value: 1e24, suffix: 'Sp' },
+  { value: 1e21, suffix: 'Sx' },
+  { value: 1e18, suffix: 'Qi' },
+  { value: 1e15, suffix: 'Qa' },
+  { value: 1e12, suffix: 'T' },
+  { value: 1e9, suffix: 'B' },
+  { value: 1e6, suffix: 'M' },
+  { value: 1e3, suffix: 'K' }
+];
+
+function parseCompactNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (value === null || value === undefined) return NaN;
+
+  const raw = String(value).trim();
+  if (!raw) return NaN;
+
+  const compact = raw
+    .replace(/\s+/g, '')
+    .replace(/[¢]/g, '')
+    .replace(/[,，](?=\d{3}(?:\D|$))/g, '');
+  const match = compact.match(/^(-?\d+(?:[.,]\d+)?)([a-zа-я]+)?/i);
+  if (!match) return NaN;
+
+  const number = Number(match[1].replace(',', '.'));
+  if (!Number.isFinite(number)) return NaN;
+
+  const suffix = String(match[2] || '').toLowerCase();
+  return number * (COMPACT_NUMBER_SUFFIXES[suffix] || 1);
+}
+
+function trimFixedNumber(value) {
+  return String(value).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 function formatAuctionPrice(value) {
-  const num = Number(value);
+  const num = parseCompactNumber(value);
   if (!Number.isFinite(num) || num <= 0) return '--';
-  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(num >= 10_000_000_000 ? 0 : 2).replace(/\.?0+$/, '')}B¢`;
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(num >= 10_000_000 ? 0 : 2).replace(/\.?0+$/, '')}M¢`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(num >= 10_000 ? 0 : 2).replace(/\.?0+$/, '')}K¢`;
+  if (num >= 1_000_000_000) return `${trimFixedNumber((num / 1_000_000_000).toFixed(num >= 10_000_000_000 ? 0 : 2))}B¢`;
+  if (num >= 1_000_000) return `${trimFixedNumber((num / 1_000_000).toFixed(num >= 10_000_000 ? 0 : 2))}M¢`;
+  if (num >= 1_000) return `${trimFixedNumber((num / 1_000).toFixed(num >= 10_000 ? 0 : 2))}K¢`;
   return `${Math.floor(num)}¢`;
+}
+
+function formatCompactPrice(value) {
+  const num = parseCompactNumber(value);
+  if (!Number.isFinite(num) || num <= 0) return '--';
+  for (const unit of COMPACT_PRICE_UNITS) {
+    if (num >= unit.value) {
+      return `${trimFixedNumber((num / unit.value).toFixed(num >= unit.value * 10 ? 0 : 2))}${unit.suffix}\u00A2`;
+    }
+  }
+  return `${Math.floor(num)}\u00A2`;
+}
+
+function formatFullPrice(value) {
+  const num = parseCompactNumber(value);
+  if (!Number.isFinite(num) || num <= 0) return '--';
+  return `${Math.floor(num).toLocaleString(currentLang || 'en-US')}\u00A2`;
 }
 
 function getAuctionNowUnix() {
@@ -2630,7 +2725,7 @@ function renderAuction() {
           </div>
           <div class="auction-price-row">
             <span>${t.auctionPrice}</span>
-            <strong>${formatAuctionPrice(lot.currentPrice)}</strong>
+            <strong>${formatCompactPrice(lot.currentPrice)}</strong>
           </div>
         </div>
       </article>
@@ -2720,7 +2815,7 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
   const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
   const liveMultiplier = Math.max(1, Number(currentMultiplier) || 1);
-  let value = Math.floor((Number(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
+  let value = Math.floor((parseCompactNumber(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
 
   const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
   if (Number.isFinite(minValue) && value < minValue) value = minValue;
@@ -2730,7 +2825,7 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
 function formatMultiplierRate(rate) {
   const value = Number(rate);
   if (!Number.isFinite(value) || value <= 0) return '1';
-  return value.toFixed(value >= 10 ? 0 : 2).replace(/\.?0+$/, '');
+  return trimFixedNumber(value.toFixed(value >= 10 ? 0 : 2));
 }
 
 function getCurrentFruitMultiplier(fruit) {
@@ -2894,7 +2989,7 @@ function renderCalculatorFruitMenu() {
         <span class="calculator-fruit-option-name">${escapeHtml(display)}</span>
         <span class="calculator-fruit-option-sub">${escapeHtml(original)}</span>
       </span>
-      <span class="calculator-fruit-option-price">${escapeHtml(formatAuctionPrice(fruit.baseValue))}</span>
+      <span class="calculator-fruit-option-price">${escapeHtml(formatFullPrice(fruit.baseValue))}</span>
     `;
     row.addEventListener('mousedown', event => event.preventDefault());
     row.addEventListener('mousemove', () => {
@@ -2990,7 +3085,7 @@ function renderCalculator() {
       ? calculatorData.mutations
       : [{ name: 'None', multiplier: 1 }];
     calculatorMutationSelect.innerHTML = mutations.map(mutation => {
-      const label = `${translateMutationName(mutation.name)} x${Number(mutation.multiplier || 1).toFixed(2).replace(/\.?0+$/, '')}`;
+      const label = `${translateMutationName(mutation.name)} x${trimFixedNumber(Number(mutation.multiplier || 1).toFixed(2))}`;
       return `<option value="${escapeHtml(mutation.name)}">${escapeHtml(label)}</option>`;
     }).join('');
     if (mutations.some(mutation => mutation.name === previous)) {
@@ -3013,8 +3108,8 @@ function renderCalculator() {
   updateCalculatorMultiplierButton(fruit);
 
   calculatorSelectedFruit.textContent = fruit ? translateItemName(fruit.name) : t.calculatorSelectFruit;
-  calculatorResultPrice.textContent = value == null ? '--' : formatAuctionPrice(value);
-  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(fruit ? formatAuctionPrice(fruit.baseValue || 0) : '--');
+  calculatorResultPrice.textContent = value == null ? '--' : formatFullPrice(value);
+  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(fruit ? formatFullPrice(fruit.baseValue || 0) : '--');
   if (calculatorUpdatedAt) {
     const dateValue = calculatorData.updatedAt || calculatorData.scrapedAt && calculatorData.scrapedAt * 1000;
     calculatorUpdatedAt.textContent = dateValue ? t.calculatorUpdatedAt(new Date(dateValue).toLocaleTimeString()) : '--';
