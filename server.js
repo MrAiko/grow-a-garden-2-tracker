@@ -945,6 +945,12 @@ function prepareStockResponse(stock) {
       }
     });
   }
+  const hasResponseMultipliers = Array.isArray(data.fruitMultipliers)
+    ? data.fruitMultipliers.length > 0
+    : data.fruitMultipliers && typeof data.fruitMultipliers === 'object' && Object.keys(data.fruitMultipliers).length > 0;
+  if (!data.fruitMultipliersUpdatedAt && hasResponseMultipliers && data.updatedAt) {
+    data.fruitMultipliersUpdatedAt = data.updatedAt;
+  }
 
   sanitizeWeatherImages(data);
   data.weatherCatalog = buildWeatherCatalog(data);
@@ -1659,9 +1665,12 @@ async function handleUpdateStock(newStock) {
   } else if (currentStock && currentStock.fruitMultipliers) {
     fruitMultipliers = currentStock.fruitMultipliers;
   }
+  const hasStoredMultipliers = Array.isArray(fruitMultipliers)
+    ? fruitMultipliers.length > 0
+    : fruitMultipliers && typeof fruitMultipliers === 'object' && Object.keys(fruitMultipliers).length > 0;
   const fruitMultipliersUpdatedAt = hasIncomingMultipliers
     ? Date.now()
-    : (currentStock && currentStock.fruitMultipliersUpdatedAt) || null;
+    : (currentStock && (currentStock.fruitMultipliersUpdatedAt || (hasStoredMultipliers ? currentStock.updatedAt : null))) || null;
 
   // Fruit refresh countdown: the scraper sends the remaining seconds until the next
   // in-game multiplier refresh. We convert it to an ABSOLUTE unix timestamp so the

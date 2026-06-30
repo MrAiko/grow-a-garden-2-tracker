@@ -2711,13 +2711,6 @@ body::before {
   text-align: center;
 }
 
-.multipliers-updated-at::before {
-  content: "\\f017";
-  margin-right: 7px;
-  color: var(--color-warning);
-  font: var(--fa-font-solid);
-}
-
 /* Live countdown to the next fruit multiplier refresh. */
 .mult-refresh-box {
   margin-bottom: 14px;
