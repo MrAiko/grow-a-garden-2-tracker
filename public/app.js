@@ -1014,6 +1014,13 @@ Object.entries(neutralLiveDataMessages).forEach(([lang, values]) => {
   if (translations[lang]) Object.assign(translations[lang], values);
 });
 
+if (translations.ru) {
+  translations.ru.calculatorBaseValue = (average, perKg) => `Средняя: ${average} | за kg: ${perKg}`;
+}
+if (translations.en) {
+  translations.en.calculatorBaseValue = (average, perKg) => `Average: ${average} | per kg: ${perKg}`;
+}
+
 // English to Russian item name translation mapping
 const itemTranslations = {
   "acorn": "Желудь",
@@ -2723,8 +2730,10 @@ function renderAuction() {
     const rarityClass = `rarity-${String(lot.rarity || 'common').toLowerCase()}`;
     const statusClass = lot.expired ? 'expired' : lot.soldOut ? 'sold' : 'active';
     const statusText = lot.expired ? t.auctionExpired : lot.soldOut ? t.auctionSoldOut : t.auctionAvailable;
-    const stockText = lot.stock === null || lot.stock === undefined
+    const stockText = lot.stockUnlimited
       ? t.auctionStockUnlimited
+      : lot.stockUnknown || lot.stock === null || lot.stock === undefined
+        ? '--'
       : t.auctionStockLeft(Math.max(0, Number(lot.stock) || 0));
     const imageHtml = lot.image
       ? `<div class="auction-image-wrapper"><img src="${escapeHtml(lot.image)}" alt="${escapeHtml(name)}" class="auction-image" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentNode.classList.add('img-failed');this.remove();"></div>`
@@ -2783,6 +2792,38 @@ function getCaseInsensitiveMapValue(map, name, fallback) {
   return fallback;
 }
 
+function getCalculatorSizePower(fruitName, weight) {
+  const cfg = calculatorData && calculatorData.config || {};
+  const dr = cfg.diminishingReturns || {};
+  const safeWeight = Math.max(0.01, Number(weight) || 1);
+  const exponent = getCaseInsensitiveMapValue(cfg.sizeExponentOverrides, fruitName, Number(cfg.sizeExponent) || 2.65);
+  const knee = (Number(dr.knee) || 5) * getCaseInsensitiveMapValue(dr.kneeMultipliers, fruitName, 1);
+  let sizePower = Math.pow(safeWeight, exponent);
+
+  if (dr.enabled !== false && knee > 0 && safeWeight > knee) {
+    const tailBase = Number(dr.tailExponent) || 1.5;
+    const tailMultiplier = getCaseInsensitiveMapValue(dr.tailExponentMultipliers, fruitName, 1);
+    const tailExponent = Math.min(tailBase * tailMultiplier, exponent);
+    sizePower = Math.pow(knee, exponent) * Math.pow(safeWeight / knee, tailExponent);
+  }
+
+  return Number.isFinite(sizePower) && sizePower > 0 ? sizePower : 1;
+}
+
+function getCalculatorBaseValuePerKg(fruit) {
+  if (!fruit) return 0;
+  const provided = parseCompactNumber(fruit.baseValuePerKg ?? fruit.valuePerKg ?? fruit.perKgValue);
+  if (Number.isFinite(provided) && provided > 0) return provided;
+
+  const baseValue = parseCompactNumber(fruit.baseValue);
+  if (!Number.isFinite(baseValue) || baseValue <= 0) return 0;
+  const averageWeight = Number(fruit.averageWeight ?? fruit.avgWeight ?? fruit.weight);
+  const divisor = Number(fruit.averageSizePower) > 0
+    ? Number(fruit.averageSizePower)
+    : getCalculatorSizePower(fruit.name, Number.isFinite(averageWeight) && averageWeight > 0 ? averageWeight : 1);
+  return divisor > 0 ? baseValue / divisor : baseValue;
+}
+
 function clampNumber(value, min, max) {
   const num = Number(value);
   if (!Number.isFinite(num)) return min;
@@ -2812,19 +2853,9 @@ function translateMutationName(name) {
 function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier) {
   if (!fruit || !calculatorData) return null;
   const cfg = calculatorData.config || {};
-  const dr = cfg.diminishingReturns || {};
   const fruitName = fruit.name;
   const safeWeight = Math.max(0.01, Number(weight) || 1);
-  const exponent = getCaseInsensitiveMapValue(cfg.sizeExponentOverrides, fruitName, Number(cfg.sizeExponent) || 2.65);
-  const knee = (Number(dr.knee) || 5) * getCaseInsensitiveMapValue(dr.kneeMultipliers, fruitName, 1);
-  let sizePower = Math.pow(safeWeight, exponent);
-
-  if (dr.enabled !== false && knee > 0 && safeWeight > knee) {
-    const tailBase = Number(dr.tailExponent) || 1.5;
-    const tailMultiplier = getCaseInsensitiveMapValue(dr.tailExponentMultipliers, fruitName, 1);
-    const tailExponent = Math.min(tailBase * tailMultiplier, exponent);
-    sizePower = Math.pow(knee, exponent) * Math.pow(safeWeight / knee, tailExponent);
-  }
+  const sizePower = getCalculatorSizePower(fruitName, safeWeight);
 
   let mutationMultiplier = mutation && mutation.name && String(mutation.name).toLowerCase() !== 'none'
     ? Number(mutation.multiplier) || 1
@@ -2837,7 +2868,8 @@ function calculateFruitValue(fruit, mutation, weight, friends, currentMultiplier
   const sizeMultiplier = Number(cfg.sizeMultiplier) || 1;
   const friendsMultiplier = 1 + Math.max(0, Number(friends) || 0) * 0.1;
   const liveMultiplier = Math.max(1, Number(currentMultiplier) || 1);
-  let value = Math.floor((parseCompactNumber(fruit.baseValue) || 0) * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
+  const baseValuePerKg = getCalculatorBaseValuePerKg(fruit);
+  let value = Math.floor(baseValuePerKg * sizePower * sizeMultiplier * mutationMultiplier * friendsMultiplier * liveMultiplier);
 
   const minValue = getCaseInsensitiveMapValue(cfg.minimumValues, fruitName, null);
   if (Number.isFinite(minValue) && value < minValue) value = minValue;
@@ -2961,6 +2993,25 @@ function formatCalculatorWeightValue(value) {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return '';
   return trimFixedNumber(num.toFixed(2));
+}
+
+function formatCalculatorBaseMeta(fruit) {
+  const t = translations[currentLang];
+  if (!fruit) {
+    const formatter = t.calculatorBaseValue;
+    if (typeof formatter === 'function') {
+      return formatter.length >= 2 ? formatter('--', '--') : formatter('--');
+    }
+    return 'Base: --';
+  }
+  const averagePrice = formatFullPrice(fruit.baseValue || 0);
+  const perKgPrice = formatFullPrice(getCalculatorBaseValuePerKg(fruit));
+  const formatter = t.calculatorBaseValue;
+  if (typeof formatter === 'function') {
+    if (formatter.length >= 2) return formatter(averagePrice, perKgPrice);
+    return `${formatter(averagePrice)} | kg: ${perKgPrice}`;
+  }
+  return `Base: ${averagePrice} | kg: ${perKgPrice}`;
 }
 
 function selectCalculatorFruit(fruit) {
@@ -3141,7 +3192,7 @@ function renderCalculator() {
 
   calculatorSelectedFruit.textContent = fruit ? translateItemName(fruit.name) : t.calculatorSelectFruit;
   calculatorResultPrice.textContent = value == null ? '--' : formatFullPrice(value);
-  if (calculatorBaseValue) calculatorBaseValue.textContent = t.calculatorBaseValue(fruit ? formatFullPrice(fruit.baseValue || 0) : '--');
+  if (calculatorBaseValue) calculatorBaseValue.textContent = formatCalculatorBaseMeta(fruit);
   if (calculatorUpdatedAt) {
     const dateValue = calculatorData.updatedAt || calculatorData.scrapedAt && calculatorData.scrapedAt * 1000;
     calculatorUpdatedAt.textContent = dateValue ? t.calculatorUpdatedAt(new Date(dateValue).toLocaleTimeString()) : '--';

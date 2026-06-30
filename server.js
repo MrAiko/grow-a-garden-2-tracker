@@ -491,13 +491,18 @@ function normalizeCalculatorData(input) {
     const key = name.toLowerCase();
     const prev = fruitsByName.get(key);
     if (prev && prev.baseValue >= baseValue) return;
+    const averageWeight = Number(item.averageWeight ?? item.avgWeight ?? item.weight);
+    const baseValuePerKg = parseCompactNumber(item.baseValuePerKg ?? item.valuePerKg ?? item.perKgValue);
+    const averageSizePower = Number(item.averageSizePower ?? item.avgSizePower);
     fruitsByName.set(key, {
       name,
       baseValue,
+      baseValuePerKg: Number.isFinite(baseValuePerKg) && baseValuePerKg > 0 ? baseValuePerKg : undefined,
+      averageSizePower: Number.isFinite(averageSizePower) && averageSizePower > 0 ? averageSizePower : undefined,
       image: formatImageForClient(item.image),
       isSingleHarvest: item.isSingleHarvest === true,
-      averageWeight: Number.isFinite(Number(item.averageWeight ?? item.avgWeight ?? item.weight))
-        ? Number(item.averageWeight ?? item.avgWeight ?? item.weight)
+      averageWeight: Number.isFinite(averageWeight)
+        ? averageWeight
         : undefined,
       sizeExponent: Number.isFinite(Number(item.sizeExponent)) ? Number(item.sizeExponent) : undefined
     });
@@ -577,6 +582,7 @@ function normalizeAuctionLotId(lotId) {
 
 function computeAuctionCurrentPrice(lot, nowSec = Math.floor(Date.now() / 1000)) {
   if (!lot || typeof lot !== 'object') return null;
+  if (lot.priceUnknown === true) return null;
   const explicit = lot.currentPrice !== undefined ? lot.currentPrice
     : lot.price !== undefined ? lot.price
       : lot.cost;
@@ -616,14 +622,16 @@ function normalizeAuctionData(input) {
     .filter(lot => lot && typeof lot === 'object')
     .map((lot, index) => {
       const lotId = normalizeAuctionLotId(lot.lotId || lot.id || index);
-      const stockValue = lot.stock !== undefined
+      const stockUnknown = lot.stockUnknown === true;
+      const stockUnlimited = lot.stockUnlimited === true;
+      const stockValue = stockUnknown || stockUnlimited ? null : lot.stock !== undefined
         ? lot.stock
         : stockMap[lotId] !== undefined
           ? stockMap[lotId]
           : lot.stockQuantity;
       const stock = stockValue === undefined || stockValue === null ? null : safeNumber(stockValue, 0);
       const expiresAt = safeNumber(lot.expiresAt, 0);
-      const soldOut = typeof lot.soldOut === 'boolean' ? lot.soldOut : stock !== null && stock <= 0;
+      const soldOut = typeof lot.soldOut === 'boolean' ? lot.soldOut : !stockUnknown && !stockUnlimited && stock !== null && stock <= 0;
       const expired = typeof lot.expired === 'boolean' ? lot.expired : expiresAt > 0 && expiresAt <= nowSec;
       const rawImage = lot.image || lot.icon || lot.displayImage || lot.thumbnail || lot.assetId || null;
       const currentPrice = computeAuctionCurrentPrice(lot, nowSec);
@@ -640,8 +648,11 @@ function normalizeAuctionData(input) {
         rarity: lot.rarity || '',
         image: formatImageForClient(rawImage),
         stock,
-        stockQuantity: lot.stockQuantity === undefined ? stock : lot.stockQuantity,
+        stockQuantity: stockUnknown ? null : lot.stockQuantity === undefined ? stock : lot.stockQuantity,
+        stockUnknown,
+        stockUnlimited,
         currentPrice: currentPrice === undefined || currentPrice === null ? null : safeNumber(currentPrice, 0),
+        priceUnknown: lot.priceUnknown === true || currentPrice === undefined || currentPrice === null,
         robuxPrice: lot.robuxPrice === undefined ? null : safeNumber(lot.robuxPrice, 0),
         rolledAt: safeNumber(lot.rolledAt, 0),
         expiresAt,
