@@ -423,12 +423,12 @@ print("Будущие семена:", data["seeds"])</code></pre>
           <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-info"></i> How Our GAG 2 Dashboard Syncs</h2>
           <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; display: flex; flex-direction: column; gap: 12px;">
             <p>Our real-time stock tracker is designed to keep you updated on the Grow a Garden 2 seed market and general item availability. By communicating directly with active game servers, we process restock changes instantly as they occur in Roblox.</p>
-            <p>Every shop card details the item name, available supply, rarity tier (from Common up to Divine), and price. Cards are color-coded so you can spot highly valued, high-yield seeds immediately.</p>
+            <p>Every shop card details the item name, available supply, rarity tier (from Common up to Super), and price. Cards are color-coded so you can spot highly valued, high-yield seeds immediately.</p>
             <p>The tracker dashboard displays the following items:</p>
             <div class="guide-step-list" style="margin-top: 8px; gap: 10px;">
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Seeds & Crops</strong> — Track seed availability, from basic crops to ultra-rare Legendary and Divine varieties.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Seeds & Crops</strong> — Track seed availability, from basic crops to ultra-rare Legendary and Super varieties.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
@@ -449,7 +449,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
         <section class="shop-section glass" style="padding: 24px;">
           <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-bell"></i> Live Alerts Setup Guide</h2>
           <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
-            <p>Missing restocks of Divine or Legendary seeds can slow down your farm's growth. Our client-side sound notification system alerts you immediately when rare seeds arrive in stock.</p>
+            <p>Missing restocks of Super or Legendary seeds can slow down your farm's growth. Our client-side sound notification system alerts you immediately when rare seeds arrive in stock.</p>
             <p style="margin-top: 10px;">Follow these simple steps to configure your alerts:</p>
             <div class="guide-step-list">
               <div class="guide-step-item">
@@ -462,7 +462,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Choose Rarity Filters</strong> — Select which rarity levels you want to track (Legendary, Mythic, Divine).</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Choose Rarity Filters</strong> — Select which rarity levels you want to track (Legendary, Mythic, Super).</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
@@ -487,44 +487,44 @@ print("Будущие семена:", data["seeds"])</code></pre>
         <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-question"></i> FAQ</h2>
         <div style="display: flex; flex-direction: column;">
           <details class="faq-details" open>
-            <summary class="faq-summary">How often does the Grow a Garden 2 seed shop restock?</summary>
+            <summary class="faq-summary">How often does the Grow a Garden 2 shop cycle?</summary>
             <div class="faq-content">
-              The seed shop restocks every 5 in-game minutes (which corresponds to 5 real-time minutes). Restock timers are displayed dynamically on our dashboard for Seeds, Gears, Crates, and Auction lots.
+              The seed shop inventory refreshes every 5 minutes in real time. We display countdown timers for all shops and auction lots.
             </div>
           </details>
 
           <details class="faq-details">
-            <summary class="faq-summary">How does the live stock tracker work?</summary>
+            <summary class="faq-summary">Where does the tracker data come from?</summary>
             <div class="faq-content">
-              Our automated Roblox scraper runs in the background of active game servers and securely uploads stock values, weather states, and fruit price multipliers to our central server whenever a change is detected.
+              Data is gathered by background instances running on game servers, sending updates to our server whenever inventory, weather, or multipliers change.
             </div>
           </details>
 
           <details class="faq-details">
-            <summary class="faq-summary">Can I get sound notifications for rare seeds?</summary>
+            <summary class="faq-summary">Can I get desktop audio alerts for rare seeds?</summary>
             <div class="faq-content">
-              Yes! By clicking the bell icon at the top of the tracker dashboard, you can enable browser sound notifications for Legendary, Mythic, Prismatic, and Divine seed types.
+              Yes, click the bell icon at the top of the page to configure sound notifications for any rarity tier of your choice (such as Legendary, Mythic, or Super).
             </div>
           </details>
 
           <details class="faq-details">
-            <summary class="faq-summary">What do the rarity colors mean?</summary>
+            <summary class="faq-summary">Why are items color-coded in the lists?</summary>
             <div class="faq-content">
-              Colors highlight seed and gear rarity. Common is gray, Uncommon is green, Rare is blue, Epic is purple, Legendary is orange, Mythic is red, and Divine is light blue/rainbow. Higher rarity seeds yield crops that sell for exponentially more coins.
+              Colors indicate the rarity tiers of seeds and tools. Gray represents common items, while orange, red, and cyan represent Legendary, Mythic, and Super items. Planting rarer crops leads to far larger payout yields.
             </div>
           </details>
 
           <details class="faq-details">
-            <summary class="faq-summary">Is the stock the same on every server?</summary>
+            <summary class="faq-summary">Does every server share the same shop inventory?</summary>
             <div class="faq-content">
-              Yes, the standard seed shop, gear shop, and crate shop stocks are synchronized globally across all public game servers. However, the custom auction house items and prices might differ if players create private bidding pools.
+              Yes, the standard seed, gear, and crate shop restocks are globally synchronized across all public servers. However, player-driven auction house bids and lots are unique to the server you are playing on.
             </div>
           </details>
 
           <details class="faq-details">
-            <summary class="faq-summary">Does this tracker work on mobile devices?</summary>
+            <summary class="faq-summary">Can I view the dashboard on my phone?</summary>
             <div class="faq-content">
-              Absolutely! The tracker layout is fully responsive and optimized for mobile screens. You can check live stocks, predictions, and weather trends on Android and iOS devices.
+              Yes, our web application is fully responsive. It automatically scales to look great and remain functional on all mobile screens, including smartphones and tablets.
             </div>
           </details>
         </div>
@@ -570,10 +570,15 @@ print("Будущие семена:", data["seeds"])</code></pre>
           <a href="#" class="footer-link">Contact Us</a>
           <a href="#" class="footer-link">About Us</a>
         </div>
-      </div>
       <p style="margin-top: 24px; text-align: center; font-size: 0.8rem; color: rgba(255, 255, 255, 0.3);">
         &copy; 2026 Grow a Garden 2 Stock Tracker.
       </p>
+      <!-- Yandex SQI (ИКС) Badge -->
+      <div style="margin-top: 16px; text-align: center;">
+        <a href="https://webmaster.yandex.ru/siteinfo/?site=https://grow-a-garden-2-tracker.onrender.com" target="_blank" rel="noopener noreferrer">
+          <img src="https://yandex.ru/cycounter?https://grow-a-garden-2-tracker.onrender.com&theme=light&lang=ru" width="88" height="31" border="0" alt="Яндекс ИКС" style="border-radius: 8px; opacity: 0.75; transition: opacity 0.2s ease;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75" />
+        </a>
+      </div>
     </footer>
   </div>
 
