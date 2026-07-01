@@ -386,7 +386,6 @@
   "updatedAt": 1781287318259
 }</code></pre>
             <h5>Пример JSON ответа (/api/predictions):</h5>
-            <h5>Р СџРЎР‚Р С‘Р СР ВµРЎР‚ JSON Р С•РЎвЂљР Р†Р ВµРЎвЂљР В° (/api/predictions):</h5>
             <pre><code>{
   "updatedAt": 1782133826000,
   "seeds": [
@@ -403,82 +402,81 @@
   ]
 }</code></pre>
             <h5>Пример получения предсказаний на Python:</h5>
-            <h5>Р СџРЎР‚Р С‘Р СР ВµРЎР‚ Р С—Р С•Р В»РЎС“РЎвЂЎР ВµР Р…Р С‘РЎРЏ Р С—РЎР‚Р ВµР Т‘РЎРѓР С”Р В°Р В·Р В°Р Р…Р С‘Р в„– Р Р…Р В° Python:</h5>
             <pre><code>import requests
 
 response = requests.get("https://grow-a-garden-2-tracker.onrender.com/api/predictions")
 print("Будущие семена:", data["seeds"])</code></pre>
-print("Р вЂРЎС“Р Т‘РЎС“РЎвЂ°Р С‘Р Вµ РЎРѓР ВµР СР ВµР Р…Р В°:", data["seeds"])</code></pre>
             <h5>Пример получения предсказаний на JavaScript (Node.js):</h5>
-            <h5>Р СџРЎР‚Р С‘Р СР ВµРЎР‚ Р С—Р С•Р В»РЎС“РЎвЂЎР ВµР Р…Р С‘РЎРЏ Р С—РЎР‚Р ВµР Т‘РЎРѓР С”Р В°Р В·Р В°Р Р…Р С‘Р в„– Р Р…Р В° JavaScript (Node.js):</h5>
             <pre><code>fetch("https://grow-a-garden-2-tracker.onrender.com/api/predictions")
   .then(res => res.json())
   .then(data => console.log(data.seeds));</code></pre>
           </div>
         </details>
       </div>
+    </section>
+
     <!-- SEO Information Section -->
     <div class="seo-info-container" style="margin-top: 24px; margin-bottom: 24px;">
       <!-- Left Column: How it Works & How to set up alerts -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
         <section class="shop-section glass" style="padding: 24px; height: 100%;">
-          <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-info"></i> How the Tracker Works</h2>
+          <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-info"></i> How Our GAG 2 Dashboard Syncs</h2>
           <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; display: flex; flex-direction: column; gap: 12px;">
-            <p>Our live stock tracker connects directly to the <strong>Grow a Garden 2 seed shop</strong> and monitors inventory changes in real time. The tracker polls for new data, so you will see stock updates within moments of a restock occurring in the game.</p>
-            <p>Each item card displays the item name, current quantity available, rarity tier, and the shop price. Items are color-coded by rarity — from Common all the way up to Divine — making it easy to spot valuable finds at a glance. Only items currently in stock are displayed, so you can focus on what is available right now.</p>
-            <p>The tracker covers the main shop categories:</p>
+            <p>Our real-time stock tracker is designed to keep you updated on the Grow a Garden 2 seed market and general item availability. By communicating directly with active game servers, we process restock changes instantly as they occur in Roblox.</p>
+            <p>Every shop card details the item name, available supply, rarity tier (from Common up to Divine), and price. Cards are color-coded so you can spot highly valued, high-yield seeds immediately.</p>
+            <p>The tracker dashboard displays the following items:</p>
             <div class="guide-step-list" style="margin-top: 8px; gap: 10px;">
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Seeds</strong> — The main seed shop inventory including all rarity tiers from Common Carrot to Super Moon Bloom.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Seeds & Crops</strong> — Track seed availability, from basic crops to ultra-rare Legendary and Divine varieties.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Gear</strong> — Tools like Watering Can, Shovel, Sprinkler, Trowel, and rare equipment.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Farming Equipment</strong> — Keep an eye on sprinkler upgrades, watering cans, and critical gears.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Crates</strong> — Buildable items including Fence, Bridge, Light, Teleporter, and more.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Structure Crates</strong> — Monitor building materials like fences, bridges, and teleporters.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Seed Packs</strong> — Bundled seed packages with multiple seeds at special prices.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Value Bundles</strong> — Watch out for bulk seed packages that offer premium discounts.</p></div>
               </div>
             </div>
           </div>
         </section>
 
         <section class="shop-section glass" style="padding: 24px;">
-          <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-bell"></i> How to Set Up Alerts</h2>
+          <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-bell"></i> Live Alerts Setup Guide</h2>
           <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7;">
-            <p>Missing a Beanstalk, Moon Bloom, or other high-rarity seed because you were not watching the shop is one of the most common frustrations in Grow a Garden 2. Our built-in sound alert system solves this problem completely.</p>
-            <p style="margin-top: 10px;">Here is how to set up rare seed notifications:</p>
+            <p>Missing restocks of Divine or Legendary seeds can slow down your farm's growth. Our client-side sound notification system alerts you immediately when rare seeds arrive in stock.</p>
+            <p style="margin-top: 10px;">Follow these simple steps to configure your alerts:</p>
             <div class="guide-step-list">
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Click the Alerts button</strong> at the top of the page to open the notification settings panel.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Open Notification Settings</strong> — Click the Bell icon in the navigation bar to reveal the control panel.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Enable Sound Alerts</strong> using the master toggle switch at the top of the panel.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Toggle Sound Alerts</strong> — Turn on the master switch to enable audio alerts.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Select rarity tiers</strong> you want to track. By default, Legendary and above are tracked.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Choose Rarity Filters</strong> — Select which rarity levels you want to track (Legendary, Mythic, Divine).</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Adjust the volume</strong> and use the Test button to preview the alert chime.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Test the Volume</strong> — Use the built-in chime player to adjust the notification volume.</p></div>
               </div>
               <div class="guide-step-item">
                 <i class="fa-solid fa-play guide-step-icon"></i>
-                <div class="guide-step-text"><p style="margin-top:0;"><strong>Keep this tab open</strong> in your browser. When a tracked item appears in stock, you will hear the notification instantly.</p></div>
+                <div class="guide-step-text"><p style="margin-top:0;"><strong>Run in Background</strong> — Leave the tab active in your browser. The site will play a sound alert the second a matched item restocks.</p></div>
               </div>
             </div>
-            <p style="margin-top: 12px; font-size: 0.9rem;">This is especially valuable for Super, Mythic, Prismatic, and Divine rarity items that appear very rarely in restocks. Your preferences are saved locally and persist between sessions — no account needed.</p>
+            <p style="margin-top: 12px; font-size: 0.9rem;">Preferences are saved inside your browser session, meaning you won't need to create an account. For mobile alerts, we recommend joining our Telegram channel.</p>
             
             <div class="info-highlight-box">
-              <span><strong>Want to learn more advanced strategies?</strong> Check out our <a href="https://t.me/GrowaGarden2stock_bot" target="_blank">Ultimate Grow a Garden 2 Guide</a> for secret tips on maximizing profits.</span>
+              <span><strong>Looking for pro strategies?</strong> Connect with our community in the <a href="https://t.me/GrowaGarden2stock_bot" target="_blank">Telegram Notification Bot</a> to get direct messages for active restocks.</span>
             </div>
           </div>
         </section>
