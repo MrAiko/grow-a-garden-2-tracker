@@ -4831,3 +4831,127 @@ function playAlertSound() {
     console.warn('AudioContext chime audio failed to play:', e);
   }
 }
+
+// Modal Data & Logic for Footer links
+const modalData = {
+  'restock-timer': {
+    title: { ru: '⏰ Таймеры обновлений', en: '⏰ Restock Timers & Countdown' },
+    content: {
+      ru: `<p>В игре <strong>Grow a Garden 2</strong> магазины обновляют свои запасы каждые 5 минут реального времени.</p>
+           <p>Наш трекер получает точное оставшееся время напрямую с игровых серверов. Когда таймер доходит до нуля, список товаров обновляется автоматически без необходимости перезагружать страницу.</p>`,
+      en: `<p>In <strong>Grow a Garden 2</strong>, the shops refresh their stocks every 5 real-life minutes.</p>
+           <p>Our tracker receives the exact remaining seconds directly from active game servers. When the countdown reaches zero, the item list refreshes automatically without reloading the page.</p>`
+    }
+  },
+  'rare-seeds': {
+    title: { ru: '🌱 Руководство по редким семенам', en: '🌱 Rare Seeds & Yield Guide' },
+    content: {
+      ru: `<p>Выращивание редких семян — ключ к миллионным заработкам в игре.</p>
+           <p><strong>Множители редкости урожая:</strong></p>
+           <ul>
+             <li>Common: 1x</li>
+             <li>Uncommon: 1.5x</li>
+             <li>Rare: 2x</li>
+             <li>Epic: 3.5x</li>
+             <li>Legendary: 6x</li>
+             <li>Mythic: 10x</li>
+             <li>Super: 20x ценности!</li>
+           </ul>
+           <p>Держите вкладку сайта открытой со включенным звуком или используйте нашего Telegram-бота, чтобы мгновенно узнавать о завозе Legendary и Super семян.</p>`,
+      en: `<p>Growing rare seeds is the key to maximizing coin profit in Grow a Garden 2.</p>
+           <p><strong>Crop Rarity Multipliers:</strong></p>
+           <ul>
+             <li>Common: 1x value</li>
+             <li>Uncommon: 1.5x value</li>
+             <li>Rare: 2x value</li>
+             <li>Epic: 3.5x value</li>
+             <li>Legendary: 6x value</li>
+             <li>Mythic: 10x value</li>
+             <li>Super: 20x value!</li>
+           </ul>
+           <p>Keep our tracker tab active with sound alerts turned on, or connect the Telegram Bot to get notified the second Legendary or Super seeds appear in stock.</p>`
+    }
+  },
+  'privacy': {
+    title: { ru: '🔒 Политика конфиденциальности', en: '🔒 Privacy Policy' },
+    content: {
+      ru: `<p>Мы уважаем вашу конфиденциальность. Наш сайт не собирает личные данные пользователей.</p>
+           <p>Все ваши настройки (громкость звука, выбранные подписки на семена, язык интерфейса) сохраняются исключительно на вашем собственном устройстве в LocalStorage вашего браузера.</p>`,
+      en: `<p>We respect your privacy. Grow a Garden 2 Stock Tracker does not collect any personal identifier data.</p>
+           <p>All notification preferences, volume levels, and custom settings are stored locally on your device using browser LocalStorage.</p>`
+    }
+  },
+  'terms': {
+    title: { ru: '⚖️ Условия использования', en: '⚖️ Terms of Use' },
+    content: {
+      ru: `<p>Этот сайт является бесплатным фанатским проектом.</p>
+           <p>Данные о запасах и погоде собираются из общедоступных игровых серверов. Мы не можем гарантировать 100% точность в случае сетевых сбоев Roblox или задержек сети.</p>`,
+      en: `<p>This is a free, fan-made community utility tool.</p>
+           <p>Roblox game data displayed here is gathered solely from public server instances. By using the tracker, you agree that the data is provided 'as-is' and may not be 100% accurate due to Roblox network delays or server fluctuations.</p>`
+    }
+  },
+  'contact': {
+    title: { ru: '💬 Контакты', en: '💬 Contact Us' },
+    content: {
+      ru: `<p>По любым вопросам, багам или предложениям вы можете связаться с нами через официального Telegram-бота:</p>
+           <p style="text-align: center; margin: 16px 0;">
+             <a href="https://t.me/GrowaGarden2stock_bot" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">@GrowaGarden2stock_bot</a>
+           </p>
+           <p>Бот также позволяет настроить личные оповещения в ЛС о завозах и погоде.</p>`,
+      en: `<p>For support, bugs, or feature suggestions, you can reach out directly via our official Telegram Bot:</p>
+           <p style="text-align: center; margin: 16px 0;">
+             <a href="https://t.me/GrowaGarden2stock_bot" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">@GrowaGarden2stock_bot</a>
+           </p>
+           <p>The bot also provides customizable alerts directly to your Telegram DMs.</p>`
+    }
+  },
+  'about': {
+    title: { ru: 'ℹ️ О проекте', en: 'ℹ️ About Us' },
+    content: {
+      ru: `<p><strong>Grow a Garden 2 Stock Tracker</strong> — независимый аналитический инструмент для игроков Roblox.</p>
+           <p>Наша цель — помочь игрокам эффективно развивать свои фермы с помощью точного калькулятора, предсказаний погоды и мгновенных оповещений о редких завозах семян и предметов.</p>`,
+      en: `<p><strong>Grow a Garden 2 Stock Tracker</strong> is an independent analytical fan tool for Roblox players.</p>
+           <p>Our goal is to help players optimize their farming cycles by showing live stock counts, auction lots, weather predictions, and a highly precise crop price calculator.</p>`
+    }
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('footer-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalBody = document.getElementById('modal-body');
+  const closeBtn = document.getElementById('modal-close-btn');
+
+  if (!modal || !closeBtn) return;
+
+  // Open modal
+  document.querySelectorAll('.modal-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const type = trigger.getAttribute('data-modal');
+      const data = modalData[type];
+      if (!data) return;
+
+      const lang = typeof currentLang === 'string' && currentLang in data.title ? currentLang : 'en';
+      modalTitle.innerHTML = data.title[lang];
+      modalBody.innerHTML = data.content[lang];
+
+      modal.style.display = 'flex';
+      // Force reflow
+      modal.offsetHeight;
+      modal.classList.add('active');
+    });
+  });
+
+  // Close modal
+  const closeModal = () => {
+    modal.classList.remove('active');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  };
+
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+});

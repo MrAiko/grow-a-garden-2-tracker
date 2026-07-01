@@ -3380,3 +3380,97 @@ body::before {
     grid-template-columns: 1fr;
   }
 }
+
+/* Modal Popup Styling & Footer Button Triggers */
+button.footer-link {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-content {
+  background: rgba(18, 18, 24, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+.modal-overlay.active .modal-content {
+  transform: translateY(0);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.modal-header h3 {
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  line-height: 1;
+}
+.modal-close:hover {
+  color: var(--text-primary);
+}
+.modal-body-content {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.modal-body-content h4 {
+  color: var(--text-primary);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.modal-body-content p {
+  margin-bottom: 12px;
+}
+.modal-body-content ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+.modal-body-content li {
+  margin-bottom: 4px;
+}

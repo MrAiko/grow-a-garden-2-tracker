@@ -419,7 +419,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
     <div class="seo-info-container" style="margin-top: 24px; margin-bottom: 24px;">
       <!-- Left Column: How it Works & How to set up alerts -->
       <div style="display: flex; flex-direction: column; gap: 20px;">
-        <section class="shop-section glass" style="padding: 24px; height: 100%;">
+        <section id="how-it-works-scroll" class="shop-section glass" style="padding: 24px; height: 100%;">
           <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-info"></i> How Our GAG 2 Dashboard Syncs</h2>
           <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; display: flex; flex-direction: column; gap: 12px;">
             <p>Our real-time stock tracker is designed to keep you updated on the Grow a Garden 2 seed market and general item availability. By communicating directly with active game servers, we process restock changes instantly as they occur in Roblox.</p>
@@ -483,7 +483,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
       </div>
 
       <!-- Right Column: FAQ -->
-      <section class="shop-section glass" style="padding: 24px; display: flex; flex-direction: column;">
+      <section id="faq-scroll" class="shop-section glass" style="padding: 24px; display: flex; flex-direction: column;">
         <h2 class="section-title" style="margin-bottom: 16px;"><i class="fa-solid fa-circle-question"></i> FAQ</h2>
         <div style="display: flex; flex-direction: column;">
           <details class="faq-details" open>
@@ -528,6 +528,7 @@ print("Будущие семена:", data["seeds"])</code></pre>
             </div>
           </details>
         </div>
+      </section>
     </div>
 
     <!-- Extra SEO Keywords and Information Block -->
@@ -555,21 +556,20 @@ print("Будущие семена:", data["seeds"])</code></pre>
       </p>
       <div class="footer-links-grid">
         <div class="footer-link-group">
-          <a href="#" class="footer-link">How It Works</a>
-          <a href="#" class="footer-link">Restock Timer</a>
-          <a href="#" class="footer-link">Rare Seeds Guide</a>
-          <a href="#" class="footer-link">FAQ</a>
+          <a href="#how-it-works-scroll" class="footer-link">How It Works</a>
+          <button class="footer-link modal-trigger" data-modal="restock-timer">Restock Timer</button>
+          <button class="footer-link modal-trigger" data-modal="rare-seeds">Rare Seeds Guide</button>
+          <a href="#faq-scroll" class="footer-link">FAQ</a>
         </div>
         <div class="footer-link-group">
-          <a href="#" class="footer-link">Privacy Policy</a>
-          <a href="#" class="footer-link">Terms of Use</a>
-          <a href="#" class="footer-link">Disclaimer</a>
-          <a href="#" class="footer-link">DMCA</a>
+          <button class="footer-link modal-trigger" data-modal="privacy">Privacy Policy</button>
+          <button class="footer-link modal-trigger" data-modal="terms">Terms of Use</button>
         </div>
         <div class="footer-link-group">
-          <a href="#" class="footer-link">Contact Us</a>
-          <a href="#" class="footer-link">About Us</a>
+          <button class="footer-link modal-trigger" data-modal="contact">Contact Us</button>
+          <button class="footer-link modal-trigger" data-modal="about">About Us</button>
         </div>
+      </div>
       <p style="margin-top: 24px; text-align: center; font-size: 0.8rem; color: rgba(255, 255, 255, 0.3);">
         &copy; 2026 Grow a Garden 2 Stock Tracker.
       </p>
@@ -580,6 +580,19 @@ print("Будущие семена:", data["seeds"])</code></pre>
         </a>
       </div>
     </footer>
+  </div>
+
+  <!-- Modal Popup Container -->
+  <div id="footer-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h3 id="modal-title">Info</h3>
+        <button id="modal-close-btn" class="modal-close">&times;</button>
+      </div>
+      <div id="modal-body" class="modal-body-content">
+        <!-- Dynamic content goes here -->
+      </div>
+    </div>
   </div>
 
   <script src="app.js?v=2.5.22"></script>
