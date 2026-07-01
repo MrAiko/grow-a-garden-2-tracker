@@ -1780,38 +1780,47 @@ async function handleUpdateStock(newStock) {
     updatedAt: Date.now()
   };
 
-  saveStockData();
-
-  let calculatorUpdated = false;
-  if (newStock.calculatorData && typeof newStock.calculatorData === 'object') {
-    const wikiData = await fetchWikiCropCalculatorData(false);
-    const normalizedCalculatorData = mergeCalculatorDataWithWikiData(newStock.calculatorData, wikiData);
-    if (normalizedCalculatorData && normalizedCalculatorData.fruits.length > 0) {
-      currentCalculatorData = normalizedCalculatorData;
-      saveCalculatorData();
-      calculatorUpdated = true;
-    }
-  }
-
-  // Update pre-serialized cache
-  updateCachedResponses();
-
+  // Broadcast the stock and weather update instantly to WebSocket clients (like Telegram bot)
   broadcast({
     type: 'stock',
     stock: prepareStockResponse(currentStock)
   });
-  if (auctionUpdated) {
-    broadcast({
-      type: 'auction',
-      auction: prepareAuctionResponse(currentAuction)
-    });
-  }
-  if (calculatorUpdated) {
-    broadcast({
-      type: 'calculator-data',
-      calculatorData: prepareCalculatorDataResponse(currentCalculatorData)
-    });
-  }
+
+  // Perform slower background IO, Wiki fetching, and cache updates asynchronously
+  (async () => {
+    try {
+      saveStockData();
+
+      let calculatorUpdated = false;
+      if (newStock.calculatorData && typeof newStock.calculatorData === 'object') {
+        const wikiData = await fetchWikiCropCalculatorData(false);
+        const normalizedCalculatorData = mergeCalculatorDataWithWikiData(newStock.calculatorData, wikiData);
+        if (normalizedCalculatorData && normalizedCalculatorData.fruits.length > 0) {
+          currentCalculatorData = normalizedCalculatorData;
+          saveCalculatorData();
+          calculatorUpdated = true;
+        }
+      }
+
+      // Update pre-serialized cache
+      updateCachedResponses();
+
+      if (auctionUpdated) {
+        broadcast({
+          type: 'auction',
+          auction: prepareAuctionResponse(currentAuction)
+        });
+      }
+      if (calculatorUpdated) {
+        broadcast({
+          type: 'calculator-data',
+          calculatorData: prepareCalculatorDataResponse(currentCalculatorData)
+        });
+      }
+    } catch (bgErr) {
+      console.error('Error in background stock update processing:', bgErr);
+    }
+  })();
 
   return { success: true, isRestockTimeUpdated };
 }
