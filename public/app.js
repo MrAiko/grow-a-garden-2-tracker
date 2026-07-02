@@ -1963,14 +1963,6 @@ function setLanguage(lang) {
 function updateStaticTranslations() {
   const t = translations[currentLang];
   
-  // Update browser page title and SEO description dynamically
-  const pageTitle = (t.title || 'Grow a Garden 2') + ' - ' + (t.subtitle || 'Live Stock Tracker & Alerts');
-  document.title = pageTitle;
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) {
-    metaDesc.setAttribute('content', (t.subtitle || '') + '. Monitor active seed stock, gear, crates, auction, weather events and restock timers in Grow a Garden 2.');
-  }
-  
   // Header
   document.querySelector('.dashboard-header .subtitle').textContent = t.subtitle;
   
@@ -2027,13 +2019,7 @@ function updateStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t[key];
-    if (typeof val === 'string') {
-      if (val.includes('<') && val.includes('>')) {
-        el.innerHTML = val;
-      } else {
-        el.textContent = val;
-      }
-    }
+    if (typeof val === 'string') el.textContent = val;
   });
 
   const calculatorTitle = document.querySelector('#calculator-section .section-title');

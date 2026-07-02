@@ -331,9 +331,11 @@ try {
 updateCachedResponses();
 
 function saveTranslationCache() {
-  fs.writeFile(TRANSLATION_CACHE_FILE, JSON.stringify(translationCache, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving translation cache:', err);
-  });
+  try {
+    fs.writeFileSync(TRANSLATION_CACHE_FILE, JSON.stringify(translationCache, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving translation cache:', err);
+  }
 }
 
 function normalizeTranslationLang(lang) {
@@ -406,41 +408,53 @@ async function translateTextAutomatically(text, targetLang) {
 
 // Save Stock Data
 function saveStockData() {
-  fs.writeFile(STOCK_DATA_FILE, JSON.stringify(currentStock, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving stock data:', err);
-  });
+  try {
+    fs.writeFileSync(STOCK_DATA_FILE, JSON.stringify(currentStock, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving stock data:', err);
+  }
 }
 
 // Save Predictions Data
 function savePredictionsData() {
-  fs.writeFile(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving predictions data:', err);
-  });
+  try {
+    fs.writeFileSync(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving predictions data:', err);
+  }
 }
 
 function saveAuctionData() {
-  fs.writeFile(AUCTION_DATA_FILE, JSON.stringify(currentAuction, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving auction data:', err);
-  });
+  try {
+    fs.writeFileSync(AUCTION_DATA_FILE, JSON.stringify(currentAuction, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving auction data:', err);
+  }
 }
 
 function saveCalculatorData() {
-  fs.writeFile(CALCULATOR_DATA_FILE, JSON.stringify(currentCalculatorData, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving calculator data:', err);
-  });
+  try {
+    fs.writeFileSync(CALCULATOR_DATA_FILE, JSON.stringify(currentCalculatorData, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving calculator data:', err);
+  }
 }
 
 // Save Catalog Images Data
 function saveCatalogImages() {
-  fs.writeFile(CATALOG_IMAGES_FILE, JSON.stringify(catalogImages, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving catalog images:', err);
-  });
+  try {
+    fs.writeFileSync(CATALOG_IMAGES_FILE, JSON.stringify(catalogImages, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving catalog images:', err);
+  }
 }
 
 function saveWeatherCatalogImages() {
-  fs.writeFile(WEATHER_CATALOG_IMAGES_FILE, JSON.stringify(weatherCatalogImages, null, 2), 'utf8', (err) => {
-    if (err) console.error('Error saving weather catalog images:', err);
-  });
+  try {
+    fs.writeFileSync(WEATHER_CATALOG_IMAGES_FILE, JSON.stringify(weatherCatalogImages, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error saving weather catalog images:', err);
+  }
 }
 
 function rememberWeatherCatalogImage(name, image, displayName) {
@@ -1350,6 +1364,115 @@ function getMaxWeatherEndTime(sessions, mergedWeathers = {}) {
   return maxEndTime;
 }
 
+function getNormalizedFruitMultipliers(raw) {
+  const out = [];
+  if (!raw) return out;
+  if (Array.isArray(raw)) {
+    for (const entry of raw) {
+      if (entry && typeof entry === 'object') {
+        const key = entry.key || entry.name;
+        if (key !== undefined) {
+          out.push({ key: String(key), multiplier: Number(entry.multiplier || 0) });
+        }
+      }
+    }
+  } else if (typeof raw === 'object') {
+    for (const [k, v] of Object.entries(raw)) {
+      out.push({ key: String(k), multiplier: Number(v || 0) });
+    }
+  }
+  out.sort((a, b) => a.key.localeCompare(b.key));
+  return out;
+}
+
+function isStockDataEqual(oldStock, newStock) {
+  if (!oldStock) return false;
+  
+  // 1. Compare restockTimes
+  const oldRestock = oldStock.restockTimes || {};
+  const newRestock = newStock.restockTimes || {};
+  const oldShopsKeys = Object.keys(oldRestock);
+  const newShopsKeys = Object.keys(newRestock);
+  if (oldShopsKeys.length !== newShopsKeys.length) return false;
+  for (const key of oldShopsKeys) {
+    const oldTime = oldRestock[key] ? oldRestock[key].next : 0;
+    const newTime = newRestock[key] ? newRestock[key].next : 0;
+    if (Math.abs(oldTime - newTime) > 60) {
+      return false; // Real change in restock time
+    }
+  }
+
+  // 2. Compare shops
+  const oldShops = oldStock.shops || {};
+  const newShops = newStock.shops || {};
+  const oldShopNames = Object.keys(oldShops);
+  const newShopNames = Object.keys(newShops);
+  if (oldShopNames.length !== newShopNames.length) return false;
+  for (const shopKey of oldShopNames) {
+    const oldItems = oldShops[shopKey] || [];
+    const newItems = newShops[shopKey] || [];
+    if (oldItems.length !== newItems.length) return false;
+    for (let i = 0; i < oldItems.length; i++) {
+      const oldItem = oldItems[i];
+      const newItem = newItems[i];
+      if (!oldItem || !newItem) return false;
+      if (oldItem.name !== newItem.name) return false;
+      if (oldItem.stock !== newItem.stock) return false;
+      if (oldItem.price !== newItem.price) return false;
+    }
+  }
+
+  // 3. Compare weather
+  const oldWeather = oldStock.weather || {};
+  const newWeather = newStock.weather || {};
+  if (oldWeather.night !== newWeather.night) return false;
+  
+  const oldPhase = oldWeather.phase ? oldWeather.phase.toLowerCase().trim() : '';
+  const newPhase = newWeather.phase ? newWeather.phase.toLowerCase().trim() : '';
+  if (oldPhase !== newPhase) return false;
+
+  const oldWeathers = oldWeather.weathers || {};
+  const newWeathers = newWeather.weathers || {};
+  const oldWKeys = Object.keys(oldWeathers).filter(k => oldWeathers[k] && oldWeathers[k].playing);
+  const newWKeys = Object.keys(newWeathers).filter(k => newWeathers[k] && newWeathers[k].playing);
+  if (oldWKeys.length !== newWKeys.length) return false;
+  for (const wKey of oldWKeys) {
+    if (!newWeathers[wKey] || !newWeathers[wKey].playing) return false;
+  }
+
+  // 4. Compare fruitMultipliers
+  const oldFruits = oldStock.fruitMultipliers || [];
+  const newFruits = newStock.fruitMultipliers || [];
+  const oldNorm = getNormalizedFruitMultipliers(oldFruits);
+  const newNorm = getNormalizedFruitMultipliers(newFruits);
+  if (oldNorm.length !== newNorm.length) return false;
+  for (let i = 0; i < oldNorm.length; i++) {
+    if (oldNorm[i].key !== newNorm[i].key) return false;
+    if (Math.abs(oldNorm[i].multiplier - newNorm[i].multiplier) > 0.01) return false;
+  }
+
+  // 5. Compare auction
+  const oldAuction = oldStock.auction || {};
+  const newAuction = newStock.auction || {};
+  
+  const oldLots = oldAuction.lots || [];
+  const newLots = newAuction.lots || [];
+  if (oldLots.length !== newLots.length) return false;
+  for (let i = 0; i < oldLots.length; i++) {
+    const l1 = oldLots[i];
+    const l2 = newLots[i];
+    if (!l1 || !l2) return false;
+    if (l1.lotId !== l2.lotId) return false;
+    if (l1.item !== l2.item) return false;
+    if (l1.price !== l2.price) return false;
+    if (l1.stockQuantity !== l2.stockQuantity && l1.stock !== l2.stock) return false;
+    if (l1.seller !== l2.seller) return false;
+    if (l1.buyer !== l2.buyer) return false;
+  }
+
+  return true;
+}
+
 async function handleUpdateStock(newStock) {
   if (!newStock || !newStock.shops) {
     throw new Error('Invalid stock data structure');
@@ -1751,6 +1874,18 @@ async function handleUpdateStock(newStock) {
       saveAuctionData();
       auctionUpdated = true;
     }
+  }
+
+  const candidateStock = {
+    restockTimes: newStock.restockTimes,
+    shops: newStock.shops,
+    weather: newStock.weather,
+    fruitMultipliers: fruitMultipliers,
+    auction: currentAuction
+  };
+  const isDuplicate = currentStock && isStockDataEqual(currentStock, candidateStock);
+  if (isDuplicate) {
+    return { success: true, isRestockTimeUpdated: false };
   }
 
   currentStock = {
