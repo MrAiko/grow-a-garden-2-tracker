@@ -331,11 +331,9 @@ try {
 updateCachedResponses();
 
 function saveTranslationCache() {
-  try {
-    fs.writeFileSync(TRANSLATION_CACHE_FILE, JSON.stringify(translationCache, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving translation cache:', err);
-  }
+  fs.writeFile(TRANSLATION_CACHE_FILE, JSON.stringify(translationCache, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving translation cache:', err);
+  });
 }
 
 function normalizeTranslationLang(lang) {
@@ -408,53 +406,41 @@ async function translateTextAutomatically(text, targetLang) {
 
 // Save Stock Data
 function saveStockData() {
-  try {
-    fs.writeFileSync(STOCK_DATA_FILE, JSON.stringify(currentStock, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving stock data:', err);
-  }
+  fs.writeFile(STOCK_DATA_FILE, JSON.stringify(currentStock, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving stock data:', err);
+  });
 }
 
 // Save Predictions Data
 function savePredictionsData() {
-  try {
-    fs.writeFileSync(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving predictions data:', err);
-  }
+  fs.writeFile(PREDICTIONS_DATA_FILE, JSON.stringify(currentPredictions, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving predictions data:', err);
+  });
 }
 
 function saveAuctionData() {
-  try {
-    fs.writeFileSync(AUCTION_DATA_FILE, JSON.stringify(currentAuction, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving auction data:', err);
-  }
+  fs.writeFile(AUCTION_DATA_FILE, JSON.stringify(currentAuction, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving auction data:', err);
+  });
 }
 
 function saveCalculatorData() {
-  try {
-    fs.writeFileSync(CALCULATOR_DATA_FILE, JSON.stringify(currentCalculatorData, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving calculator data:', err);
-  }
+  fs.writeFile(CALCULATOR_DATA_FILE, JSON.stringify(currentCalculatorData, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving calculator data:', err);
+  });
 }
 
 // Save Catalog Images Data
 function saveCatalogImages() {
-  try {
-    fs.writeFileSync(CATALOG_IMAGES_FILE, JSON.stringify(catalogImages, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving catalog images:', err);
-  }
+  fs.writeFile(CATALOG_IMAGES_FILE, JSON.stringify(catalogImages, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving catalog images:', err);
+  });
 }
 
 function saveWeatherCatalogImages() {
-  try {
-    fs.writeFileSync(WEATHER_CATALOG_IMAGES_FILE, JSON.stringify(weatherCatalogImages, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error saving weather catalog images:', err);
-  }
+  fs.writeFile(WEATHER_CATALOG_IMAGES_FILE, JSON.stringify(weatherCatalogImages, null, 2), 'utf8', (err) => {
+    if (err) console.error('Error saving weather catalog images:', err);
+  });
 }
 
 function rememberWeatherCatalogImage(name, image, displayName) {
