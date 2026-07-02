@@ -1963,6 +1963,14 @@ function setLanguage(lang) {
 function updateStaticTranslations() {
   const t = translations[currentLang];
   
+  // Update browser page title and SEO description dynamically
+  const pageTitle = (t.title || 'Grow a Garden 2') + ' - ' + (t.subtitle || 'Live Stock Tracker & Alerts');
+  document.title = pageTitle;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute('content', (t.subtitle || '') + '. Monitor active seed stock, gear, crates, auction, weather events and restock timers in Grow a Garden 2.');
+  }
+  
   // Header
   document.querySelector('.dashboard-header .subtitle').textContent = t.subtitle;
   
