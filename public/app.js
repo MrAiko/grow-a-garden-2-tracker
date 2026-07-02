@@ -2019,7 +2019,18 @@ function updateStaticTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t[key];
-    if (typeof val === 'string') el.textContent = val;
+    if (typeof val === 'string') {
+      if (val.includes('<') && val.includes('>')) {
+        el.innerHTML = val;
+      } else {
+        const icon = el.querySelector('i');
+        if (icon) {
+          el.innerHTML = icon.outerHTML + ' ' + val;
+        } else {
+          el.textContent = val;
+        }
+      }
+    }
   });
 
   const calculatorTitle = document.querySelector('#calculator-section .section-title');
