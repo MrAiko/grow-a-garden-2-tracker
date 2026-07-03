@@ -1,24 +1,41 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const API_PASSWORD = process.env.API_PASSWORD || 'test_password';
-const STOCK_DATA_FILE = path.join(__dirname, process.env.STOCK_DATA_FILE || 'stock_data.json');
-const PREDICTIONS_DATA_FILE = path.join(__dirname, process.env.PREDICTIONS_DATA_FILE || 'predictions_data.json');
-const AUCTION_DATA_FILE = path.join(__dirname, process.env.AUCTION_DATA_FILE || 'auction_data.json');
-const CALCULATOR_DATA_FILE = path.join(__dirname, process.env.CALCULATOR_DATA_FILE || 'calculator_data.json');
-const TRANSLATION_CACHE_FILE = path.join(__dirname, process.env.TRANSLATION_CACHE_FILE || 'translation_cache.json');
-const WEATHER_CATALOG_IMAGES_FILE = path.join(__dirname, process.env.WEATHER_CATALOG_IMAGES_FILE || 'weather_catalog_images.json');
+const DOMAIN = 'growagarden2stock.site';
+const SSL_CERT_PATH = `/etc/letsencrypt/live/${DOMAIN}/fullchain.pem`;
+const SSL_KEY_PATH = `/etc/letsencrypt/live/${DOMAIN}/privkey.pem`;
+
+// Auto-detect SSL: if cert files exist → HTTPS on 443 + HTTP redirect on 80
+// If no certs → HTTP only on port 80 (for initial setup / certbot)
+const SSL_EXISTS = fs.existsSync(SSL_CERT_PATH) && fs.existsSync(SSL_KEY_PATH);
+const API_PASSWORD = 'mySuperSecretToken123';
+const STOCK_DATA_FILE = path.join(__dirname, 'stock_data.json');
+const PREDICTIONS_DATA_FILE = path.join(__dirname, 'predictions_data.json');
+const AUCTION_DATA_FILE = path.join(__dirname, 'auction_data.json');
+const CALCULATOR_DATA_FILE = path.join(__dirname, 'calculator_data.json');
+const TRANSLATION_CACHE_FILE = path.join(__dirname, 'translation_cache.json');
+const WEATHER_CATALOG_IMAGES_FILE = path.join(__dirname, 'weather_catalog_images.json');
 const WIKI_CROP_DATA_API_URL = 'https://growagarden2.fandom.com/api.php?action=parse&page=Module:Crop%20Data&prop=wikitext&format=json&origin=*';
 const WIKI_CROP_DATA_SOURCE_URL = 'https://growagarden2.fandom.com/wiki/Crops';
 const WIKI_CROP_DATA_REFRESH_MS = 6 * 60 * 60 * 1000;
 
 // WebSocket clients pool
 const wsClients = new Set();
+
+function getUniqueUserCount() {
+  const uniqueIps = new Set();
+  for (const client of wsClients) {
+    if (client.clientIp) {
+      uniqueIps.add(client.clientIp);
+    }
+  }
+  return Math.max(uniqueIps.size, 1);
+}
 
 
 // Security Headers Middleware (standard anti-exploit & clickjacking headers)
@@ -998,7 +1015,7 @@ function prepareStockResponse(stock) {
   data.weatherCatalog = buildWeatherCatalog(data);
   sanitizeWeatherImages(data);
   
-  data.visitorCount = Math.max(wsClients.size, 1);
+  data.visitorCount = getUniqueUserCount();
   return data;
 }
 
@@ -2200,7 +2217,7 @@ function extractTextFromEmbeds(embeds) {
   return texts;
 }
 
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const DISCORD_TOKEN = 'MTQwMTEwMTc2ODU4MjEwMzA0Mg.GIwMEk.bgRjoO7iehVFc8s0xX_TxIWTPKQnomNoXAGB6M';
 const PREDICTIONS_CHANNEL_ID = '1516238240779075725';
 
 function isPredictionsMessage(fullText) {
@@ -2323,20 +2340,53 @@ if (DISCORD_TOKEN) {
   setInterval(fetchDiscordPredictions, 180 * 1000);
 }
 
-const http = require('http');
-const server = http.createServer(app);
+// ============ SERVER CREATION (HTTP + HTTPS) ============
+let server;
+if (SSL_EXISTS) {
+  // HTTPS main server on port 443
+  const sslOptions = {
+    cert: fs.readFileSync(SSL_CERT_PATH),
+    key: fs.readFileSync(SSL_KEY_PATH),
+  };
+  server = https.createServer(sslOptions, app);
+
+  // HTTP server on port 80: API requests go through directly, everything else redirects to HTTPS
+  // This is critical because Roblox Lua executors cannot follow HTTP redirects or use HTTPS
+  const httpApp = express();
+  // Allow certbot renewal challenges through HTTP
+  httpApp.use('/.well-known/acme-challenge', express.static('/var/www/html/.well-known/acme-challenge'));
+  // Pass ALL /api/ requests through the main app directly (no redirect)
+  httpApp.use('/api', app);
+  // Redirect everything else (browser visitors) to HTTPS
+  httpApp.use((req, res) => {
+    res.redirect(301, `https://${req.headers.host}${req.url}`);
+  });
+  http.createServer(httpApp).listen(80, () => {
+    console.log('HTTP server on port 80: API passthrough + browser redirect → HTTPS');
+  });
+} else {
+  // No SSL certs found — run plain HTTP on port 80
+  server = http.createServer(app);
+  console.warn('[SSL] No certificates found at ' + SSL_CERT_PATH);
+  console.warn('[SSL] Running HTTP-only on port 80. Run certbot to enable HTTPS.');
+}
+
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server });
 
 function broadcastUserCount() {
+  const uniqueCount = getUniqueUserCount();
+  console.log(`[WS] Active WebSocket clients: ${wsClients.size} (Unique IPs: ${uniqueCount})`);
+  updateCachedResponses();
   broadcast({
     type: 'users',
-    count: Math.max(wsClients.size, 1)
+    count: uniqueCount
   });
 }
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   ws.isAlive = true;
+  ws.clientIp = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress) : null;
   ws.on('pong', () => {
     ws.isAlive = true;
   });
@@ -2418,6 +2468,13 @@ function broadcast(data) {
   }
 }
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const LISTEN_PORT = SSL_EXISTS ? 443 : 80;
+server.listen(LISTEN_PORT, () => {
+  console.log(`Server running on ${SSL_EXISTS ? 'HTTPS' : 'HTTP'} mode on port ${LISTEN_PORT}`);
+  if (SSL_EXISTS) {
+    console.log(`✅ HTTPS enabled: https://${DOMAIN}`);
+  } else {
+    console.log(`⚠️  HTTP only: http://${DOMAIN}`);
+    console.log('   To enable HTTPS, run: certbot certonly --webroot -w /var/www/html -d ' + DOMAIN);
+  }
 });
